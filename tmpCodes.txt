@@ -1,0 +1,121 @@
+def getJpolar(Up,Lo,Mach, Re,alphaStart, alphaEnd, alphaStep):
+    JfoilPath = r'D:\Jfoil'
+    JavaPath = r'C:\Program Files (x86)\Java\jre6\bin\java.exe'
+    tmpPath = JfoilPath + '\\temp\\'
+
+    NewPolar = polar(Up,Lo)
+    NewPolar.M = Mach
+    NewPolar.Re = Re
+    tmpalpha = ny.arange(alphaStart,alphaEnd,alphaStep)
+
+    filename  = getRandPrefix()
+    tmpFile   = tmpPath + filename
+    tmpAfFile = tmpFile + '.dat'
+    tmpScriptFile = tmpFile + '.jfscript'
+    tmpPolar  = tmpFile + '.pol'
+    AfLib.writeAirfoil(tmpAfFile,NewPolar.Name,NewPolar.Up,NewPolar.Lo)
+    MhPath = JfoilPath + '\\mhclasses.jar'    
+    JfoilPath = JfoilPath + '\\javafoil.jar'
+
+    ScriptFile = open(tmpScriptFile,'wt')
+    ScriptFile.write('Options.Country(0)\nGeometry.Clear()\n')
+    ScriptFile.write('Geometry.Open("%s")\n' %tmpAfFile)
+    ScriptFile.write('Options.MachNumber(%.4f)\nOptions.StallModel(0)\n' %Mach)
+    ScriptFile.write('Options.TransitionModel(1)\nOptions.GroundEffect(0)\n')
+    ScriptFile.write('Options.HeightOverSpan(0.5)\nOptions.AspectRatio(0)\n')
+    ScriptFile.write('Polar.Analyze(%.0f;%.0f;0;%.2f;%.2f;%.2f;100;100;0;0)\n'%(Re,Re,alphaStart,alphaEnd,alphaStep))
+    ScriptFile.write('Polar.Save("%s")\nExit()' %tmpPolar)
+    ScriptFile.close()
+    print('\"%s\"-cp \"%s\"-jar \"%s\" Script=\"%s\"' %(JavaPath,MhPath,JfoilPath,tmpScriptFile))
+    os.system('\"%s\"-cp \"%s\"-jar \"%s\" Script=\"%s\"' %(JavaPath,MhPath,JfoilPath,tmpScriptFile))
+    polarFile = open(tmpPolar,'rt')
+    for ii in range(5): tmp = polarFile.readline()
+    del tmp
+    lines = polarFile.readlines()
+    polarFile.close()
+    NewPolar.SU = []
+    NewPolar.SL = []
+    NewPolar.LD = []
+    NewPolar.AC = []
+    NewPolar.CP = []
+    for line in lines:
+        segLine = line.split()
+        NewPolar.alpha = ny.append(NewPolar.alpha,float(segLine[0]))
+        NewPolar.CL = ny.append(NewPolar.CL,float(segLine[1]))
+        NewPolar.CD = ny.append(NewPolar.CD,float(segLine[2]))
+        NewPolar.CM = ny.append(NewPolar.CM,float(segLine[3]))
+        NewPolar.TU = ny.append(NewPolar.TU,float(segLine[4]))
+        NewPolar.TL = ny.append(NewPolar.TL,float(segLine[5]))
+        NewPolar.SU = ny.append(NewPolar.SU,float(segLine[6]))
+        NewPolar.SL = ny.append(NewPolar.SL,float(segLine[7]))
+        NewPolar.LD = ny.append(NewPolar.LD,float(segLine[8]))
+        NewPolar.AC = ny.append(NewPolar.AC,float(segLine[9]))
+        NewPolar.CP = ny.append(NewPolar.CP,float(segLine[10]))
+    os.remove(tmpAfFile)
+    os.remove(tmpPolar)
+    os.remove(tmpScriptFile)
+    return NewPolar
+============
+
+def getRandPrefix(fileExt = "", addSymbol = ""):
+    from random import randrange
+    from time import gmtime, strftime
+    
+    Time = int(strftime("%H%M%S", gmtime()))
+    NamePrefix = str(Time+randrange(0,1e6,1)) + addSymbol
+    if fileExt != "":
+        NamePrefix  = NamePrefix + "." + fileExt
+    return(NamePrefix)
+============
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jun 04 11:25:38 2012
+
+@author: Maxim
+"""
+
+def getXpolar(Up,Lo,Mach, Re,alphaStart, alphaEnd, alphaStep, Iter=10, Smooth=False):
+    path = MyPaths()
+
+    filename  = getRandPrefix()
+    tmpFile   = tmpPath + filename
+    tmpAfFile = tmpFile + '.dat'
+    tmpPolar  = tmpFile + '.pol'
+    tmpDump   = tmpFile + '.dmp' #'HARD'
+    AfLib.writeAirfoil(tmpAfFile,'XfoilAnalysis',Up,Lo)
+    XfoilPath = XfoilPath + '\\xfoil.exe'
+
+    def issueCmd(cmd,echo=True):
+        ps.stdin.write(cmd+'\n')
+        if echo: print cmd
+    ps = sp.Popen([XfoilPath], stdin=sp.PIPE, stdout=None, stderr=None)
+	
+    issueCmd('LOAD')
+    issueCmd('%s' %tmpAfFile)
+    if Smooth == True:issueCmd('GDES\nCADD\n\n\n\n\nPANEL')
+	
+    issueCmd('OPER')
+    issueCmd('VISC\n%.0f' % Re)
+    issueCmd('MACH\n%.4f' % Mach)
+    if Iter>10: issueCmd('ITER\n%d' % Iter)
+    issueCmd('PACC')
+    issueCmd('%s\n%s' % (tmpPolar,tmpDump))
+	
+    if alphaStep == 0:
+        issueCmd('ALFA\n%.2f'%alphaStart)
+    elif alphaStart*alphaEnd<0:
+        issueCmd('ASEQ\n%.2f\n%.2f\n%.2f'%(-alphaStep, alphaStart, -alphaStep))
+        issueCmd('ASEQ\n%.2f\n%.2f\n%.2f'%(0, alphaEnd, alphaStep))
+    else:
+        issueCmd('ASEQ\n%.2f\n%.2f\n%.2f'%(alphaStart, alphaEnd, alphaStep))
+    issueCmd('\nQUIT')
+    ps.wait()
+
+    NewPolar = readXpolar(tmpPolar,Up,Lo)
+    NewPolar.Mach = Mach
+    NewPolar.Re = Re
+    
+    os.remove(tmpAfFile)
+    os.remove(tmpPolar)
+    os.remove(tmpDump)
+    
