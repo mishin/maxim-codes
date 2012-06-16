@@ -6,10 +6,10 @@ Created on Thu Jun 07 15:08:44 2012
 """
 import numpy as ny
 import math
-import AfLib
+import afLib
 import scipy.optimize as root
 import scipy.interpolate as interp
-import Curves
+import curves
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 
@@ -45,7 +45,7 @@ FTan[1,1] = 1.0
 BTan[0,0] = math.cos(math.radians(theta))
 BTan[0,1] = math.sin(math.radians(theta))
 
-Up, Lo, _ = AfLib.readAirfoil(AfFile)
+Up, Lo, _ = afLib.readAirfoil(AfFile)
 AfUpCurve = interp.interp1d(Up[:,0],Up[:,1],'cubic')
 AfLoCurve = interp.interp1d(Lo[:,0],Lo[:,1],'cubic')
 #flap curve
@@ -56,13 +56,13 @@ V2allowed = ny.min([FNode[1,1]-pt2Ylb, pt2Yub-FNode[1,1]])
 
 FNode[0,1] = AfUpCurve(FNode[0,0])
 dy = AfUpCurve(FNode[0,0]+dx) - FNode[0,1]
-FTan[0,:] = -Curves.normVect( ny.array([dx,dy]) ) * V1
+FTan[0,:] = -curves.normVect( ny.array([dx,dy]) ) * V1
 FTan[1,:] = -FTan[1,:] * V2 * V2allowed
 FNode[2,1] = AfLoCurve(FNode[2,0])
 dy = AfLoCurve(FNode[2,0]+dx) - FNode[2,1]
-FTan[2,:] = Curves.normVect( ny.array([dx,dy]) ) * V3
+FTan[2,:] = curves.normVect( ny.array([dx,dy]) ) * V3
 
-FCurve,_ = Curves.PwBezier(FNode,FTan,20)
+FCurve,_ = curves.PwBezier(FNode,FTan,20)
 #body curve
 XFlap = interp.interp1d(FCurve[:,2],FCurve[:,0],'cubic')
 YFlap = interp.interp1d(FCurve[:,2],FCurve[:,1],'cubic')
@@ -82,13 +82,13 @@ BNode[0,1] = YFlap(pt5T)
 BNode[2,1] = AfLoCurve(BNode[2,0])
 
 dy = AfLoCurve(BNode[2,0]+dx) - BNode[2,1]
-BTan[1,:] = Curves.normVect( ny.array([dx,dy]) )
+BTan[1,:] = curves.normVect( ny.array([dx,dy]) )
 
-Line1 = Curves.linePtDir2D(BNode[0,:],BTan[0,:])
-Line2 = Curves.linePtDir2D(BNode[2,:],BTan[1,:])
-BNode[1,:] = Curves.lineIntersect(Line1,Line2)
+Line1 = curves.linePtDir2D(BNode[0,:],BTan[0,:])
+Line2 = curves.linePtDir2D(BNode[2,:],BTan[1,:])
+BNode[1,:] = curves.lineIntersect(Line1,Line2)
 
-BCurve = Curves.BezierCurve(BNode,11)
+BCurve = curves.BezierCurve(BNode,11)
 
 #trailing edge thickness of body part
 Fcurve1 = interp.interp1d(FCurve[:,2],FCurve[:,0])
@@ -102,21 +102,21 @@ def findTE(t):
     
 t_teThickness = root.bisect(findTE,0,0.5)
 
-FCurve2 = Curves.CurveSplit2(FCurve,t_teThickness,0)
-BCurveLo = Curves.CurveSplit1(Lo,0,BNode[2,0])
-BCurveUp = Curves.CurveSplit1(Up,0,Fcurve1(t_teThickness))
+FCurve2 = curves.curvesplit2(FCurve,t_teThickness,0)
+BCurveLo = curves.curvesplit1(Lo,0,BNode[2,0])
+BCurveUp = curves.curvesplit1(Up,0,Fcurve1(t_teThickness))
 BCurveLo2 = BCurve[:,0:2]
-BCurveUp2 = Curves.CurveSplit2(FCurve2,0,pt5T)[:,0:2]
+BCurveUp2 = curves.curvesplit2(FCurve2,0,pt5T)[:,0:2]
 BodyCurve = ny.vstack([ny.flipud(BCurveUp),BCurveLo,ny.flipud(BCurveLo2),ny.flipud(BCurveUp2)])
 
 #flap curve
-FCurveUp = Curves.CurveSplit1(Up,FNode[0,0],1.)
-FCurveLo = Curves.CurveSplit1(Lo,FNode[2,0],1.)
+FCurveUp = curves.curvesplit1(Up,FNode[0,0],1.)
+FCurveLo = curves.curvesplit1(Lo,FNode[2,0],1.)
 FlapCurve = ny.vstack([ny.flipud(FCurveUp),FCurve[:,0:2],FCurveLo])
 
 #flap position
 tmpAxis = ny.array([.7,-0.5])
-FlapCurve = Curves.rotate2D(FlapCurve,tmpAxis,deflection)
+FlapCurve = curves.rotate2D(FlapCurve,tmpAxis,deflection)
 refPt = BodyCurve[-1,:] 
 currentOverlap = refPt[0] - ny.min(FlapCurve[:,0])
 FlapCurve[:,0] = FlapCurve[:,0] + (currentOverlap-overlap)

@@ -49,7 +49,7 @@ def BezierCurve(Pts, opt):
                 Curve[0,jj] += K[kk]*Pts[kk,jj]*(1-t)**(order-kk)*t**kk
     return Curve
 
-def PwBezier(Node, Vect, Npts):
+def pwBezier(Node, Vect, Npts):
     if Node.shape != Vect.shape: sys.exit('Node and Vector dimmensions should match')
     Nseg,dimm = Node.shape
     Nseg -=1
@@ -72,8 +72,16 @@ def PwBezier(Node, Vect, Npts):
             tmp[:,-1] = tmp[:,-1]+ii
             tmp = ny.delete(tmp,0,0)
             Curve = ny.vstack([Curve, tmp])
-
     return Curve, SegCurve
+
+class xytCurveInterp:
+    def __init__(self,curve):
+        self.points = curve
+        self.xt = interp.interp1d(curve[:,2],curve[:,0],'cubic')
+        self.yt = interp.interp1d(curve[:,2],curve[:,1],'cubic')
+    def getCoord(self,t):
+        point = ny.array([self.xt(t),self.yt(t),t])
+        return point
 
 def normVect(Vector):
     length = 0
@@ -99,47 +107,88 @@ def lineIntersect(line1,line2):
     Xint = -(line1.C*line2.B - line2.C*line1.B)/(line1.A*line2.B - line2.A*line1.B)
     Yint = -(line1.A*line2.C - line2.A*line1.C)/(line1.A*line2.B - line2.A*line1.B)
     return ny.array([Xint,Yint])
-    
-def CurveSplit1(Curve,startPt,endPt):
-    #y = y(x) format curves
-    curve = interp.interp1d(Curve[:,0],Curve[:,1],'cubic')
-    if startPt !=0: 
-        NewCurve = ny.array([startPt,curve(startPt)])
+
+def xyCurveSplit(curve,startPt,endPt=[]):
+    NewCurve = ny.zeros([1,2])
+    curveInt = interp.interp1d(curve[:,0],curve[:,1],'cubic')
+    if startPt == []:
+        for ii in range(curve.shape[0]):
+            if curve[ii,0] < endPt: NewCurve = ny.vstack([NewCurve,curve[ii,:]])
+        NewCurve = ny.vstack([NewCurve,[endPt,curveInt(endPt)]])
+    elif endPt == []:
+        NewCurve = ny.vstack([NewCurve,[startPt,curveInt(startPt)]])
+        for ii in range(curve.shape[0]):
+            if curve[ii,0] > startPt: NewCurve = ny.vstack([NewCurve,curve[ii,:]])
     else:
-        NewCurve = ny.array([0,0])
-    for ii in range(Curve.shape[0]):
-        if startPt < Curve[ii,0] < endPt: NewCurve = ny.vstack([NewCurve,Curve[ii,:]])
-    NewCurve = ny.vstack([NewCurve,[endPt,curve(endPt)]])
-    #if startPt ==0:
-     #   NewCurve = ny.delete(NewCurve,0,0)
+        NewCurve = ny.vstack([NewCurve,[startPt,curveInt(startPt)]])
+        for ii in range(curve.shape[0]):
+            if endPt > curve[ii,0] > startPt: NewCurve = ny.vstack([NewCurve,curve[ii,:]])
+        NewCurve = ny.vstack([NewCurve,[endPt,curveInt(endPt)]])
+    NewCurve = ny.delete(NewCurve,0,0)
     return NewCurve
-    
-def CurveSplit2(Curve,startPt,endPt):
-    #y = y(t), x = x(t)
-    curvetx = interp.interp1d(Curve[:,2],Curve[:,0],'cubic')
-    curvety = interp.interp1d(Curve[:,2],Curve[:,1],'cubic')
-    if endPt == 0: endPt = Curve[-1,2]
-    if startPt != 0:
-        NewCurve = ny.array([curvetx(startPt),curvety(startPt),startPt])
-    else: NewCurve = ny.array([0,0,0])
-    for ii in range(Curve.shape[0]):
-        if startPt < Curve[ii,2] < endPt: NewCurve = ny.vstack([NewCurve,Curve[ii,:]])
-    if endPt !=0: NewCurve = ny.vstack([NewCurve,[curvetx(endPt),curvety(endPt),endPt]])
-    if startPt ==0: NewCurve = ny.delete(NewCurve,0,0)
+        
+def xytCurveSplit(curve,startPt,endPt=[]):
+    NewCurve = ny.zeros([1,3])
+    curveInt = xytCurveInterp(curve).getCoord
+    if startPt == []:
+        for ii in range(curve.shape[0]):
+            if curve[ii,2] < endPt: NewCurve = ny.vstack([NewCurve,curve[ii,:]])
+        NewCurve = ny.vstack([NewCurve,curveInt(endPt)])
+    elif endPt == []:
+        NewCurve = ny.vstack([NewCurve,curveInt(startPt)])
+        for ii in range(curve.shape[0]):
+            if curve[ii,2] > startPt: NewCurve = ny.vstack([NewCurve,curve[ii,:]])
+    else:
+        NewCurve = ny.vstack([NewCurve,curveInt(startPt)])
+        for ii in range(curve.shape[0]):
+            if endPt > curve[ii,2] > startPt: NewCurve = ny.vstack([NewCurve,curve[ii,:]])
+        NewCurve = ny.vstack([NewCurve,curveInt(endPt)])
+    NewCurve = ny.delete(NewCurve,0,0)
     return NewCurve
 
 def rotate2D(curve, axis, angle):
+    split = False
+    if curve.shape[1]>2: 
+        tmp = curve[:,2:]
+        curve = curve[:,0:2]
+        split = True
     angle = math.radians(angle)
     rotMatrix = ny.array([[math.cos(angle), -math.sin(angle)],[math.sin(angle), math.cos(angle)]])
-    return ny.dot((curve-axis),rotMatrix) + axis
+    rotCurve = ny.dot((curve-axis),rotMatrix) + axis
+    if split:
+        return ny.hstack([rotCurve,tmp])
+    else:
+        return rotCurve
+
+def dist2pts(point1, point2):
+    dist = 0.
+    dimm = ny.min([point1.shape[0],point2.shape[0]])
+    for ii in range(dimm):
+        dist += (point1[ii] - point2[ii])**2
+    return math.sqrt(dist)
+
+def join(curves, reverse):
+    N = curves.shape[0]
+    if reverse[0]: 
+        newCurve = curves[0][-1,:]
+    else:
+        newCurve = curves[0][0,:]
+    for ii in range(N):
+        if reverse[ii]: 
+            addCurve = ny.flipud(curves[ii])
+        else:
+            addCurve = curves[ii]
+        addCurve = ny.delete(addCurve,0,0)
+        newCurve = ny.vstack([newCurve,addCurve])
+    return newCurve
 
 def testCurve():
     node = ny.array([[0,0],[2.,2.],[4,1]])
     testVect = ny.array([[0,1.],[1.5,0],[0.5,-1]])
     
-    testCurve, Curve1 = PwBezier(node,testVect,25)
+    testCurve, Curve1 = pwBezier(node,testVect,25)
     
-    curve3 = CurveSplit2(testCurve,0.2,1.7)
+    curve3 = curveSplit2(testCurve,0.2,1.7)
     
     print testCurve
     plt.plot(testCurve[:,0],testCurve[:,1],'-')

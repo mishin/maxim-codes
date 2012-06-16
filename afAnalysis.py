@@ -8,7 +8,7 @@ import subprocess as sp
 import os
 import afLib
 import numpy as ny
-from paths import MyPaths
+from paths import myPaths
 import scipy.optimize as root
 import scipy.interpolate as interp
 
@@ -70,13 +70,13 @@ class polar:
             self.CLmax = ny.max(self.CL)
 
     def calcXpolar(self,Mach, Re,alphaStart, alphaEnd, alphaStep, Iter=10, Graphic = True, Smooth=False):
-        path = MyPaths()
+        path = myPaths()
         path.setRandPrefix()
         tmpAfFile = path.getTmpFile('dat','af')
         tmpPolar  = path.getTmpFile('pol')
         tmpDump   = path.getTmpFile('dmp')
 
-        AfLib.writeAirfoil(tmpAfFile,self.Name,self.Up,self.Lo)
+        afLib.writeAirfoil(tmpAfFile,self.Name,self.Up,self.Lo)
         self.M = Mach
         self.Re = Re
     
@@ -112,6 +112,36 @@ class polar:
         os.remove(tmpPolar)
         os.remove(tmpDump)
         
+    def calcJpolar(self, Mach, Re, alphaStart, alphaEnd, alphaStep):
+        path = myPaths()
+        path.setRandPrefix()
+        tmpJournal = path.getTmpFile('jou')
+        tmpAfFile = path.getTmpFile('dat','af')
+        tmpPolar  = path.getTmpFile('pol')
+        
+        afLib.writeAirfoil(tmpAfFile,self.Name,self.Up,self.Lo)
+        self.M = Mach
+        self.Re = Re
+
+        #write journal file
+        jouFile = open(tmpJournal,'wt')
+        jouFile.write('Options.Country(0)\nGeometry.Clear()\n')
+        jouFile.write('Geometry.Open(\"%s\")\n' %tmpAfFile)
+        jouFile.write('Options.MachNumber(%.4f)\n'%Mach)
+        jouFile.write('Options.StallModel(0)\n')
+        jouFile.write('Options.TransitionModel(1)\n')
+        jouFile.write('Options.GroundEffect(0)\n')
+        jouFile.write('Options.HeightOverSpan(0.5)\n')
+        jouFile.write('Options.AspectRatio(0)\n')
+        jouFile.write('Polar.Analyze(%.0f;%.0f;%.0f;%.0f;%.0f;%.0f;100;100;0;0)\n'%(Re,Re,0,alphaStart, alphaEnd, alphaStep))
+        jouFile.write('Polar.Save(\"%s\")\n'%tmpPolar)
+        jouFile.write('Exit()')
+        jouFile.close()
+        #run javafoil
+        #read polars
+        
+        
+        
     def cdAtcl(self,clreq):
         try:
             clalpha = interp.interp1d(self.alpha,self.CL,'linear')
@@ -127,3 +157,11 @@ class polar:
             alpha = 100
             print 'Drag coefficient', cdreq
         return cdreq, alpha
+
+def testFcn():
+    af = 'GA37A315mod.dat'
+    airfoil = afLib.readAirfoil(af)
+    Polar = polar(airfoil.up,airfoil.lo)
+    Polar.calcJpolar(0.16,4e6,-30,30,1)
+    
+testFcn()
