@@ -23,12 +23,12 @@ def CostFcn(X):
     alphaStep = 1.0
     clreq = 0.2
     
-    Up,Lo = CST.CSTairfoil(Au,Al,ny.array([0.5,1.0]),80)
-    tc = ny.max(Up[:,1]-Lo[:,1])
+    af = CST.CSTairfoil(Au,Al,ny.array([0.5,1.0]),80)
+    tc = ny.max(af.up[:,1]-af.lo[:,1])
     
     g = ny.zeros([4])
     
-    polar = AfAnalysis.polar(Up,Lo,'XfoilAnalysis')
+    polar = afAnalysis.polar(af)
     polar.calcXpolar(Mach,Re,alphaStart,alphaEnd,alphaStep,50,False)
     
     g[0] = 0.13 - tc
@@ -72,7 +72,7 @@ print 'f:   ',f,'\ng:    ',g
 print 'Time consumed:', TimeConsumed
 
 
-AfAnalysis.AfLib.writeAirfoil(airfoilFile, 'optimized airfoil', Up,Lo)
+afAnalysis.AfLib.writeAirfoil(airfoilFile, 'optimized airfoil', Up,Lo)
 
 result = open(resultFile,'wt')
 result.write('xBest:\n')

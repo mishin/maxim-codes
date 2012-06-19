@@ -11,11 +11,11 @@ import numpy as ny
 from paths import myPaths
 import scipy.optimize as root
 import scipy.interpolate as interp
+import matplotlib.pyplot as plt
 
 class polar:
-    def __init__(self,afUp,afLo,afName='noname'):
-        self.Up,self.Lo = afUp,afLo
-        self.Name = afName
+    def __init__(self,airfoil):
+        self.airfoil = airfoil
         self.M  = []
         self.Re = []
         self.alpha = []
@@ -68,6 +68,34 @@ class polar:
             self.CLmax = -100.
         else:
             self.CLmax = ny.max(self.CL)
+            
+    def readJpolar(self,filePath):
+        polarFile = open(filePath,'rt')
+        for ii in range(5): tmp = polarFile.readline()
+        del tmp
+        lines = polarFile.readlines()
+        for ii in range(2): lines = ny.delete(lines,-1,0)
+        polarFile.close()
+        self.SU = []
+        self.SL = []
+        self.LD = []
+        self.AC = []
+        self.CP = []
+        for line in lines:
+            segLine = line.split()
+            self.alpha = ny.append(self.alpha, float(segLine[0]))
+            self.CL = ny.append(self.CL, float(segLine[1]))
+            self.CD = ny.append(self.CD, float(segLine[2]))
+            self.CM = ny.append(self.CM, float(segLine[3]))
+            self.TU = ny.append(self.TU, float(segLine[4]))
+            self.TL = ny.append(self.TL, float(segLine[5]))
+            self.SU = ny.append(self.SU, float(segLine[6]))
+            self.SL = ny.append(self.SL, float(segLine[7]))
+            self.LD = ny.append(self.LD, float(segLine[8]))
+            self.AC = ny.append(self.AC, float(segLine[9]))
+            self.CP = ny.append(self.CP, float(segLine[10]))
+        self.CLmax = ny.max(self.CL)
+        self.ClmaxAlpha = self.alpha[ny.argmax(self.CL)]
 
     def calcXpolar(self,Mach, Re,alphaStart, alphaEnd, alphaStep, Iter=10, Graphic = True, Smooth=False):
         path = myPaths()
@@ -76,7 +104,7 @@ class polar:
         tmpPolar  = path.getTmpFile('pol')
         tmpDump   = path.getTmpFile('dmp')
 
-        afLib.writeAirfoil(tmpAfFile,self.Name,self.Up,self.Lo)
+        afLib.writeAirfoil(tmpAfFile,self.airfoil)
         self.M = Mach
         self.Re = Re
     
@@ -112,18 +140,21 @@ class polar:
         os.remove(tmpPolar)
         os.remove(tmpDump)
         
-    def calcJpolar(self, Mach, Re, alphaStart, alphaEnd, alphaStep):
+    def calcJpolar(self, Mach, Re, alphaStart, alphaEnd, alphaStep,flap=False):
         path = myPaths()
         path.setRandPrefix()
-        tmpJournal = path.getTmpFile('jou')
+        tmpJournal = path.getTmpFile('jfscript')
         tmpAfFile = path.getTmpFile('dat','af')
         tmpPolar  = path.getTmpFile('pol')
         
-        afLib.writeAirfoil(tmpAfFile,self.Name,self.Up,self.Lo)
+        if flap:
+            afLib.writeFlap(tmpAfFile, self.airfoil)
+        else:
+            afLib.writeAirfoil(tmpAfFile,self.airfoil)
+            
         self.M = Mach
         self.Re = Re
 
-        #write journal file
         jouFile = open(tmpJournal,'wt')
         jouFile.write('Options.Country(0)\nGeometry.Clear()\n')
         jouFile.write('Geometry.Open(\"%s\")\n' %tmpAfFile)
@@ -137,11 +168,13 @@ class polar:
         jouFile.write('Polar.Save(\"%s\")\n'%tmpPolar)
         jouFile.write('Exit()')
         jouFile.close()
-        #run javafoil
-        #read polars
-        
-        
-        
+        cmd = ('\"\"%s\" -cp \"%s\" -jar \"%s\" Script=\"%s\"\"'%(path.java,path.mhclasses,path.javafoil,tmpJournal))
+        os.system(cmd)
+        self.readJpolar(tmpPolar)
+        os.remove(tmpJournal)
+        os.remove(tmpAfFile)
+        os.remove(tmpPolar)
+
     def cdAtcl(self,clreq):
         try:
             clalpha = interp.interp1d(self.alpha,self.CL,'linear')
@@ -161,7 +194,10 @@ class polar:
 def testFcn():
     af = 'GA37A315mod.dat'
     airfoil = afLib.readAirfoil(af)
-    Polar = polar(airfoil.up,airfoil.lo)
+    Polar = polar(airfoil)
     Polar.calcJpolar(0.16,4e6,-30,30,1)
     
-testFcn()
+    plt.plot(Polar.alpha, Polar.CD)
+    plt.show()
+
+#testFcn()

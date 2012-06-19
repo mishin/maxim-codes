@@ -16,8 +16,8 @@ from scipy.optimize import minimize
 def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness):
     dx = 1e-4
     
-    flapNpts = 20
-    bodyTEpts = 10
+    flapNpts = 15
+    mainSecTEpts = 8
     tmpAxis = ny.array([.8,-.5])
     if overlap < -0.9*gap: gap = ny.abs(overlap)/0.9
     af = afLib.readAirfoil(airfoilPath)
@@ -61,13 +61,13 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
         ctanTheta = math.cos(math.radians(theta))/math.sin(math.radians(theta))
         return ctanTheta - ctan
 
-    t_theta = root.bisect(getTangency,0.5,1.5)
+    t_theta = root.bisect(getTangency,0.1,1.9)
     nodes2[2,:] = xytCurveInt1.getCoord(t_theta)[0:2]
     line1 = curves.linePtDir2D(nodes2[0,:],tangency2[0,:])
     line2 = curves.linePtDir2D(nodes2[2,:],tangency2[1,:])
     nodes2[1,:] = curves.lineIntersect(line1,line2)
     
-    xytCurve2 = curves.BezierCurve(nodes2,bodyTEpts)
+    xytCurve2 = curves.BezierCurve(nodes2,mainSecTEpts)
     
     def getTEthickness(t):
         pt1 = xytCurveInt1.getCoord(t)
@@ -84,8 +84,8 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
     split4 = curves.xyCurveSplit(af.lo,nodes1[-1,0])
     split5 = curves.xytCurveSplit(xytCurve1,t_split,t_theta)
     
-    bodyCurve = ny.array([split1,split3,xytCurve2[:,0:2],split5[:,0:2]])
-    bodyCurve = curves.join(bodyCurve,[True,False,False,True])
+    mainSecCurve = ny.array([split1,split3,xytCurve2[:,0:2],split5[:,0:2]])
+    mainSecCurve = curves.join(mainSecCurve,[True,False,False,True])
     
     flapCurve = ny.array([split2,xytCurve1[:,0:2],split4])
     flapCurve = curves.join(flapCurve,[True,False,False])
@@ -93,11 +93,11 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
     
     tmpFlap = curves.rotate2D(xytCurve1,tmpAxis,deflection)
     xytCurveInt2 = curves.xytCurveInterp(tmpFlap)
-    refPt = bodyCurve[-1,:]
+    refPt = mainSecCurve[-1,:]
     
     def getFlapX(t):
         return xytCurveInt2.getCoord(t)[0]
-    dist = minimize(getFlapX,1)
+    dist = minimize(getFlapX,1,method='SLSQP',bounds=[0.0001,1.9999])
     dx = (refPt[0]-overlap) - dist.fun
     
     tmpFlap[:,0] += dx
@@ -110,24 +110,26 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
         def getDist(t):
             pt = xytCurveInt3.getCoord(t)
             return curves.dist2pts(pt,refPt)
-        CurGap = minimize(getDist,1.).fun
+        CurGap = minimize(getDist,1.,method='SLSQP',bounds=(0.0001,1.9999)).fun
         return CurGap-gap
 
     dy = root.fsolve(getGap,0)
     
     flapCurve[:,0] = flapCurve[:,0] + dx
     flapCurve[:,1] = flapCurve[:,1] + dy
-    afLib.writeFlap('tmpFlap.dat',bodyCurve,flapCurve)
     
-    plt.figure(1)
-    plt.hold(True)
-    plt.grid(True)
-    plt.axis([0,1.2,-.5,.5])
-    plt.plot(flapCurve[:,0],flapCurve[:,1])
-    plt.plot(bodyCurve[:,0],bodyCurve[:,1],'-')
-    plt.show()
-
-    return bodyCurve, flapCurve
+    af.mainSec = mainSecCurve
+    af.flap = flapCurve
+    af.hasFlap = True
+    
+#    plt.plot(mainSecCurve[:,0],mainSecCurve[:,1])
+#    plt.hold(True)
+#    plt.axis([0,1.2,-0.5,0.5])
+#    plt.grid(True)
+#    plt.plot(flapCurve[:,0],flapCurve[:,1])
+#    plt.show()
+    
+    return af
 
 airfoilPath = 'GA37A315mod.dat'
 nodes1 = ny.zeros([3,2])
@@ -147,4 +149,4 @@ deflection = 35
 overlap = -0.03
 gap = 0.05
 
-getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness)
+#getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness)

@@ -6,6 +6,7 @@ Created on Fri May 25 10:22:32 2012
 """
 
 import numpy as ny
+import afLib
 
 def BPOcoef(order):
     K = ny.ones([order+1,1],int)
@@ -51,4 +52,5 @@ def CSTairfoil(Au,Al,N,Npts):
             ysLo = ysLo+x[ii]**(jj)*(1-x[ii])**(order-jj)*K[jj]*Al[jj]
         Up[ii,:] = [x[ii],ysUp*yc]
         Lo[ii,:] = [x[ii],ysLo*yc]
-    return Up,Lo
+    af = afLib.airfoil(Up,Lo,[],[],'CST airfoil')
+    return af
