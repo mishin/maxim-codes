@@ -61,7 +61,7 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
         ctanTheta = math.cos(math.radians(theta))/math.sin(math.radians(theta))
         return ctanTheta - ctan
 
-    t_theta = root.bisect(getTangency,0.1,1.9)
+    t_theta = root.bisect(getTangency,0.5,1.5)
     nodes2[2,:] = xytCurveInt1.getCoord(t_theta)[0:2]
     line1 = curves.linePtDir2D(nodes2[0,:],tangency2[0,:])
     line2 = curves.linePtDir2D(nodes2[2,:],tangency2[1,:])
@@ -97,7 +97,7 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
     
     def getFlapX(t):
         return xytCurveInt2.getCoord(t)[0]
-    dist = minimize(getFlapX,1,method='SLSQP',bounds=[0.0001,1.9999])
+    dist = minimize(getFlapX,1)
     dx = (refPt[0]-overlap) - dist.fun
     
     tmpFlap[:,0] += dx
@@ -110,7 +110,7 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
         def getDist(t):
             pt = xytCurveInt3.getCoord(t)
             return curves.dist2pts(pt,refPt)
-        CurGap = minimize(getDist,1.,method='SLSQP',bounds=(0.0001,1.9999)).fun
+        CurGap = minimize(getDist,1.).fun
         return CurGap-gap
 
     dy = root.fsolve(getGap,0)

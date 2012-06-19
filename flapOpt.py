@@ -37,13 +37,13 @@ def costFcn(X):
     alphaStart = -20
     alphaEnd = 20
     alphaStep = 1
-#    try:
-    airfoil = flapGeom.getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness)
-    polar = afAnalysis.polar(airfoil)
-    polar.calcJpolar(Mach,Re,alphaStart,alphaEnd,alphaStep,True)
-    f = -polar.CLmax
-    g = 5. - polar.ClmaxAlpha
-#    except: f,g = 100,100
+    try:
+        airfoil = flapGeom.getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness)
+        polar = afAnalysis.polar(airfoil)
+        polar.calcJpolar(Mach,Re,alphaStart,alphaEnd,alphaStep,True)
+        f = -polar.CLmax
+        g = 5. - polar.ClmaxAlpha
+    except: f,g = 100,100
     h = []
     return f,g,h
     
