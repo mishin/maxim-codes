@@ -42,7 +42,6 @@ def CostFcn(X):
 
 StartTime = datetime.now()
 
-
 bestAfpath = r'D:\Documents\My Documents\1. Classes\5 Sem - Optimization\term project\result 20120610'
 resultFile = bestAfpath + '\\result1.dat'
 airfoilFile = bestAfpath + '\\airfoil1.dat'
@@ -52,7 +51,6 @@ lb = ny.array([0.08,0.001,0.001,0.001,-0.4   ,-0.4   ,-0.4])
 ub = ny.array([0.4 ,0.4  ,0.4  ,0.4  , -0.001, -0.001,-0.001])
 
 opt = ga2.gaOptions(lb,ub)
-#opt.PopSize = 5
 opt.CorrNan = True
 opt.MaxIterations(200,40)
 opt.HistFile = historyFile
@@ -70,7 +68,6 @@ TimeConsumed = datetime.now()-StartTime
 print fBest, xBest
 print 'f:   ',f,'\ng:    ',g
 print 'Time consumed:', TimeConsumed
-
 
 afAnalysis.AfLib.writeAirfoil(airfoilFile, 'optimized airfoil', Up,Lo)
 

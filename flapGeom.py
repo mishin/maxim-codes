@@ -16,37 +16,54 @@ from scipy.optimize import minimize
 def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness):
     dx = 1e-4
     
-    flapNpts = 15
+    flapNpts = 100
     mainSecTEpts = 8
     tmpAxis = ny.array([.8,-.5])
     if overlap < -0.9*gap: gap = ny.abs(overlap)/0.9
     af = afLib.readAirfoil(airfoilPath)
-    xyCurve1 = af.upCurve
-    xyCurve2 = af.loCurve
+
+    af.loCurve = af.loCurve
     
-    nodes1[0,1] = xyCurve1(nodes1[0,0])
-    nodes1[2,1] = xyCurve2(nodes1[2,0])
-    nodes2[0,1] = xyCurve2(nodes2[0,0])
+    nodes1[0,1] = af.upCurve(nodes1[0,0])
+    nodes1[2,1] = af.loCurve(nodes1[2,0])
+    nodes2[0,1] = af.loCurve(nodes2[0,0])
     
-    nodes1[1,1] = nodes1[1,1]*af.getThicknessAtX(nodes1[1,0])+xyCurve2(nodes1[1,0])
-    tmpVecLen   = ny.array([xyCurve1(nodes1[1,0])-nodes1[1,1], nodes1[1,1]-xyCurve2(nodes1[1,0])])
-    vectLen1[1] = vectLen1[1]*ny.min(tmpVecLen)
+    vectLenMax1 = ny.zeros([3,1])
+    
+    nodes1[1,1] = nodes1[1,1]*af.getThicknessAtX(nodes1[1,0])+af.loCurve(nodes1[1,0])
+    tmpVecLen   = ny.array([af.upCurve(nodes1[1,0])-nodes1[1,1], nodes1[1,1]-af.loCurve(nodes1[1,0])])
+    print tmpVecLen
+    vectLenMax1[1] = ny.min(tmpVecLen)
     del tmpVecLen
     
     tangency1 = ny.zeros([3,2])
     tangency2 = ny.zeros([2,2])
     tangency1[0,0] = dx
-    tangency1[0,1] = xyCurve1(nodes1[0,0]+dx) - xyCurve1(nodes1[0,0])
+    tangency1[0,1] = af.upCurve(nodes1[0,0]+dx) - af.upCurve(nodes1[0,0])
     tangency1[1,1] = -1.
     tangency1[2,0] = dx
-    tangency1[2,1] = xyCurve2(nodes1[2,0]+dx) - xyCurve2(nodes1[2,0])
+    tangency1[2,1] = af.loCurve(nodes1[2,0]+dx) - af.loCurve(nodes1[2,0])
     tangency1[0,:] = - tangency1[0,:]
     for ii in range(3): tangency1[ii,:] = curves.normVect(tangency1[ii,:])
+    
+    #create two lines and get allowable length
+    line3 = curves.linePtDir2D(nodes1[0,:],tangency1[0,:])
+    line4 = curves.linePtDir2D(nodes1[1,:],tangency1[1,:])
+    line5 = curves.linePtDir2D(nodes1[2,:],tangency1[2,:])
+    
+    Intersect1 = curves.lineIntersect(line3,line4)
+    Intersect2 = curves.lineIntersect(line4,line5)
+    
+    vectLenMax1[0] = curves.dist2pts(nodes1[0,:],Intersect1)
+    vectLenMax1[1] = curves.dist2pts(nodes1[2,:],Intersect2)
+
+    for ii in range(3): vectLen1[ii] = vectLen1[ii]*vectLenMax1[ii]
+    
     vect1 = ny.zeros([3,2])
     for ii in range(3): vect1[ii,:] = tangency1[ii,:]*vectLen1[ii]
     
     tangency2[0,0] = dx
-    tangency2[0,1] = xyCurve2(nodes2[0,0]+dx) - xyCurve2(nodes2[0,0])
+    tangency2[0,1] = af.loCurve(nodes2[0,0]+dx) - af.loCurve(nodes2[0,0])
     tangency2[1,0] = math.cos(math.radians(theta))
     tangency2[1,1] = math.sin(math.radians(theta))
     
@@ -61,7 +78,7 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
         ctanTheta = math.cos(math.radians(theta))/math.sin(math.radians(theta))
         return ctanTheta - ctan
 
-    t_theta = root.bisect(getTangency,0.5,1.5)
+    t_theta = root.bisect(getTangency,0.25,1.75)
     nodes2[2,:] = xytCurveInt1.getCoord(t_theta)[0:2]
     line1 = curves.linePtDir2D(nodes2[0,:],tangency2[0,:])
     line2 = curves.linePtDir2D(nodes2[2,:],tangency2[1,:])
@@ -71,7 +88,7 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
     
     def getTEthickness(t):
         pt1 = xytCurveInt1.getCoord(t)
-        yy = xyCurve1(pt1[0])
+        yy = af.upCurve(pt1[0])
         thickness = yy-pt1[1]
         return thickness-teThickness
         
@@ -122,12 +139,27 @@ def getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflectio
     af.flap = flapCurve
     af.hasFlap = True
     
-#    plt.plot(mainSecCurve[:,0],mainSecCurve[:,1])
-#    plt.hold(True)
-#    plt.axis([0,1.2,-0.5,0.5])
-#    plt.grid(True)
-#    plt.plot(flapCurve[:,0],flapCurve[:,1])
-#    plt.show()
+    testNode = ny.zeros([7,2])
+    testNode[0,:] = nodes1[0,:]
+    testNode[3,:] = nodes1[1,:]
+    testNode[6,:] = nodes1[2,:]
+    testNode[1,:] = nodes1[0,:] + vect1[0,:]
+    testNode[2,:] = nodes1[1,:] - vect1[1,:]
+    testNode[4,:] = nodes1[1,:] + vect1[1,:]
+    testNode[5,:] = nodes1[2,:] - vect1[2,:]
+    
+    
+    plt.plot(mainSecCurve[:,0],mainSecCurve[:,1])
+    plt.hold(True)
+    plt.plot(xytCurve1[:,0],xytCurve1[:,1])
+    plt.plot(xytCurve2[:,0],xytCurve2[:,1])
+    plt.plot(af.up[:,0],af.up[:,1])
+    plt.plot(af.lo[:,0],af.lo[:,1])
+    plt.axis([0,1.2,-0.5,0.5])
+    plt.grid(True)
+    plt.plot(flapCurve[:,0],flapCurve[:,1])
+    plt.plot(testNode[:,0],testNode[:,1])
+    plt.show()
     
     return af
 
@@ -135,18 +167,18 @@ airfoilPath = 'GA37A315mod.dat'
 nodes1 = ny.zeros([3,2])
 nodes2 = ny.zeros([3,2])
 vectLen1 = ny.zeros([3])
-nodes1[0,0] = 0.85
+nodes1[0,0] = 0.9
 nodes1[1,0] = 0.7 #flap chord ratio
-nodes1[1,1] = 0.3
-nodes1[2,0] = 0.8
+nodes1[1,1] = 0.5
+nodes1[2,0] = 0.9
 nodes2[0,0] = 0.65
-vectLen1[0] = 0.1
-vectLen1[1] = 0.5
-vectLen1[2] = 0.08
-theta = 120
+vectLen1[0] = 0.5   #length ratio
+vectLen1[1] = 0.5   #length ratio
+vectLen1[2] = 0.8
+theta = 90
 teThickness = 0.002
-deflection = 35
+deflection = 0
 overlap = -0.03
 gap = 0.05
 
-#getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness)
+getFlap(airfoilPath, nodes1,nodes2, vectLen1, theta, gap, overlap, deflection,teThickness)

@@ -187,7 +187,6 @@ def gaMain(CostFcn, Options):
         fHist = ny.append(fHist,fBest)
         if Options.HistFile != []: writeHist(Options,Iter,xBest,fBest)
         X = NextGen(X,fitness, MutRate,sigma,EliteRatio)
-        print 'gen: %d   fval = %.6f  sigma = %.6f  Xval = ' %(Iter,fBest,sigma),xBest
         Iter +=1
     xHist = ny.delete(xHist,0,0)
     return fBest,xBest,fHist,xHist, Iter-1

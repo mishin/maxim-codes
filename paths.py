@@ -18,9 +18,7 @@ class myPaths:
 
     def setRandPrefix(self):
         from random import randrange
-        from time import gmtime, strftime
-        Time = int(strftime("%H%M%S", gmtime()))
-        self.NamePrefix = str(Time+randrange(0,1e6,1))
+        self.NamePrefix = str(randrange(0,1e6,1))
 
     def getTmpFile(self,fileExt = "", addSymbol = ""):
         fileName = self.tmpdir + '\\' + self.NamePrefix + addSymbol
