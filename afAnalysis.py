@@ -174,7 +174,30 @@ class polar:
         os.remove(tmpJournal)
         os.remove(tmpAfFile)
         os.remove(tmpPolar)
-
+    
+    def saveAsIgs(self,filename,airfoil,flap=False):
+        path = myPaths()
+        path.setRandPrefix()
+        tmpJournal = path.getTmpFile('jfscript')
+        tmpAfFile = path.getTmpFile('dat','af')
+        
+        if flap:
+            afLib.writeFlap(tmpAfFile, self.airfoil)
+        else:
+            afLib.writeAirfoil(tmpAfFile,self.airfoil)
+            
+        jouFile = open(tmpJournal,'wt')
+        jouFile.write('Options.Country(0)\nGeometry.Clear()\n')
+        jouFile.write('Geometry.Open(\"%s\")\n' %tmpAfFile)
+        jouFile.write('Geometry.Save(\"%s\")\n' %filename)
+        jouFile.write('Exit()')
+        jouFile.close()
+        cmd = ('\"\"%s\" -cp \"%s\" -jar \"%s\" Script=\"%s\"\"'%(path.java,path.mhclasses,path.javafoil,tmpJournal))
+        
+        os.system(cmd)
+        os.remove(tmpJournal)
+        os.remove(tmpAfFile)
+    
     def cdAtcl(self,clreq):
         try:
             clalpha = interp.interp1d(self.alpha,self.CL,'linear')

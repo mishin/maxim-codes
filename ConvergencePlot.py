@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import time
 
 
-HistFile = r'D:\Documents\My Documents\Dropbox\cfd analysis\Flap Design Optimization\cl-history(16deg)(flap25deg)(X0Y-2.5)'
+HistFile = r'D:\Documents\My Documents\1. Classes\5 Sem - Human Computer Interaction for MDO\term project\flapOptHist.dat'
 Xaxis = 0
 Yaxis = 1
 
@@ -26,17 +26,17 @@ Xval, Yval = [],[]
 for line in lines:
     SegLine = line.split()
     Xval = ny.append(Xval,float(SegLine[Xaxis]))
-    Yval = ny.append(Yval,float(SegLine[Yaxis]))
+    Yval = ny.append(Yval,-float(SegLine[Yaxis]))
 
 plt.interactive(False)
 plt.figure(1)
 plt.plot(Xval,Yval)
 plt.hold(True)
-#plt.title(Title)
-#plt.xlabel(Xlabel)
-#plt.ylabel(Ylabel)
-plt.draw()
-
-#time.sleep(5)
+plt.title('Convergence history')
+plt.xlabel('iterations')
+plt.ylabel('c_l_max')
+plt.axis([0,210,2.5,3.0])
+plt.grid(True)
+plt.show()
 
 print 'done'

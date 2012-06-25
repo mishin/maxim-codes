@@ -33,24 +33,25 @@ def costFcn(X):
     node1[1,0] = 0.7 #flap chord ratio
     Mach = 0.16
     Re = 4e6
-    alphaStart = -20
-    alphaEnd = 20
+    alphaStart = -10
+    alphaEnd = 15
     alphaStep = 1
     try:
         airfoil = flapGeom2.getFlap(airfoilPath, node1,node2, vectLenRatio1, theta, gap, overlap, deflection,zTE)
         polar = afAnalysis.polar(airfoil)
         polar.calcJpolar(Mach,Re,alphaStart,alphaEnd,alphaStep,True)
         f = -polar.CLmax
-        g = 5. - polar.ClmaxAlpha
-    except: f,g = 100,100
+        #g = 5. - polar.ClmaxAlpha
+    except: f = 100
     h = []
+    g = []
     return f,g,h
     
-lb = ny.array([0.71, 0.1, 0.71, 0.65, 0.1, 0.1, 0.1, 60 , -0.04, 0.005 ])
+lb = ny.array([0.71, 0.1, 0.71, 0.65, 0.4, 0.4, 0.4, 60 , -0.04, 0.005])
 ub = ny.array([0.9 , 0.9, 0.9 , 0.7 , 0.9, 0.9, 0.9, 150,  0.04, 0.05])
 opt = ga2.gaOptions(lb,ub)
 opt.MaxIterations(400,200)
 opt.sigma = 0.75
-opt.HistFile = 'flapOptHist.dat'
+opt.HistFile = 'flapOptHistnew.dat'
 
 fBest,xBest,fHist,xHist, Iter = ga2.gaMain(costFcn,opt)
