@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 import flapGeom2
 import afAnalysis
 
-def sensAnalysis(func, lb, ub, Npt,varNames=[]):
+def sensAnalysis(func, lb, ub, Npt, dx, varNames=[]):
     step = (ub-lb)/(Npt-1)
     Xinit = (ub+lb)/2
     fval = ny.zeros([lb.shape[0],Npt])
     Xinc = ny.zeros([lb.shape[0],Npt])
     labels = ny.array(['pt0-X','pt1-Y','pt2-X','pt4-X','vect0','vect1','vect2','theta','overlap','gap'])
-    
+    grad = ny.zeros(lb.shape)
     for ii in range(lb.shape[0]):
         Xnew = ny.copy(Xinit)
         Xnew[ii] = lb[ii] - step[ii]
@@ -25,6 +25,8 @@ def sensAnalysis(func, lb, ub, Npt,varNames=[]):
             Xinc[ii,jj] = Xnew[ii]
             f,_,_ = func(Xnew)
             fval[ii,jj] = -f
+        grad[ii] = (fval[ii,-1]-fval[ii,0]) / dx[ii]
+        print grad
         plt.figure(ii+1)
         plt.plot(Xinc[ii,:],fval[ii,:],'o-')
         plt.grid(True)
@@ -35,7 +37,7 @@ def sensAnalysis(func, lb, ub, Npt,varNames=[]):
 
 
 def costFcn(X):
-    airfoilPath = 'GA37A315mod.dat'
+    airfoilPath = 'FinalOptimum20120720.dat'
     node1 = ny.zeros([3,2])
     node2 = ny.zeros([3,2])
     vectLenRatio1 = ny.zeros([3])
@@ -54,10 +56,10 @@ def costFcn(X):
     zTE = 0.002
     deflection = 35
     node1[1,0] = 0.7 #flap chord ratio
-    Mach = 0.16
-    Re = 4e6
-    alphaStart = -20
-    alphaEnd = 20
+    Mach = 0.0955
+    Re =  2285283
+    alphaStart = -10
+    alphaEnd = 15
     alphaStep = 1
     try:
         airfoil = flapGeom2.getFlap(airfoilPath, node1,node2, vectLenRatio1, theta, gap, overlap, deflection,zTE)
@@ -69,15 +71,16 @@ def costFcn(X):
     h = []
     g = []
     return f,g,h
-    
-
 
 def testFcn(func):
-    #lb = ny.array([0.75, 0.1, 0.71, 0.65, 0.1, 0.4, 0.1, 80 , -0.04, 0.005 ])
-    #ub = ny.array([0.85 , 0.5, 0.85 , 0.7 , 0.5, 0.8, 0.5, 140,  0.04, 0.02])
-    #0.827618	0.369286	0.805817	0.669824	0.333747	0.602765	0.273544	108.994754	0.030467	0.007191
-    lb = ny.array([0.727618,0.269286,0.705817,0.569824,0.233747,0.502765,0.173544,88.994754,0.01,0.001])
-    ub = ny.array([0.927618,0.469286,0.905817,0.769824,0.433747,0.702765,0.373544,128.994754,0.05,0.014191])
-    sensAnalysis(costFcn,lb,ub,7)
+    xOpt = ny.array([0.843078,0.365108,0.804955,0.677721,0.527504,0.643172,0.788588,97.123078,0.036051,0.012782])
+    lb = xOpt - ny.array([0.025,0.025,0.025,0.01,0.025,0.025,0.025,2,0.01, 0.01])
+    ub = xOpt + ny.array([0.025,0.025,0.025,0.01,0.025,0.025,0.025,2,0.01, 0.01])
+    #lb = xOpt - ny.array([0.01,0.01,0.01,0.01,0.01,0.01,0.01,1,0.005, 0.005])
+    #ub = xOpt + ny.array([0.01,0.01,0.01,0.01,0.01,0.01,0.01,1,0.005, 0.005])
+    #lb1 = ny.array([0.71, 0.1, 0.71, 0.65, 0.4, 0.4, 0.4, 60 , -0.04, 0.005])
+    #ub1 = ny.array([0.9 , 0.9, 0.9 , 0.7 , 0.9, 0.9, 0.9, 150,  0.04, 0.05])
+    dx = (ub-lb)
+    sensAnalysis(costFcn,lb,ub,5,dx)
     
 testFcn(costFcn)

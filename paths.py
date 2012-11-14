@@ -36,7 +36,7 @@ class myPaths:
         
 def testFcn():
     a = myPaths()
-	for ii in range(5):
+    for ii in range(5):
         a.setRandPrefix()
         print ii, '\t',a.NamePrefix,'\n'
     

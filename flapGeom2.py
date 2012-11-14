@@ -16,7 +16,7 @@ from scipy.optimize import minimize, minimize_scalar
 def getFlap(airfoilPath, node1,node2, vectLenRatio1, theta, gap, overlap, deflection,zTE):
     dx = 1e-4
     dt = 1e-4
-    Npts = ny.array([15,8]) #flap, main section
+    Npts = ny.array([25,10]) #flap, main section
     tmpAxis = ny.array([.8,-.5])
     theta = math.radians(theta)
     if overlap < -0.9*gap: gap = ny.abs(overlap)/0.9

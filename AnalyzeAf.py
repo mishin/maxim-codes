@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 
 xBest = ny.array([0.184069,0.173145,0.374482,0.311078,-0.178542,-0.089179,-0.224291])
     
-    
 Au = xBest[0:3]
 Al = xBest[4:6]
 Al = ny.hstack([-Au[0],Al])
