@@ -7,6 +7,8 @@ Created on Fri Oct 11 19:35:10 2013
 from numpy import array, zeros, dot, copy, linspace, meshgrid, ravel
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import Rbf
+from scipy.optimize import minimize
 
 class TaylorSeries1:
     def __init__(self,x0,f0,grad):
@@ -36,11 +38,14 @@ class TestFunction():
     def get_gradient(self,x,dx=1e-10,fval=None):
         self.nGrad += 1
         if fval==None: fval = self(x)
-        grad = zeros(len(x))
-        for i in range(len(x)):
-            X = copy(x)
-            X[i] = X[i]+dx
-            grad[i] = (self(X,False)-fval)/dx
+        if not hasattr(x,'__iter__'):
+            grad = (self(x+dx) - fval)/dx
+        else:
+            grad = zeros(len(x))
+            for i in range(len(x)):
+                X = copy(x)
+                X[i] = X[i]+dx
+                grad[i] = (self(X,False)-fval)/dx
         return fval, grad
     
     def get_taylor(self,x,dx=1e-10,fval=None):
@@ -58,39 +63,60 @@ class TestFunction():
 
 
 class ScaledFunction():
-    def __init__(self,funcLo,funcHi):
+    def __init__(self,funcLo,funcHi,minXnum=3):
         self.funcHi = TestFunction(funcHi)
         self.funcLo = TestFunction(funcLo)
         self.nEval = 0
         self.xPrev = list()
         self.fPrev = list()
         self.betaPrev = list()
-        self.taylor = True
+        self.nMin = minXnum
+        self.oneDim = False
 
+    def construct_scaling_model(self,x0,f0=None):
+        if hasattr(x0,'__iter__'):
+            self.oneDim = True
+        self.x0 = x0
+        if f0==None:
+            f0 = self.funcHi(x0)
+        self.xPrev.append(x0)
+        self.fPrev.append(f0)
+        if len(self.xPrev)<=self.nMin:
+            fHi, gradHi = self.funcHi.get_gradient(x0,fval=f0)
+            fLo, gradLo = self.funcLo.get_gradient(x0)
+            betaGrad = (gradHi*fLo - gradLo*fHi) / (fLo**2)
+            beta = fHi/fLo
+            self.betaPrev.append(beta)
+            self.beta = TaylorSeries1(x0,beta,betaGrad)
+        else:
+            fLo = self.funcLo(x0)
+            beta = f0/fLo
+            self.betaPrev.append(beta)
+            if self.oneDim:
+                xPrev = array(self.xPrev)
+            else:
+                m = len(self.xPrev[0])
+                xPrev = tuple()
+                xnew = zeros(m)
+                for i in range(m):
+                    for xval in self.xPrev:
+                        xnew[i] = xval[i]
+                    xPrev = xPrev + (xnew,)
+            xrbf = tuple()
+            xrbf = xrbf + (xPrev,self.betaPrev)
+            self.beta = Rbf(*xrbf)
 
-def run_test_grad():
-    def _fhigh(x):
-        return 1.0/x[0] + 1.0/x[1] - 2.0
+    def __call__(self,x):
+        self.nEval += 1
+        return self.beta(x) * self.funcLo(x)
     
-    x0 = array([3.0,3.0])
-    func = TestFunction(_fhigh,'test function')
-    ts = func.get_taylor(x0)
-    
-    x = linspace(0.5,10,30)
-    y = linspace(0.5,10,30)
-    X,Y = meshgrid(x,y)
-    zs1 = array([func([xx,yy]) for xx,yy in zip(ravel(X), ravel(Y))])
-    zs2 = array([ts([xx,yy]) for xx,yy in zip(ravel(X), ravel(Y))])
-    Z1 = zs1.reshape(X.shape)
-    Z2 = zs2.reshape(X.shape)
-    
-    fig = plt.figure(1)
-    ax = Axes3D(fig)
-    ax.hold(True)
-    ax.plot_wireframe(X,Y,Z1,color='y')
-    ax.plot_wireframe(X,Y,Z2,color='b')
-    ax.plot([x0[0]],[x0[1]],[func(x0)],'ro')
-    plt.show()
+    def get_thrust_region_ratio(self,x):
+        fHi = self.funcHi(x)
+        fScaled = self(x)
+        fScaled0 = self(self.x0)
+        if fScaled==fScaled0:
+            return float('inf')
+        else:
+            rho = (fScaled0 - fHi) / (fScaled0 - fScaled)
+            return rho
 
-if __name__=="__main__":
-    run_test_grad()

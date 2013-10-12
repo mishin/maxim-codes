@@ -162,7 +162,7 @@ def vcm_test2D():
 
 
 def rbf_test():
-    x = np.linspace(-1,15,10)
+    x = np.linspace(-1,15,2)
     y = testFunc1(x)
     rbf = Rbf(x,y)
     xnew = np.linspace(-1,15,100)
@@ -177,4 +177,4 @@ def rbf_test():
     plt.show()
 
 if __name__=="__main__":
-    vcm_test()
+    rbf_test()
