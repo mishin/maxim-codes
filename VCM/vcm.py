@@ -10,6 +10,19 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import Rbf
 from scipy.optimize import minimize
 
+class RbfMod():
+    def __init__(self,args):
+        self.rbf = Rbf(*args)
+    def __call__(self,x):
+        if hasattr(x,'__iter__'):
+            _x = tuple()
+            for xx in x:
+                _x += (xx,)
+            return self.rbf(*_x)
+        else:
+            return self.rbf(x)
+
+
 class TaylorSeries1:
     def __init__(self,x0,f0,grad):
         self.x0 = array(x0)
@@ -63,7 +76,7 @@ class TestFunction():
 
 
 class ScaledFunction():
-    def __init__(self,funcLo,funcHi,minXnum=3):
+    def __init__(self,funcLo,funcHi,minXnum=4):
         self.funcHi = TestFunction(funcHi)
         self.funcLo = TestFunction(funcLo)
         self.nEval = 0
@@ -74,7 +87,7 @@ class ScaledFunction():
         self.oneDim = False
 
     def construct_scaling_model(self,x0,f0=None):
-        if hasattr(x0,'__iter__'):
+        if not hasattr(x0,'__iter__'):
             self.oneDim = True
         self.x0 = x0
         if f0==None:
@@ -92,19 +105,18 @@ class ScaledFunction():
             fLo = self.funcLo(x0)
             beta = f0/fLo
             self.betaPrev.append(beta)
-            if self.oneDim:
-                xPrev = array(self.xPrev)
-            else:
-                m = len(self.xPrev[0])
-                xPrev = tuple()
-                xnew = zeros(m)
-                for i in range(m):
-                    for xval in self.xPrev:
-                        xnew[i] = xval[i]
-                    xPrev = xPrev + (xnew,)
             xrbf = tuple()
-            xrbf = xrbf + (xPrev,self.betaPrev)
-            self.beta = Rbf(*xrbf)
+            if self.oneDim:
+                xrbf = xrbf + (array(self.xPrev),)
+            else:
+                n = len(self.xPrev); m = len(self.xPrev[0])
+                for i in range(m):
+                    xnew = zeros(n)
+                    for j,xval in enumerate(self.xPrev):
+                        xnew[j] = xval[i]
+                    xrbf = xrbf + (xnew,)
+            xrbf = xrbf + (self.betaPrev,)
+            self.beta = RbfMod(xrbf)
 
     def __call__(self,x):
         self.nEval += 1
