@@ -5,6 +5,7 @@ Created on Fri Oct 11 19:35:10 2013
 @author: Maxim
 """
 from numpy import array, zeros, dot, copy, linspace, meshgrid, ravel
+from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import Rbf
@@ -132,3 +133,83 @@ class ScaledFunction():
             rho = (fScaled0 - fHi) / (fScaled0 - fScaled)
             return rho
 
+class VCMoptimization:
+    """variables will be normalized
+    """
+    def __init__(self,eta1=0.25,eta2=0.75,eta3=1.25,c1=0.25,c2=2.0,delta=1.0):
+        self.eta1 = float(eta1)
+        self.eta2 = float(eta2)
+        self.eta3 = float(eta3)
+        self.c1   = float(c1)
+        self.c2   = float(c2)
+        self.delta= float(delta)
+        self.constr    = list()
+        self.constrVcm = list()
+        self.nVcmConstr = 0
+        self.tolX = 1.0e-6
+        self.tolF = 1.0e-6
+        self.iterMax = 50
+    
+    def set_objective_lofi(self,fLow,x0):
+        self.func = fLow
+        self.x0 = x0
+        self.vcmObjective = False
+    
+    def set_objective_vcm(self,fLow,fHigh,x0):
+        self.func = ScaledFunction(fLow,fHigh)
+        self.x0 = x0
+        self.vcmObjective = True
+
+    def add_constraint_lofi(self,gLow):
+        self.vcmConstr = False
+        self.constr.append(gLow)
+    
+    def add_constraint_vcm(self,gLow,gHigh):
+        self.vcmConstr = True
+        self.nVcmConstr += 1
+        self.constrVcm.append(ScaledFunction(gLow,gHigh))
+    
+    def _update_delta(self,rho,err):
+        for r in rho:
+            if r<self.eta1 or r>self.eta3:
+                d = self.delta * self.c1
+            elif self.eta2<r<self.eta3:
+                if err==self.delta:
+                    d = self.delta * self.c2
+                else:
+                    d = self.delta
+            if d<self.delta:
+                self.delta = d
+
+    def solve(self):
+        err = self.tolX + 1.0
+        x = self.x0
+        nIter = 0
+        while err>self.tolX or nIter<self.iterMax:
+            if self.vcmObjective:
+                self.func.construct_scaling_model(x)
+            if self.vcmConstr:
+                for i in range(self.nVcmConstr):
+                    self.constrVcm[i].construct_scaling_model(x)
+            tmpCnstrList = self.constr + self.constrVcm
+            cnstr = tuple()
+            bnds  = tuple()
+            for tmpCnstr in tmpCnstrList:
+                cnstr = cnstr + ({'type':'ineq','fun':tmpCnstr},)
+            for xx in x:
+                bnds = bnds + ((x-self.delta,x+self.delta),)
+            rslt = minimize(self.func,x0,method='SLSQP',bounds=bnds,
+                            constraints=cnstr)
+            xnew = rslt.x
+            fnew = rslt.fun
+            err = norm(x-xnew)
+            x = xnew
+            rho = list()
+            if self.vcmObjective:
+                rho.append(self.func.get_thrust_region_ratio(xnew))
+            if self.vcmConstr:
+                for i in range(self.nVcmConstr):
+                    rho.append(self.constrVcm[i].get_thrust_region_ratio(xnew))
+            self._update_delta(rho,err)
+            nIter += 1
+            
