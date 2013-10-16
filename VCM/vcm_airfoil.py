@@ -15,8 +15,8 @@ class AirfoilAnalysis:
     def __init__(self):
         self._clmax = 1.5
         self.clCruise = [0.4,0.6]
-        self.thicknessMin = 0.12
-        self.thicknessMax = 0.14
+        self.thicknessMin = 0.14
+        self.thicknessMax = 0.16
         self.af = None
         self.Mcrs = 0.18
         self.Recrs = 4.4e6
