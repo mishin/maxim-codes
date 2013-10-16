@@ -19,7 +19,11 @@ def _phigh(x):
     return _fhigh(x) + 100000.0*(max([0,_ghigh(x)]))**2.0
 def _plow(x):
     return _flow(x) + 100000.0*(max([0,_glow(x)]))**2.0
-    
+def _fhigh1(x):
+    return x*x - 4.0*x + 2.0
+def _flow1(x):
+    return x+1.0
+
 def vcm_test_2d():
     x0 = array([1.5,1.5])
     delta = 1.0
@@ -92,6 +96,12 @@ def vcm_test_2dwire():
     ax.plot([x0[0]],[x0[1]],[func(x0)],'ro')
     plt.show()
 
+def vcm_test_2d_2():
+    vcmSolver = VCMoptimization()
+    vcmSolver.set_objective_vcm(_flow1,_fhigh1,3.0)
+    #vcmSolver.add_constraint_vcm(_glow,_ghigh)
+    vcmSolver.solve()
+
 def exact_solution():
     x0 = array([1.5,1.5])
     bnds = [(0.1,10),(0.1,10)]
@@ -101,4 +111,4 @@ def exact_solution():
     print rslt
 
 if __name__=="__main__":
-    vcm_test_2dwire()
+    vcm_test_2d_2()

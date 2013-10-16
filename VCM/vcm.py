@@ -49,7 +49,7 @@ class TestFunction():
             self.fHist.append(f)
         return f
 
-    def get_gradient(self,x,dx=1e-10,fval=None):
+    def get_gradient(self,x,dx=1e-3,fval=None):
         self.nGrad += 1
         if fval==None: fval = self(x)
         if not hasattr(x,'__iter__'):
@@ -88,7 +88,9 @@ class ScaledFunction():
         self.oneDim = False
 
     def construct_scaling_model(self,x0,f0=None):
-        if not hasattr(x0,'__iter__'):
+        if hasattr(x0,'__iter__'):
+            self.oneDim = False
+        else:
             self.oneDim = True
         self.x0 = x0
         if f0==None:
@@ -118,7 +120,15 @@ class ScaledFunction():
                     xrbf = xrbf + (xnew,)
             xrbf = xrbf + (self.betaPrev,)
             self.beta = RbfMod(xrbf)
-
+    
+    def _initialize_by_doe_points(self,xnew,fnew=None):
+        if fnew==None:
+            for i,xx in enumerate(xnew):
+                _f = self.funcHi(xx)
+                _flow = self.funcLo(xx)
+                self.fPrev.append(_f)
+                self.xPrev.append(xx)
+                self.betaPrev.append(_f/_flow)
     def __call__(self,x):
         self.nEval += 1
         return self.beta(x) * self.funcLo(x)
@@ -149,6 +159,7 @@ class VCMoptimization:
         self.tolX = 1.0e-6
         self.tolF = 1.0e-6
         self.iterMax = 50
+        self.vcmConstr = False
     
     def set_objective_lofi(self,fLow,x0):
         self.func = fLow
@@ -171,9 +182,11 @@ class VCMoptimization:
     
     def _update_delta(self,rho,err):
         for r in rho:
-            if r<self.eta1 or r>self.eta3:
+            if r<=self.eta1 or r>=self.eta3:
                 d = self.delta * self.c1
             elif self.eta2<r<self.eta3:
+                d = self.delta
+            else:
                 if err==self.delta:
                     d = self.delta * self.c2
                 else:
@@ -185,7 +198,9 @@ class VCMoptimization:
         err = self.tolX + 1.0
         x = self.x0
         nIter = 0
+        fnew = 0
         while err>self.tolX or nIter<self.iterMax:
+            #print nIter, x, self.delta, fnew
             if self.vcmObjective:
                 self.func.construct_scaling_model(x)
             if self.vcmConstr:
@@ -196,9 +211,13 @@ class VCMoptimization:
             bnds  = tuple()
             for tmpCnstr in tmpCnstrList:
                 cnstr = cnstr + ({'type':'ineq','fun':tmpCnstr},)
-            for xx in x:
-                bnds = bnds + ((x-self.delta,x+self.delta),)
-            rslt = minimize(self.func,x0,method='SLSQP',bounds=bnds,
+            if hasattr(x,'__iter__'):
+                for xx in x:
+                    bnds = bnds + ((xx-self.delta,xx+self.delta),)
+            else:
+                bnds = ((x-self.delta,x+self.delta),)
+            print bnds
+            rslt = minimize(self.func,x,method='SLSQP',bounds=bnds,
                             constraints=cnstr)
             xnew = rslt.x
             fnew = rslt.fun
@@ -210,6 +229,8 @@ class VCMoptimization:
             if self.vcmConstr:
                 for i in range(self.nVcmConstr):
                     rho.append(self.constrVcm[i].get_thrust_region_ratio(xnew))
+            print rho
+            raw_input()
             self._update_delta(rho,err)
             nIter += 1
             
