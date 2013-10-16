@@ -13,10 +13,10 @@ import airfoil as af
 
 class AirfoilAnalysis:
     def __init__(self):
-        self._clmax = 1.4
+        self._clmax = 1.5
         self.clCruise = [0.4,0.6]
         self.thicknessMin = 0.12
-        self.thicknessMax = 0.16
+        self.thicknessMax = 0.14
         self.af = None
         self.Mcrs = 0.18
         self.Recrs = 4.4e6
@@ -49,7 +49,7 @@ class AirfoilAnalysis:
         self._upd_cst(x)
         pol = self.af.get_J_polar(self.Mldg, self.Reldg)
         pol.calc_clmax()
-        return -(self._clmax - 0.9*pol.clmax)
+        return -(self._clmax - pol.clmax)
     
     def g2(self,x):
         self._upd_cst(x)
@@ -82,6 +82,7 @@ def vcm_airfoil_optimization():
     c1 = 0.7
     c2 = 2.0
     tol = 1e-6
+    gtol = 1e-3
     err = tol+1
     iterMax = 20
     nIter = 0
@@ -110,8 +111,13 @@ def vcm_airfoil_optimization():
                         tol=1e-10,jac=aa.fLowDeriv)
         xnew = rslt.x
         fnew = rslt.fun
-        rho = gscaled.get_thrust_region_ratio(xnew)
-        err = norm(x0-xnew)
+        gHinew = gscaled.funcHi(xnew)
+        if gHinew<=gtol:
+            rho = gscaled.get_thrust_region_ratio(xnew,gHinew)
+            err = norm(x0-xnew)
+        else:
+            rho = 1.0
+            err = 0.0
         if rho<=eta1 or rho>=eta3:
             delta *= c1
         elif eta1<rho<eta2:
@@ -123,7 +129,9 @@ def vcm_airfoil_optimization():
                 delta = delta
         #print nIter,'\t','%.6f\t'%err,fnew,rho,delta
         print '%d\t%.2e\t%.6f\t%.2f\t%.4e'%(nIter,err,fnew,rho,delta)
-        print xnew
+        _xprint = ''
+        for xx in xnew: _xprint += '%.4f\t'%xx
+        print _xprint
         print gscaled.funcHi(xnew)
         #print gscaled.xPrev,len(gscaled.xPrev)
         x0 = xnew

@@ -133,8 +133,9 @@ class ScaledFunction():
         self.nEval += 1
         return self.beta(x) * self.funcLo(x)
     
-    def get_thrust_region_ratio(self,x):
-        fHi = self.funcHi(x)
+    def get_thrust_region_ratio(self,x,fHi=None):
+        if fHi==None:
+            fHi = self.funcHi(x)
         fScaled = self(x)
         fScaled0 = self(self.x0)
         if fScaled==fScaled0:
