@@ -28,7 +28,7 @@ def vcm_test_1d():
         fscaled.construct_scaling_model(x0)
         bnds = [(x0-delta, x0+delta)]
         rslt = minimize(fscaled,x0,method='SLSQP',bounds=bnds,tol=1e-10)
-        xnew = rslt.x
+        xnew = rslt.x[0]
         fnew = rslt.fun
         rho = fscaled.get_thrust_region_ratio(xnew)
         if rho<=eta1 or rho>=eta3:
@@ -41,7 +41,7 @@ def vcm_test_1d():
             delta *= gamma
         err = abs(x0-xnew)
         x0 = xnew
-        print '%.4f\t%.4f\t%.4f\t%.4f'%(rho, xnew, fnew, delta)
+        print 'rho:%.4f\tx:%.2f\tf:%.2f\tdelta:%.2e'%(rho, xnew, fnew, delta)
         niter += 1
 
         plt.figure(1)

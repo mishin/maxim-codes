@@ -89,7 +89,6 @@ class ScaledFunction():
         self.type = scalingType
 
     def construct_scaling_model(self,x0,f0=None):
-        print x0
         if hasattr(x0,'__iter__'):
             self.oneDim = False
         else:
