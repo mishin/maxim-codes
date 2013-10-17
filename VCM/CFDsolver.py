@@ -347,7 +347,7 @@ def batch_doe_txt():
         else:
             data = ny.vstack([data,lineData])
     fid.close()
-    
+
 if __name__=="__main__":
-    calc_airfoil('NACA4415.txt','NACA4415polar.txt')
-#calc_Re()
+    #calc_airfoil('NACA4415.txt','NACA4415polar.txt')
+    #get_cfd_polar_cst()
