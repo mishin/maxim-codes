@@ -13,10 +13,10 @@ import airfoil as af
 
 class AirfoilAnalysis:
     def __init__(self):
-        self._clmax = 1.5
+        self._clmax = 1.4
         self.clCruise = [0.4,0.6]
-        self.thicknessMin = 0.14
-        self.thicknessMax = 0.16
+        self.thicknessMin = 0.12
+        self.thicknessMax = 0.14
         self.af = None
         self.Mcrs = 0.18
         self.Recrs = 4.4e6
@@ -40,15 +40,16 @@ class AirfoilAnalysis:
 
     def gLow(self,x):
         self._upd_cst(x)
-        #self.af.plot()
         pol = self.af.get_X_polar(self.Mldg,self.Reldg,alphaSeq=[0,20,1.0])
         pol.calc_clmax()
+        sys.stdout.write('.')
         return -(self._clmax - pol.clmax)
     
     def gHigh(self,x):
         self._upd_cst(x)
         pol = self.af.get_J_polar(self.Mldg, self.Reldg)
         pol.calc_clmax()
+        sys.stdout.write('-')
         return -(self._clmax - pol.clmax)
     
     def g2(self,x):
@@ -79,7 +80,7 @@ def vcm_airfoil_optimization():
     eta1 = 0.25
     eta2 = 0.75
     eta3 = 1.25
-    c1 = 0.7
+    c1 = 0.5
     c2 = 2.0
     tol = 1e-6
     gtol = 1e-3
@@ -97,9 +98,10 @@ def vcm_airfoil_optimization():
     x0 = array([0.1851,0.2578,0.2748,0.1872,-0.1550,-0.2395,0.0593])
     x0 = normalize(x0,lb,ub)
     aa._upd_cst(x0)
-    gscaled = ScaledFunction(aa.gLow, aa.gHigh)
+    gscaled = ScaledFunction(aa.gLow, aa.gHigh,scalingType='add')
     gscaled._initialize_by_doe_points(xdoe)
     while err>tol and nIter<iterMax:
+        print '--> iteration started'
         nIter += 1
         gscaled.construct_scaling_model(x0)
         bnds = tuple()
@@ -108,7 +110,7 @@ def vcm_airfoil_optimization():
         cnstr = ({'type':'ineq','fun':gscaled},{'type':'ineq','fun':aa.g2},
                  {'type':'ineq','fun':aa.g3})
         rslt = minimize(aa.fLow,x0,method='SLSQP',bounds=bnds,constraints=cnstr,
-                        tol=1e-10,jac=aa.fLowDeriv)
+                        tol=1e-10,jac=aa.fLowDeriv, options={'disp':False})
         xnew = rslt.x
         fnew = rslt.fun
         gHinew = gscaled.funcHi(xnew)
@@ -128,7 +130,7 @@ def vcm_airfoil_optimization():
             else:
                 delta = delta
         #print nIter,'\t','%.6f\t'%err,fnew,rho,delta
-        print '%d\t%.2e\t%.6f\t%.2f\t%.4e'%(nIter,err,fnew,rho,delta)
+        print '\n%d\t%.2e\t%.6f\t%.2f\t%.4e'%(nIter,err,fnew,rho,delta)
         _xprint = ''
         for xx in xnew: _xprint += '%.4f\t'%xx
         print _xprint
@@ -146,9 +148,6 @@ def vcm_airfoil_optimization():
     pol1.display()
     pol2.display()
     aa.af.plot()
-        
-        
-        
 
 
 if __name__=="__main__":

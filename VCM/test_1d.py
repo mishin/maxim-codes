@@ -20,7 +20,7 @@ def vcm_test_1d():
     tol = 1e-3
     err = tol + 1
     niter = 0
-    fscaled = ScaledFunction(_flow,_fhi)
+    fscaled = ScaledFunction(_flow,_fhi,3)
     delta = 1.0
     x0 = 0.5
     x = linspace(-1,5,50)

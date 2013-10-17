@@ -77,7 +77,7 @@ class TestFunction():
 
 
 class ScaledFunction():
-    def __init__(self,funcLo,funcHi,minXnum=4):
+    def __init__(self,funcLo,funcHi,minXnum=4,scalingType='mult'):
         self.funcHi = TestFunction(funcHi)
         self.funcLo = TestFunction(funcLo)
         self.nEval = 0
@@ -86,8 +86,10 @@ class ScaledFunction():
         self.betaPrev = list()
         self.nMin = minXnum
         self.oneDim = False
+        self.type = scalingType
 
     def construct_scaling_model(self,x0,f0=None):
+        print x0
         if hasattr(x0,'__iter__'):
             self.oneDim = False
         else:
@@ -101,12 +103,12 @@ class ScaledFunction():
             fHi, gradHi = self.funcHi.get_gradient(x0,fval=f0)
             fLo, gradLo = self.funcLo.get_gradient(x0)
             betaGrad = (gradHi*fLo - gradLo*fHi) / (fLo**2)
-            beta = fHi/fLo
+            #FIXME beta calculation here
+            beta = self.get_beta(x0,fHi)
             self.betaPrev.append(beta)
             self.beta = TaylorSeries1(x0,beta,betaGrad)
         else:
-            fLo = self.funcLo(x0)
-            beta = f0/fLo
+            beta = self.get_beta(x0,f0)
             self.betaPrev.append(beta)
             xrbf = tuple()
             if self.oneDim:
@@ -122,16 +124,21 @@ class ScaledFunction():
             self.beta = RbfMod(xrbf)
     
     def _initialize_by_doe_points(self,xnew,fnew=None):
+        print '--> initializing points'
         if fnew==None:
             for i,xx in enumerate(xnew):
                 _f = self.funcHi(xx)
-                _flow = self.funcLo(xx)
                 self.fPrev.append(_f)
                 self.xPrev.append(xx)
-                self.betaPrev.append(_f/_flow)
+                beta = self.get_beta(xx,_f)
+                self.betaPrev.append(beta)
+        print '\n--> initialization completed'
     def __call__(self,x):
         self.nEval += 1
-        return self.beta(x) * self.funcLo(x)
+        if self.type=='add':
+            return self.beta(x) + self.funcLo(x)
+        elif self.type=='mult':
+            return self.beta(x) * self.funcLo(x)
     
     def get_thrust_region_ratio(self,x,fHi=None):
         if fHi==None:
@@ -143,6 +150,14 @@ class ScaledFunction():
         else:
             rho = (fScaled0 - fHi) / (fScaled0 - fScaled)
             return rho
+    
+    def get_beta(self,x,fHi=None):
+        if fHi==None:
+            fHi = self.funcHi(x)
+        if self.type=='add':
+            return fHi - self.funcLo(x)
+        elif self.type=='mult':
+            return fHi / self.funcLo(x)
 
 class VCMoptimization:
     """variables will be normalized
