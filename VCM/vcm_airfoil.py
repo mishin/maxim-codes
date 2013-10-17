@@ -13,10 +13,10 @@ import airfoil as af
 
 class AirfoilAnalysis:
     def __init__(self):
-        self._clmax = 1.4
+        self._clmax = 1.50
         self.clCruise = [0.4,0.6]
-        self.thicknessMin = 0.12
-        self.thicknessMax = 0.14
+        self.thicknessMin = 0.14
+        self.thicknessMax = 0.16
         self.af = None
         self.Mcrs = 0.18
         self.Recrs = 4.4e6
@@ -149,6 +149,33 @@ def vcm_airfoil_optimization():
     pol2.display()
     aa.af.plot()
 
-
+def plot_result_af():
+    x0 = [0.1851,0.2578,0.2748,0.1872,-0.1550,-0.2395,0.0593]
+    x1 = [0.1842,0.6701,0.7513,-0.0716,-0.2611,-0.6004,0.8769]
+    x2 = [0.2337,0.7288,0.7400,0.0154,-0.2271,-0.4580,1.0059]
+    
+    aa = AirfoilAnalysis()
+    lb = array([0.1, 0.1, 0.1, 0.1, -0.3, -0.3, -0.3])
+    ub = array([0.3, 0.3, 0.3, 0.3, 0.1, 0.1, 0.1])
+    aa.lb = lb
+    aa.ub = ub
+    aa._upd_cst(x0)
+    crd0 = copy(aa.af.coord)
+    aa._upd_cst(x1)
+    crd1 = copy(aa.af.coord)
+    aa._upd_cst(x2)
+    crd2 = copy(aa.af.coord)
+    
+    plt.figure(1)
+    plt.hold(True)
+    plt.grid(True)
+    #plt.axis('equal')
+    plt.plot(crd0[:,0],crd0[:,1],'k--')
+    plt.plot(crd1[:,0],crd1[:,1],'r-')
+    plt.plot(crd2[:,0],crd2[:,1],'b-')
+    plt.legend(['baseline','multiplicative','additive'])
+    plt.show()
+    
 if __name__=="__main__":
     vcm_airfoil_optimization()
+    #plot_result_af()

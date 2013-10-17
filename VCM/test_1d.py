@@ -15,14 +15,14 @@ def vcm_test_1d():
     eta1 = 0.25
     eta2 = 0.75
     eta3 = 1.25
-    c1 = 0.25
+    c1 = 0.3
     c2 = 2.0
-    tol = 1e-3
+    tol = 1.0e-3
     err = tol + 1
     niter = 0
     fscaled = ScaledFunction(_flow,_fhi,3)
     delta = 1.0
-    x0 = 0.5
+    x0 = 1.0
     x = linspace(-1,5,50)
     while err>tol:
         fscaled.construct_scaling_model(x0)
@@ -41,7 +41,7 @@ def vcm_test_1d():
             delta *= gamma
         err = abs(x0-xnew)
         x0 = xnew
-        print 'rho:%.4f\tx:%.2f\tf:%.2f\tdelta:%.2e'%(rho, xnew, fnew, delta)
+        print 'rho:%.4f\tx:%.4f\tf:%.4f\tdelta:%.4e'%(rho, xnew, fnew, delta)
         niter += 1
 
         plt.figure(1)
