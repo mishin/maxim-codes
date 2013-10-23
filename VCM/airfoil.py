@@ -13,13 +13,14 @@ from subprocess import Popen, PIPE
 import os
 from scipy.optimize import fminbound,bisect
 from matplotlib.pyplot import figure, plot, axis, hold, grid, legend, title, show,xlim
-from math import factorial, pi
+from math import factorial, pi, radians
 import shlex
 import matplotlib.pyplot as plt
 import paths
 import FlightConditions as fc
 import dbTools
 import geometry as geom
+import win32com.client
 
 def load(airfoilName,dbPath=''):
     """
@@ -50,6 +51,8 @@ def load(airfoilName,dbPath=''):
 def cst(Au,Al):
     af = Airfoil()
     af.create_CST(Au,Al)
+    af.radius_LE = Au[0]**2*50.
+    af.camber_slope_LE = 0.0
     return af
 
 class AirfoilPolar:
@@ -85,10 +88,11 @@ class AirfoilPolar:
         """
         if not hasattr(self.Mach,'__iter__'):
             clCurve = interp1d(self.alpha,-self.cl,'cubic')
-            ub,lb = self.alpha[1],self.alpha[-2]
+            ub,lb = self.alpha[0],self.alpha[-1]
             self.alphaClmax = fminbound(clCurve,ub,lb)
             self.clmax = -clCurve(self.alphaClmax)
         else:
+            n = len(self.Mach)
             self.clmax = zeros(n)
             self.alphaClmax = zeros(n)
             for i in range(n):
@@ -364,6 +368,7 @@ class Airfoil:
         self.dbPath = paths.Database().airfoil
         self.polar  = AirfoilPolar()
         self.path   = paths.MyPaths()
+        self.camber_slope_LE = 0.0
     def read_lines(self,fileID,numLines):
         """
         reads lines from open file and returns 2D array
@@ -1056,6 +1061,71 @@ class Airfoil:
                 except ValueError:
                     print 'Polar processing failed'
         return polar
+    def create_af_CAT(self,chord = 1.0,batch = True, save = [],filetype = 'igs'):
+        CATIA = win32com.client.Dispatch('catia.application')
+        partDocument1 = CATIA.Documents.Add("Part")
+        partDocument1 = CATIA.ActiveDocument
+        Part1 = partDocument1.Part
+        hSF = Part1.HybridShapeFactory
+        hybridBodies1 = Part1.HybridBodies
+        hybridBody1 = hybridBodies1.Item("Geometrical Set.1")
+        
+        def curve2D(mode):
+            le_camber_angle = radians(self.camber_slope_LE)
+            if mode == 'up':
+                coordinates = self.upPts * chord
+                direction = -1
+            elif mode == 'lo':
+                coordinates = self.loPts * chord
+                direction = 1
+
+            Spline1 = hSF.AddNewSpline()
+            if self.radius_LE == []:
+                start = 0
+            else:
+                start = 1
+                radius_LE = self.radius_LE * chord/100
+                Xctr = coordinates[0,0] + radius_LE*cos(le_camber_angle)
+                Yctr = coordinates[0,1] + radius_LE*sin(le_camber_angle)
+                ctrPC = hSF.AddNewPointCoord(Xctr,Yctr,0)
+                LE_pt = hSF.AddNewPointCoord(coordinates[0,0],coordinates[0,1],0)
+                originElements = Part1.OriginElements
+                plane = originElements.PlaneXY
+                ref1 = Part1.CreateReferenceFromObject(ctrPC)
+                ref2 = Part1.CreateReferenceFromObject(LE_pt)
+                ref3 = Part1.CreateReferenceFromObject(plane)
+                LE_circle = hSF.AddNewCircleCtrPt(ref1,ref2,ref3,False)
+                LE_circle.SetLimitation(1)
+                ref4 = Part1.CreateReferenceFromObject(LE_circle)
+                Spline1.AddPointWithConstraintFromCurve(ref2,ref4,1,direction,2)
+                
+            for pt in coordinates[start:]:
+                HSPC = hSF.AddNewPointCoord(pt[0],pt[1],0)
+                reference = Part1.CreateReferenceFromObject(HSPC)
+                Spline1.AddPointWithConstraintExplicit(reference, None, -1, 1, None, 0)
+            hybridBody1.AppendHybridShape(Spline1)
+            Part1.update()
+            
+        curve2D('up')
+        curve2D('lo')
+        if save != []: partDocument1.ExportData(save,'igs')
+        if batch: 
+            partDocument1.Close()
+            CATIA.quit()
+
+    def write_polar_txt(self, path):
+        if self.polar.alpha !=[]:
+            fpolar = open(path,'wt')
+            fpolar.write('Airfoil: %s\n'%self.name)
+            fpolar.write('Re = %.0f\n'%self.polar.Re)
+            fpolar.write('Mach = %.4f\n'%self.polar.Mach)
+            fpolar.write('alpha\tCL\tCD\tCM\n')
+            for ii in range(self.polar.alpha.shape[0]):
+                fpolar.write('%.2f\t'%self.polar.alpha[ii])
+                fpolar.write('%.6f\t'%self.polar.cl[ii])
+                fpolar.write('%.6f\t'%self.polar.cd[ii])
+                fpolar.write('%.6f\n'%self.polar.cm[ii])
+            fpolar.close()
 
     def plot(self,linetype='bo-'):
         """
@@ -1198,6 +1268,12 @@ def test_06():
     plt.plot(anew,clnew,'ro-')
     plt.show()
 
+def test_cst():
+    Au = array([0.2337,0.7288,0.7400,0.0154])
+    Al = array([-0.2337,-0.2271,-0.4580,1.0059])
+    af = cst(Au,Al)
+    af.plot()
+    af.create_af_CAT(batch=False)
 
 if __name__=="__main__":
-    test_06()
+    test_cst()

@@ -125,12 +125,14 @@ class ScaledFunction():
     def _initialize_by_doe_points(self,xnew,fnew=None):
         print '--> initializing points'
         if fnew==None:
+            fnew = list()
             for i,xx in enumerate(xnew):
-                _f = self.funcHi(xx)
-                self.fPrev.append(_f)
-                self.xPrev.append(xx)
-                beta = self.get_beta(xx,_f)
-                self.betaPrev.append(beta)
+                fnew.append(self.funcHi(xx))
+        for _f,_x in zip(fnew,xnew):
+            self.fPrev.append(_f)
+            self.xPrev.append(_x)
+            beta = self.get_beta(_x,_f)
+            self.betaPrev.append(beta)
         print '\n--> initialization completed'
     def __call__(self,x):
         self.nEval += 1

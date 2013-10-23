@@ -17,7 +17,7 @@ def vcm_test_1d():
     eta3 = 1.25
     c1 = 0.3
     c2 = 2.0
-    tol = 1.0e-3
+    tol = 1.0e-4
     err = tol + 1
     niter = 0
     fscaled = ScaledFunction(_flow,_fhi,3)
@@ -40,10 +40,11 @@ def vcm_test_1d():
                 gamma = 1.0
             delta *= gamma
         err = abs(x0-xnew)
+        x0plt = x0
         x0 = xnew
         print 'rho:%.4f\tx:%.4f\tf:%.4f\tdelta:%.4e'%(rho, xnew, fnew, delta)
         niter += 1
-
+    
         plt.figure(1)
         #plt.grid(True)
         plt.hold(True)
@@ -52,9 +53,12 @@ def vcm_test_1d():
         fsc = [fscaled(xsc) for xsc in x]
         plt.plot(x,fsc,'k-')
         plt.plot(fscaled.xPrev,fscaled.fPrev,'ro')
+        plt.plot(array([x0plt,x0plt])+delta,[-50,50],'k--')
+        plt.plot(array([x0plt,x0plt])-delta,[-50,50],'k--')
         plt.legend(['Low-fi','Hi-fi','Scaled','Current point','Optimum point'],'lower right')
         plt.axis([-1,5,-20,10])
         plt.show()
+        plt.cla()
 
     fscaled.funcHi.display()
     fscaled.funcLo.display()

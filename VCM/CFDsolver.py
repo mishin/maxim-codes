@@ -9,16 +9,16 @@ import numpy as ny
 import os
 from math import sin, cos, pi, radians
 
-from ISAtmosphere import ISAtmosphere
+from FlightConditions import ISAtmosphere
 import paths
-from Airfoil import Airfoil
+from airfoil import Airfoil, cst
 
 class Flight_conditions():
     def __init__(self, altitude = 0, velocity = 50):
         self.velocity = velocity
         self.ref_length = 1.0
         self.ISA = ISAtmosphere(altitude)
-        self.mu = self.ISA.sutherlandVisc()
+        self.mu = self.ISA.viscosity
         self.Re = self.ISA.density * velocity * self.ref_length / self.mu
         self.Mach = velocity / self.ISA.soundSpeed
 
@@ -278,38 +278,43 @@ def testFcn():
         af.polar.Re = landing.Re
         af.polar.M = landing.Mach
         af.polar.alpha = fluent.alpha
-        af.polar.CL = fluent.cl
-        af.polar.CD = fluent.cd
-        af.polar.CM = fluent.cm
+        af.polar.cl = fluent.cl
+        af.polar.cd = fluent.cd
+        af.polar.cm = fluent.cm
         af.write_airfoil_txt(('%s\\airfoil_%d_coord.dat'%(results,N)))
         af.write_polar_txt(('%s\\airfoil_%d.pol'%(results,N)))
 
 def calc_airfoil(name,polarPath):
-#    Au = ny.array([0.178551,0.273254,0.268906,0.226346])
-#    Al = ny.array([-0.178551,-0.101338,-0.255260,-0.043527])
-    Au = ny.array([0.1920,0.2887,0.2844,0.2304])
-    Al = ny.array([-0.1920,-0.0859,-0.2398,-0.0255])
+    #Au = ny.array([0.178551,0.273254,0.268906,0.226346])
+    #Al = ny.array([-0.178551,-0.101338,-0.255260,-0.043527])
+    #Au = ny.array([0.1920,0.2887,0.2844,0.2304])
+    #Al = ny.array([-0.1920,-0.0859,-0.2398,-0.0255])
     path = paths.CFD_paths()
-    landing = Flight_conditions(1500.0,60.0)
-    af = Airfoil()
+    landing = Flight_conditions(0.0,60.0)
+    #af = cst(Au,Al)
+    #af = Airfoil()
     #af.read_airfoil_txt(name)
-    af.CST_airfoil(Au,Al)
-
+    #af.read_txt(name)
+    #af.radius_LE=[]
+    af = cst([0.1839,0.3790,0.2712,0.1635],[-0.1839,-0.0493,-0.2190,-0.0225])
+    polarPath = 'optimum-polar.txt'
     af.create_af_CAT(save = path.file_igs)
     Airfoil_mesh(path,landing)
     Airfoil_mesh.yplus_wall = 1.0
     fluent = Solver(path,landing)
     fluent.turb_model = 'ke-realizable'
     #alphaSeq = ny.linspace(0,20,21)
-    alphaSeq = ny.linspace(0,10,5)
+    #alphaSeq = ny.linspace(0,10,5)
+    alphaSeq = ny.linspace(0,20,21)#ny.array([10.0,12,14,16,18])
     for alpha in alphaSeq:
         fluent.run_fluent(alpha)
     af.polar.Re = landing.Re
     af.polar.M = landing.Mach
+    af.polar.Mach = landing.Mach
     af.polar.alpha = fluent.alpha
-    af.polar.CL = fluent.cl
-    af.polar.CD = fluent.cd
-    af.polar.CM = fluent.cm
+    af.polar.cl = fluent.cl
+    af.polar.cd = fluent.cd
+    af.polar.cm = fluent.cm
 
     #af.write_polar_txt(r'D:\3. Projects\afOpt\results\af_GA20120716\landingCFDpolar_01_.pol')
     af.write_polar_txt(polarPath)
@@ -350,4 +355,4 @@ def batch_doe_txt():
 
 if __name__=="__main__":
     #calc_airfoil('NACA4415.txt','NACA4415polar.txt')
-    #get_cfd_polar_cst()
+    calc_airfoil('GA37A315.txt','GA37A315-polar.txt')

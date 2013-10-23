@@ -94,5 +94,45 @@ def testFcn():
     print fixPaths('C:/test/test2\\test3')
     print os.path.abspath('C:/test/test2\\test3')
     print a.getTmpFile()
+
+class CFD_paths:
+    def __init__(self, name_prefix = 'tmp_file'):
+        self.wdir = os.getcwd()
+        self.name_prefix = name_prefix
+        self.fluent =  r'C:\Program Files\ANSYS Inc\v130\fluent\ntbin\win64\fluent.exe'
+        self.pointwise = r'C:\Program Files (x86)\Pointwise\PointwiseV16.03R2\win64\bin\Pointwise.exe'
+        self.tmpdir = self.wdir + '\\temp'
+        self.templates = self.wdir + '\\templates'
+        self.template_pw = self.templates + '\\meshJournalTemplate.glf'
+        self.template_fl = self.templates + '\\fluentJournalTemplate.jou'
+        self.set_name()
+        
+    def _work_file(self, file_ext = "", add_symbol = ""):
+        fileName = self.tmpdir + '\\' + self.name_prefix + add_symbol
+        if file_ext != "" : fileName  = fileName + "." + file_ext
+        return fileName
+
+    def set_name(self,name_prefix = ""):
+        if name_prefix != "": self.name_prefix = name_prefix
+        self.file_igs = self._work_file('igs')
+        self.file_glf = self._work_file('glf')
+        self.file_jou = self._work_file('jou')
+        self.file_cas = self._work_file('cas')
+        self.file_pol = self._work_file('pol')
+        self.file_airfoil = self._work_file('dat','coord')
+
+    def set_name_alpha(self,alpha):
+        alpha = '_%.0fdeg'%float(alpha)
+        self.file_cl_hist = self._work_file('cl', alpha)
+        self.file_cd_hist = self._work_file('cd', alpha)
+        self.file_cm_hist = self._work_file('cm', alpha)
+        self.file_cp_dist = self._work_file('cp', alpha)
+    
+    def clean(self):
+        os.remove(self.file_cas)
+        os.remove(self.file_igs)
+        os.remove(self.file_glf)
+        os.remove(self.file_jou)
+
 if __name__=="__main__":
     testFcn()
