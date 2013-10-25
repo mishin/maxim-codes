@@ -4,7 +4,7 @@ Created on Fri Oct 11 19:35:10 2013
 
 @author: Maxim
 """
-from numpy import array, zeros, dot, copy, linspace, meshgrid, ravel
+from numpy import array, zeros, dot, copy, linspace, meshgrid, ravel, sin, pi
 from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -147,10 +147,10 @@ class ScaledFunction():
         fScaled = self(x)
         fScaled0 = self(self.x0)
         if fScaled==fScaled0:
-            return float('inf')
+            return float('inf'),fHi
         else:
             rho = (fScaled0 - fHi) / (fScaled0 - fScaled)
-            return rho
+            return rho,fHi
     
     def get_beta(self,x,fHi=None):
         if fHi==None:
