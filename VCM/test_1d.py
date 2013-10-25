@@ -21,8 +21,11 @@ def vcm_test_1d():
     err = tol + 1
     niter = 0
     fscaled = ScaledFunction(_flow,_fhi,3)
-    delta = 1.0
+    lb = -1.0
+    ub = 5.0
     x0 = 1.0
+    delta = min([abs(x0-lb),abs(x0-ub)])
+
     x = linspace(-1,5,50)
     while err>tol:
         fscaled.construct_scaling_model(x0)
@@ -56,7 +59,7 @@ def vcm_test_1d():
         plt.plot(array([x0plt,x0plt])+delta,[-50,50],'k--')
         plt.plot(array([x0plt,x0plt])-delta,[-50,50],'k--')
         plt.legend(['Low-fi','Hi-fi','Scaled','Current point','Optimum point'],'lower right')
-        plt.axis([-1,5,-20,10])
+        plt.axis([lb,ub,-20,10])
         plt.show()
         plt.cla()
 
