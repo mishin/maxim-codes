@@ -11,6 +11,27 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import Rbf
 from scipy.optimize import minimize
 
+class TrustRegionManagement():
+    def __init__(self,delta,eta1=0.25,eta2=0.75,eta3=1.25,c1=0.3,c2=2.0):
+        self.eta1 = eta1
+        self.eta2 = eta2
+        self.eta3 = eta3
+        self.c1 = c1
+        self.c2 = c2
+        self.deltaOld = delta
+    def adjust(self,rho,err):
+        if rho<=self.eta1 or rho>=self.eta3:
+            deltaNew = self.deltaOld *self.c1
+        elif self.eta2< rho <self.eta3:
+            if err==self.deltaOld:
+                deltaNew = self.deltaOld *self.c2
+            else:
+                deltaNew = self.deltaOld
+        else:
+            deltaNew = self.deltaOld
+        self.deltaOld = deltaNew
+        return deltaNew
+
 class RbfMod():
     def __init__(self,args):
         self.rbf = Rbf(*args)
