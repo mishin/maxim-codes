@@ -23,10 +23,11 @@ class TrustRegionManagement():
         if rho<=self.eta1 or rho>=self.eta3:
             deltaNew = self.deltaOld *self.c1
         elif self.eta2< rho <self.eta3:
-            if err==self.deltaOld:
-                deltaNew = self.deltaOld *self.c2
-            else:
-                deltaNew = self.deltaOld
+            deltaNew = self.deltaOld *self.c2
+#            if err==self.deltaOld:
+#                deltaNew = self.deltaOld *self.c2
+#            else:
+#                deltaNew = self.deltaOld
         else:
             deltaNew = self.deltaOld
         self.deltaOld = deltaNew
@@ -97,6 +98,56 @@ class TestFunction():
                 print xval, '| ',fval
 
 
+class HybridScaledFunction():
+    def __init__(self,funcLo,funcHi,minXnum=4,weight=0.5):
+        self.w = weight
+        self.nEval = 0
+        self.xPrev = list()
+        self.fPrev = list()
+        self.fAdd  = ScaledFunction(funcLo,funcHi,minXnum,'add')
+        self.fMult = ScaledFunction(funcLo,funcHi,minXnum,'mult')
+        self.funcHi = TestFunction(funcHi)
+        self.funcLo = TestFunction(funcLo)
+    
+    def __call__(self,x):
+        self.nEval += 1
+        return self.w*self.fMult(x) + (1.-self.w)*self.fAdd(x)
+    
+    def construct_scaling_model(self,x0,f0=None):
+        self.x0 = x0
+        if f0==None:
+            f0 = self.fAdd.funcHi(x0)
+        self.xPrev.append(x0)
+        self.fPrev.append(f0)
+        self.fAdd.construct_scaling_model(x0,f0)
+        self.fMult.construct_scaling_model(x0,f0)
+    
+    def _initialize_by_doe_points(self,xnew,fnew=None):
+        if fnew==None:
+            fnew = list()
+            for i,xx in enumerate(xnew):
+                fnew.append(self.fAdd.funcHi(xx))
+        for _f,_x in zip(fnew,xnew):
+            self.fPrev.append(_f)
+            self.xPrev.append(_x)
+        self.fAdd._initialize_by_doe_points(xnew,fnew)
+        self.fMult._initialize_by_doe_points(xnew,fnew)
+
+    def get_trust_region_ratio(self,x,fHi=None):
+        if fHi==None:
+            fHi = self.fAdd.funcHi(x)
+        fScaled = self(x)
+        fScaled0 = self(self.x0)
+        if fScaled==fScaled0:
+            return float('inf'),fHi
+        else:
+            rho = (fScaled0 - fHi) / (fScaled0 - fScaled)
+            return rho,fHi
+    
+    def display(self):
+        self.funcHi.display()
+        self.funcLo.display()
+
 class ScaledFunction():
     def __init__(self,funcLo,funcHi,minXnum=4,scalingType='mult'):
         self.funcHi = TestFunction(funcHi)
@@ -105,6 +156,7 @@ class ScaledFunction():
         self.xPrev = list()
         self.fPrev = list()
         self.betaPrev = list()
+        self.gammaPrev = list()
         self.nMin = minXnum
         self.oneDim = False
         self.type = scalingType
@@ -155,6 +207,7 @@ class ScaledFunction():
             beta = self.get_beta(_x,_f)
             self.betaPrev.append(beta)
         print '\n--> initialization completed'
+
     def __call__(self,x):
         self.nEval += 1
         if self.type=='add':
@@ -162,7 +215,7 @@ class ScaledFunction():
         elif self.type=='mult':
             return self.beta(x) * self.funcLo(x)
     
-    def get_thrust_region_ratio(self,x,fHi=None):
+    def get_trust_region_ratio(self,x,fHi=None):
         if fHi==None:
             fHi = self.funcHi(x)
         fScaled = self(x)
