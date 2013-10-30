@@ -7,7 +7,7 @@ Created on Sun Oct 27 18:03:14 2013
 import numpy as np
 from vcm import *
 from pyDOE import lhs, ff2n
-
+from tmp_doe import read_samples
 """
 exact solution: x1=0.8842, x2=1.1507, f=5.6683
 """
@@ -155,9 +155,16 @@ def get_bounds(x0,delta,lb,ub):
         bnds.append(bnd)
     return bnds
 
+def ForresterFunc(x):
+    return (5.0*x-2.)**2*sin(12.*x-4)
+
 def numerical_example_2():
-    fHigh  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
-    fLow   = lambda x: x[0] + x[1]
+#    fHigh  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
+#    fLow   = lambda x: x[0] + x[1]
+    def fHigh(x):
+        x = 0.1*x
+        return ForresterFunc(np.linalg.norm(x)/1.2)+5.*(x[0]+x[1])
+    fLow  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
     g1High = lambda x: x[0]**2*x[1]/20. - 1
     g1Low  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. - 2
     g2     = lambda x: (x[0]+x[1]-5)**2/30 + (x[0]-x[1]-12)**2/120 - 1
@@ -168,7 +175,7 @@ def numerical_example_2():
     lb   = np.array([0.0,0.0])
     ub   = np.array([10.,10.])
     x0   = np.array([5.0,5.0])
-    nDoe = 2
+    nDoe = 5 # nDoe>20 creates numerical noise and fails to converge
     
     err = tol+1.
     niter = 0
@@ -177,10 +184,12 @@ def numerical_example_2():
     delta = min([min(xu-x,x-xl) for x,xu,xl in zip(x0,ub,lb)])
     trustRegion = TrustRegionManagement(delta, 0.25, 0.75, 1.25, 0.3, 2.0)
 
-    xDoe = lhs(len(x0),nDoe)
+    #xDoe = lhs(len(x0),nDoe)
     #xDoe = ff2n(2)
-    xDoe = denormalize(xDoe,lb,ub,1)
-    fscaled = ScaledFunction(fLow, fHigh,0,'mult')
+    xDoe = read_samples()
+    xDoe = denormalize(xDoe[:nDoe+1],lb,ub,1)
+    print xDoe
+    fscaled = ScaledFunction(fLow, fHigh,0,'add')
     gscaled = ScaledFunction(g1Low, g1High,0,'add')
 
     fscaled._initialize_by_doe_points(xDoe)
