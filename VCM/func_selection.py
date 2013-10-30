@@ -113,15 +113,15 @@ def test_function_selection4():
     f = lambda x: np.exp(x[0]/3)+np.exp(x[1]/5)-x[0]
     #g2 = lambda x: g1(x)-0.2*(x[0]*x[1])
     g1 = lambda x: x[0]**2.*x[1]/20.-1
-    g1 = lambda x: x[0]+x[1]
+    #g1 = lambda x: x[0]+x[1]
     g2 = lambda x: (x[0]+x[1]-5)**2./30 + (x[0]-x[1]-12)**2./120 - 1
     g3 = lambda x: (x[0])**2.*(x[1])/20+(x[1]-x[0])/5.-2
     #g3 = lambda x: 80./(x[0]**2.+8*x[1]+5)-1
     lb = [1.0, 10.0]
     ub = [10., 10.]
     dx = 0.5
-#    rslt = minimize(f,[5,5],bounds=((0,10),(0,10)),constraints=({'type':'ineq','fun':g2},{'type':'ineq','fun':g1}),method='SLSQP')
-#    print rslt
+    rslt = minimize(f,[5,5],bounds=((0,10),(0,10)),constraints=({'type':'ineq','fun':g2},{'type':'ineq','fun':g1}),method='SLSQP')
+    print rslt
     x = y = np.arange(lb[0],ub[0],dx)
     X, Y = np.meshgrid(x,y)
     zs1 = np.array([f([x,y]) for x,y in zip(np.ravel(X),np.ravel(Y))])
@@ -133,12 +133,12 @@ def test_function_selection4():
     Z3 = zs3.reshape(X.shape)
     Z4 = zs4.reshape(X.shape)
     fig = plt.figure(1)
-#    ax1 = fig.add_subplot(111)
-    ax1 = Axes3D(fig)
+    ax1 = fig.add_subplot(111)
+#    ax1 = Axes3D(fig)
     ax1.hold(True)
-    ax1.plot_wireframe(X,Y,Z1,color='b')
-    ax1.plot_wireframe(X,Y,Z2,color='r')
-    ax1.plot_wireframe(X,Y,Z3,color='y')
+#    ax1.plot_wireframe(X,Y,Z1,color='b')
+#    ax1.plot_wireframe(X,Y,Z2,color='r')
+#    ax1.plot_wireframe(X,Y,Z3,color='y')
     cs1 = ax1.contour(X,Y,Z1,colors='b')
     cs2 = ax1.contour(X,Y,Z2,colors='r',levels=[0])
     cs3 = ax1.contour(X,Y,Z3,colors='y',levels=[0])
@@ -146,8 +146,9 @@ def test_function_selection4():
     plt.clabel(cs1, fontsize=9, inline=1)
     plt.clabel(cs2, fontsize=9, inline=1)
     plt.clabel(cs3, fontsize=9, inline=1)
-#    ax1.plot(rslt.x[0],rslt.x[1],'ro')
+    ax1.plot(rslt.x[0],rslt.x[1],'ro')
     plt.clabel(cs4, fontsize=9, inline=1)
+    ax1.axis([0,10,0,10])
     plt.show()
 
 if __name__=="__main__":

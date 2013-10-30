@@ -6,6 +6,7 @@ Created on Sun Oct 27 18:03:14 2013
 """
 import numpy as np
 from vcm import *
+from pyDOE import lhs, ff2n
 
 """
 exact solution: x1=0.8842, x2=1.1507, f=5.6683
@@ -137,6 +138,7 @@ def run_2d_unc():
         delta = trustRegion.adjust(rho,err)
         x0 = xnew
         niter +=1
+        if niter%5: print_header()
         print '%.4f\t%.4f\t'%(x0[0],x0[1]),'%.2f\t%.2e\t'%(rho,delta),'%.2e'%err
     fscaled.funcHi.display()
     fscaled.funcLo.display()
@@ -146,6 +148,80 @@ def exact_solution():
     rslt = minimize(currin,[.5,.5],method='SLSQP',bounds=((0.0,1.),(.0,1.)))
     print rslt
 
+def get_bounds(x0,delta,lb,ub):
+    bnds = list()
+    for i,xx in enumerate(x0):
+        bnd = (max([lb[i],xx-delta]),min([ub[i],xx+delta]))
+        bnds.append(bnd)
+    return bnds
+
+def numerical_example_2():
+    fHigh  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
+    fLow   = lambda x: x[0] + x[1]
+    g1High = lambda x: x[0]**2*x[1]/20. - 1
+    g1Low  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. - 2
+    g2     = lambda x: (x[0]+x[1]-5)**2/30 + (x[0]-x[1]-12)**2/120 - 1
+    
+    tol  = 1.0e-4
+    gtol = 1.0e-4
+    maxIter = 50
+    lb   = np.array([0.0,0.0])
+    ub   = np.array([10.,10.])
+    x0   = np.array([5.0,5.0])
+    nDoe = 2
+    
+    err = tol+1.
+    niter = 0
+    gConverged = False
+    xConverged = False
+    delta = min([min(xu-x,x-xl) for x,xu,xl in zip(x0,ub,lb)])
+    trustRegion = TrustRegionManagement(delta, 0.25, 0.75, 1.25, 0.3, 2.0)
+
+    xDoe = lhs(len(x0),nDoe)
+    #xDoe = ff2n(2)
+    xDoe = denormalize(xDoe,lb,ub,1)
+    fscaled = ScaledFunction(fLow, fHigh,0,'mult')
+    gscaled = ScaledFunction(g1Low, g1High,0,'add')
+
+    fscaled._initialize_by_doe_points(xDoe)
+    gscaled._initialize_by_doe_points(xDoe)
+    def print_header():
+        print 'x1\tx2\tf\trho\tdelta\terr\tgScaled\tgHigh'
+    while xConverged==False or gConverged==False:
+        fscaled.construct_scaling_model(x0)
+        gscaled.construct_scaling_model(x0)
+        bnds = get_bounds(x0,delta,lb,ub)
+        cnstr = ({'type':'ineq','fun':gscaled},{'type':'ineq','fun':g2})
+        rslt = minimize(fscaled,x0,method='SLSQP',bounds=bnds,constraints=cnstr,tol=1e-10)
+        xnew = rslt.x
+        fnew = rslt.fun
+        gScaledNew = gscaled(xnew)
+        rho1, fHighNew = fscaled.get_trust_region_ratio(xnew)
+        rho2, gHighNew = gscaled.get_trust_region_ratio(xnew)
+        rho = min([rho1,rho2])
+        err = np.linalg.norm([x0-xnew])
+
+        delta = trustRegion.adjust(rho,err)
+        x0 = xnew
+        if niter%5==0:
+            print_header()
+        print '%.4f\t%.4f\t%.4f\t'%(x0[0],x0[1],fnew),'%.2f\t%.2e\t'%(rho,delta),'%.2e'%err,'%.4f\t%.4f\t'%(gScaledNew,gHighNew)
+        niter += 1
+        
+        if err<=tol or niter>maxIter:
+            xConverged=True
+        else:
+            xConverged=False
+
+        if (-gtol<=gHighNew<=gtol and gScaledNew<=gtol) or (gHighNew>=0.0 and gScaledNew>gtol):
+            gConverged = True
+        else:
+            gConverged = False
+        #print xConverged, gConverged, xConverged and gConverged
+    fscaled.funcHi.display()
+    fscaled.funcLo.display()
+    gscaled.funcHi.display()
+    gscaled.funcLo.display()
 if __name__=="__main__":
     #run_2d_example()
-    exact_solution()
+    numerical_example_2()

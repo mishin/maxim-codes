@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import Rbf
 from scipy.optimize import minimize
+from miscTools import normalize, denormalize
 
 class TrustRegionManagement():
     def __init__(self,delta,eta1=0.25,eta2=0.75,eta3=1.25,c1=0.3,c2=2.0):
@@ -23,11 +24,11 @@ class TrustRegionManagement():
         if rho<=self.eta1 or rho>=self.eta3:
             deltaNew = self.deltaOld *self.c1
         elif self.eta2< rho <self.eta3:
-            deltaNew = self.deltaOld *self.c2
-#            if err==self.deltaOld:
-#                deltaNew = self.deltaOld *self.c2
-#            else:
-#                deltaNew = self.deltaOld
+#            deltaNew = self.deltaOld *self.c2
+            if err==self.deltaOld:
+                deltaNew = self.deltaOld *self.c2
+            else:
+                deltaNew = self.deltaOld
         else:
             deltaNew = self.deltaOld
         self.deltaOld = deltaNew

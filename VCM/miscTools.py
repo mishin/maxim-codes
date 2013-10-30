@@ -23,7 +23,7 @@ def normalize(X,lb,ub):
     #return (X-lb) / (ub-lb)
     return (2.*X-(lb+ub)) / (ub-lb)
 
-def denormalize(X,lb,ub):
+def denormalize(X,lb,ub,interval=0):
     """
     Denormalize variable or vector from [-1,1]
     
@@ -38,7 +38,10 @@ def denormalize(X,lb,ub):
         upper bound
     """
     #return (X+1.0)*(ub-lb)/2.0+lb
-    return 0.5* (X*(ub-lb) + (lb+ub))
+    if interval==0:
+        return 0.5* (X*(ub-lb) + (lb+ub))
+    else:
+        return X*(ub-lb)+lb
 
 def integrateRomberg(f,a,b,tolerance):
     """    
