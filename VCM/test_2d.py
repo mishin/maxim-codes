@@ -175,6 +175,7 @@ def numerical_example_2():
     lb   = np.array([0.0,0.0])
     ub   = np.array([10.,10.])
     x0   = np.array([5.0,5.0])
+    
     nDoe = 5 # nDoe>20 creates numerical noise and fails to converge
     
     err = tol+1.
@@ -231,6 +232,11 @@ def numerical_example_2():
     fscaled.funcLo.display()
     gscaled.funcHi.display()
     gscaled.funcLo.display()
+    print niter
+    
+    xexact = np.array([ 3.11388573,  2.06264578])
+    print np.linalg.norm(xexact-xnew)
+    print fnew-2.5367139107528409
 if __name__=="__main__":
     #run_2d_example()
     numerical_example_2()
