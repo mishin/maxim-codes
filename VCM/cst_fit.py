@@ -12,7 +12,8 @@ def cst_fit():
     import matplotlib.pyplot as plt
     
     af = airfoil.Airfoil()
-    af.read_txt('GA37A315.txt')
+    #af.read_txt('GA37A315.txt')
+    af.naca4(nPts=30)
     #af.naca4()
     up, lo = af.upPts, af.loPts
     args1 = up,lo
@@ -29,22 +30,22 @@ def cst_fit():
             sqErr += (afcst.loCurve(pt) - lo[i,1])**2.0
         return sqErr
     
-    bnds = ((0.1,0.3),(0.1,0.5),(0.1,0.5),(0.1,0.3),(-0.3,0.1),(-0.3,0.1),(-0.3,0.1))
-    rslt = minimize(_obj,x0=0.2*ones(7),bounds=bnds,method='SLSQP',args=args1)
+    bnds = ((0.0,1.0),(0.0,1.0),(0.0,1.0),(0.0,1.0),(-1.0,0.0),(-1.0,0.0),(-1.0,0.0))
+    rslt = minimize(_obj,x0=0.1*ones(7),bounds=bnds,method='SLSQP',args=args1)
     xnew = rslt.x
     print rslt
     
-    xnew[:4] += +0.075
-    xnew[4:] += -0.075
+    #xnew[:4] += +0.075
+    #xnew[4:] += -0.075
     print xnew
     afnew = airfoil.cst(xnew[0:4],[-xnew[0],xnew[4],xnew[5],xnew[6]])
     
     plt.figure(1)
-    plt.plot(af.coord[:,0],af.coord[:,1],'b-')
+    plt.plot(af.coord[:,0],af.coord[:,1],'bo-')
     plt.grid(True)
     plt.hold(True)
     plt.axis('equal')
-    plt.plot(afnew.coord[:,0],afnew.coord[:,1],'r-')
+    plt.plot(afnew.coord[:,0],afnew.coord[:,1],'ro-')
     plt.show()
 
 
