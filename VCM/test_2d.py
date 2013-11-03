@@ -8,6 +8,8 @@ import numpy as np
 from vcm import *
 from pyDOE import lhs, ff2n
 from tmp_doe import read_samples
+import matplotlib.pyplot as plt
+
 """
 exact solution: x1=0.8842, x2=1.1507, f=5.6683
 """
@@ -161,6 +163,8 @@ def ForresterFunc(x):
 def numerical_example_2():
 #    fHigh  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
 #    fLow   = lambda x: x[0] + x[1]
+
+    
     def fHigh(x):
         x = 0.1*x
         return ForresterFunc(np.linalg.norm(x)/1.2)+5.*(x[0]+x[1])
@@ -176,7 +180,19 @@ def numerical_example_2():
     ub   = np.array([10.,10.])
     x0   = np.array([5.0,5.0])
     
-    nDoe = 5 # nDoe>20 creates numerical noise and fails to converge
+    dx = 0.1
+    xmsh = ymsh = np.arange(-0.5,10.5,dx)
+    Xmsh, Ymsh = np.meshgrid(xmsh,ymsh)
+    zs1 = np.array([fHigh(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+    zs2 = np.array([g1High(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+    zs3 = np.array([g2(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+    Z1 = zs1.reshape(Xmsh.shape)
+    Z2 = zs2.reshape(Xmsh.shape)
+    Z3 = zs3.reshape(Xmsh.shape)
+    
+
+    #plt.show()
+    nDoe = 4 # nDoe>20 creates numerical noise and fails to converge
     
     err = tol+1.
     niter = 0
@@ -190,11 +206,11 @@ def numerical_example_2():
     xDoe = read_samples()
     xDoe = denormalize(xDoe[:nDoe+1],lb,ub,1)
     print xDoe
-    fscaled = ScaledFunction(fLow, fHigh,0,'add')
-    gscaled = ScaledFunction(g1Low, g1High,0,'add')
+    fscaled = ScaledFunction(fLow, fHigh,500,'add')
+    gscaled = ScaledFunction(g1Low, g1High,500,'add')
 
-    fscaled._initialize_by_doe_points(xDoe)
-    gscaled._initialize_by_doe_points(xDoe)
+    #fscaled._initialize_by_doe_points(xDoe)
+    #gscaled._initialize_by_doe_points(xDoe)
     def print_header():
         print 'x1\tx2\tf\trho\tdelta\terr\tgScaled\tgHigh'
     while xConverged==False or gConverged==False:
@@ -227,6 +243,26 @@ def numerical_example_2():
             gConverged = True
         else:
             gConverged = False
+        xbounds = np.array([bnds[0][0],bnds[0][0],bnds[0][1],bnds[0][1],bnds[0][0]])
+        ybounds = np.array([bnds[1][0],bnds[1][1],bnds[1][1],bnds[1][0],bnds[1][0]])
+        fig = plt.figure(1)
+        ax = fig.add_subplot(111)
+        ax.hold(True)
+        zs4 = np.array([fscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+        zs5 = np.array([gscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+        Z4 = zs4.reshape(Xmsh.shape)
+        Z5 = zs5.reshape(Xmsh.shape)
+        cs1 = ax.contour(Xmsh,Ymsh,Z1,colors='r',levels=[0,2,4,6,9,12,15])
+        ax.contour(Xmsh,Ymsh,Z2,colors='b',levels=[0])
+        ax.contour(Xmsh,Ymsh,Z3,colors='k',levels=[0])
+        cs2 = ax.contour(Xmsh,Ymsh,Z4,colors='g',levels=[0,2,4,6,9,12,15])
+        ax.contour(Xmsh,Ymsh,Z5,colors='y',levels=[0])
+        ax.plot(np.array(fscaled.xPrev)[:,0],np.array(fscaled.xPrev)[:,1],'bo')
+        ax.plot(xbounds,ybounds,'k--')
+        plt.clabel(cs1, fontsize=9, inline=1)
+        plt.clabel(cs2, fontsize=9, inline=1)
+        plt.show()
+        plt.cla()
         #print xConverged, gConverged, xConverged and gConverged
     fscaled.funcHi.display()
     fscaled.funcLo.display()
