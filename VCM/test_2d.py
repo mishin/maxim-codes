@@ -206,11 +206,11 @@ def numerical_example_2():
     xDoe = read_samples()
     xDoe = denormalize(xDoe[:nDoe+1],lb,ub,1)
     print xDoe
-    fscaled = ScaledFunction(fLow, fHigh,500,'add')
-    gscaled = ScaledFunction(g1Low, g1High,500,'add')
+    fscaled = ScaledFunction(fLow, fHigh,0,'add')
+    gscaled = ScaledFunction(g1Low, g1High,0,'add')
 
-    #fscaled._initialize_by_doe_points(xDoe)
-    #gscaled._initialize_by_doe_points(xDoe)
+    fscaled._initialize_by_doe_points(xDoe)
+    gscaled._initialize_by_doe_points(xDoe)
     def print_header():
         print 'x1\tx2\tf\trho\tdelta\terr\tgScaled\tgHigh'
     while xConverged==False or gConverged==False:
@@ -253,15 +253,23 @@ def numerical_example_2():
         Z4 = zs4.reshape(Xmsh.shape)
         Z5 = zs5.reshape(Xmsh.shape)
         cs1 = ax.contour(Xmsh,Ymsh,Z1,colors='m',levels=[0,2,4,6,9,12,15])
-        ax.contour(Xmsh,Ymsh,Z2,colors='b',levels=[0])
+        ax.contour(Xmsh,Ymsh,Z2,colors='r',levels=[0])
         ax.contour(Xmsh,Ymsh,Z3,colors='k',levels=[0])
         cs2 = ax.contour(Xmsh,Ymsh,Z4,colors='g',levels=[0,2,4,6,9,12,15])
-        ax.contour(Xmsh,Ymsh,Z5,colors='r',levels=[0])
-        ax.plot(np.array(fscaled.xPrev)[:,0],np.array(fscaled.xPrev)[:,1],'bo')
+        ax.contour(Xmsh,Ymsh,Z5,colors='b',levels=[0])
+        tmpx, tmpy = [-5,-5],[1,2]
+        ax.plot(tmpx,tmpy,'m')
+        ax.plot(tmpx,tmpy,'g')
+        ax.plot(tmpx,tmpy,'r')
+        ax.plot(tmpx,tmpy,'b')
+        ax.plot(tmpx,tmpy,'k')
+        ax.plot(np.array(fscaled.xPrev)[:,0],np.array(fscaled.xPrev)[:,1],'ko')
         ax.plot(xbounds,ybounds,'k--')
+        ax.axis([-0.5,10.5,-0.5,10.5])
         plt.clabel(cs1, fontsize=9, inline=1)
         plt.clabel(cs2, fontsize=9, inline=1)
-        plt.legend(['Hifi objective','Lowfi objective','Hifi constraint 1','Lofi constraint 1','constraint 2'])
+        
+        plt.legend(['Hifi objective','Lowfi objective','Hifi constraint 1','Lofi constraint 1','constraint 2','Hifi sample points','Bounds'])
         plt.show()
         plt.cla()
         #print xConverged, gConverged, xConverged and gConverged

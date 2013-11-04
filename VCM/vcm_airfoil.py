@@ -72,15 +72,19 @@ class AirfoilAnalysis:
     
     def _run_cfd(self,x,cnstr=True):
         self._upd_cst(x)
-        alphaSeq = array([10.,12,14,16,18])
+        #alphaSeq = array([10.,12,14,16,18])
+        alphaSeq = array([0.0,2.0,4.0])
         #alphaSeq = array([12,18])
         path = paths.CFD_paths()
-        landing = Flight_conditions(0.0,30.0)
+        landing = Flight_conditions(1500.0,30.0)
+        V = landing.ISA.soundSpeed*0.6
+        landing = Flight_conditions(1500,V)
         self.af.create_af_CAT(save=path.file_igs)
         Airfoil_mesh(path,landing)
         Airfoil_mesh.yplus_wall = 1.0
         fluent = Solver(path,landing)
-        fluent.turb_model = 'ke-realizable'
+        #fluent.turb_model = 'ke-realizable'
+        fluent.turb_model = 'spalart-allmaras'
         for alpha in alphaSeq:
             fluent.run_fluent(alpha)
         print fluent.alpha
@@ -114,7 +118,7 @@ def run_doe_cfd():
 
     aa = AirfoilAnalysis()
     clmax = zeros(len(x))
-    clmaxPath = 'DOE_clmax_GA37A135.txt'
+    clmaxPath = 'DOE_clmax_GA37A135_.txt'
     fid = open(clmaxPath,'wt')
     fid.write('Iter\tclmax\n')
     fid.close()
@@ -125,7 +129,7 @@ def run_doe_cfd():
     for i,xx in enumerate(x):
         clmax[i] = aa._run_cfd(xx,False)
         print '%d\t%.8f'%(i,clmax[i])
-        aa.af.write_polar_txt('DOE_polar_%d.txt'%i)
+        aa.af.write_polar_txt('_DOE_polar_%d.txt'%i)
         fid = open(clmaxPath,'a')
         fid.write('%d\t%.8f\n'%(i+1,clmax[i]))
         fid.close()
@@ -237,5 +241,5 @@ def plot_result_af():
     
 if __name__=="__main__":
     #vcm_airfoil_optimization()
-    vcm_airfoil_optimization()
-    #run_doe_cfd()
+    #vcm_airfoil_optimization()
+    run_doe_cfd()
