@@ -104,6 +104,7 @@ class CFD_paths:
         self.tmpdir = self.wdir + '\\temp'
         self.templates = self.wdir + '\\templates'
         self.template_pw = self.templates + '\\meshJournalTemplate.glf'
+        self.template_pw2 = self.templates + '\\CmeshJournalTemplate.glf'
         self.template_fl = self.templates + '\\fluentJournalTemplate.jou'
         self.set_name()
         
