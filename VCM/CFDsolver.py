@@ -31,9 +31,9 @@ class Airfoil_mesh():
         self.dsTE = 1e-3
         self.dsFarfield = 1.
         self.dsTop = 1e-2
-        self.afPt = 101
+        self.afPt = 75
         self.Ypt = 75
-        self.Xpt = 101
+        self.Xpt = 75
         self.yplus_wall = 1.
         self.flight_cond = flight_conditions
         

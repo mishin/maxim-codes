@@ -73,12 +73,12 @@ class AirfoilAnalysis:
     def _run_cfd(self,x,cnstr=True):
         self._upd_cst(x)
         #alphaSeq = array([10.,12,14,16,18])
-        alphaSeq = array([0.0,2.0,4.0])
+        alphaSeq = array([2.0])
         #alphaSeq = array([12,18])
         path = paths.CFD_paths()
-        landing = Flight_conditions(1500.0,30.0)
-        V = landing.ISA.soundSpeed*0.6
-        landing = Flight_conditions(1500,V)
+        landing = Flight_conditions(0.0,30.0)
+        V = landing.ISA.soundSpeed*0.73
+        landing = Flight_conditions(0.0,V)
         self.af.create_af_CAT(save=path.file_igs)
         Airfoil_mesh(path,landing)
         Airfoil_mesh.yplus_wall = 1.0
@@ -122,7 +122,8 @@ def run_doe_cfd():
     fid = open(clmaxPath,'wt')
     fid.write('Iter\tclmax\n')
     fid.close()
-    x0 = array([0.15698354,0.33401813,0.26014472,0.19706849,-0.07133321,-0.19505543,-0.04984327])
+    #x0 = array([0.15698354,0.33401813,0.26014472,0.19706849,-0.07133321,-0.19505543,-0.04984327])
+    x0 = array([0.119087477, 0.160950359,0.203634413,0.192468212, -0.200580639, -0.126010045, 0.107256400e-18])
     dx = 0.075
     aa.ub = x0+dx
     aa.lb = x0-dx

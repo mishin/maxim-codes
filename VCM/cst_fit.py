@@ -12,8 +12,9 @@ def cst_fit():
     import matplotlib.pyplot as plt
     
     af = airfoil.Airfoil()
-    #af.read_txt('GA37A315.txt')
-    af.naca4(nPts=30)
+    af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
+    print af.coord
+    #af.naca4(nPts=30)
     #af.naca4()
     up, lo = af.upPts, af.loPts
     args1 = up,lo
