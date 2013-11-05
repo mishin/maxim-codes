@@ -53,6 +53,14 @@ class FlightConditions:
         self.__init__(self.speed,altitude,self.atmosphere.dT,self.refLength)
     def set_ref_length(self,refLength):
         self.__init__(self.speed,self.atmosphere.altitude,self.atmosphere.dT,float(refLength))
+    
+    def get_wall_spacing(self,yplus=1.0):
+        Cf = 0.026 / (self.Re**(1/7))
+        rho = self.atmosphere.density
+        tauWall = Cf*rho * self.velocity**2/2
+        Ufric = (tauWall/rho)**0.5
+        ds = yplus*self.atmosphere.viscosity / (Ufric*rho)
+        return ds
 
 class ISAtmosphere:
     def __init__(self, altitude, dT=0, gas='air'):
