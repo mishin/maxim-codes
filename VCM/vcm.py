@@ -24,11 +24,12 @@ class TrustRegionManagement():
         if rho<=self.eta1 or rho>=self.eta3:
             deltaNew = self.deltaOld *self.c1
         elif self.eta2< rho <self.eta3:
-#            deltaNew = self.deltaOld *self.c2
-            if err==self.deltaOld:
-                deltaNew = self.deltaOld *self.c2
-            else:
-                deltaNew = self.deltaOld
+            deltaNew = self.deltaOld *self.c2
+#            if err==self.deltaOld:
+#                #FIXME: there is no need in keeping same delta if approximation is good
+#                deltaNew = self.deltaOld *self.c2
+#            else:
+#                deltaNew = self.deltaOld
         else:
             deltaNew = self.deltaOld
         self.deltaOld = deltaNew
@@ -100,6 +101,10 @@ class TestFunction():
 
 
 class HybridScaledFunction():
+    """
+    weight = 1.0 - multiplicative
+    weight = 0.0 - additive
+    """
     def __init__(self,funcLo,funcHi,minXnum=4,weight=0.5):
         self.w = weight
         self.nEval = 0

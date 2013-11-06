@@ -154,9 +154,13 @@ def test_function_selection4():
 def test_function_selection5():
     forrester = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
     def f(x):
-        x = np.array(x)*0.1
-        return forrester(np.linalg.norm(x)/1.2)+5.*(x[0]+x[1])
-    f2 = lambda x: np.exp(x[0]/3)+np.exp(x[1]/5)-x[0]
+        x = np.array(x)*0.08
+        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x) + 10.*(x[0]+x[1])
+    def f2(x):
+        x = np.array(x)*0.085
+        return forrester(np.linalg.norm(x))
+
+    #f2 = lambda x: np.exp(x[0]/3)+np.exp(x[1]/5)-x[0]
     lb = [0, 0.0]
     ub = [10., 10.]
     dx = 0.5
@@ -171,14 +175,16 @@ def test_function_selection5():
     ax1 = fig.add_subplot(111)
     #ax1 = Axes3D(fig)
     #ax1.plot_wireframe(X,Y,Z1)
-    cs1 = ax1.contour(X,Y,Z1,levels=np.arange(0,20,1))
+    cs1 = ax1.contour(X,Y,Z1,levels=np.arange(0,20,1),colors='r')
+    cs1 = ax1.contour(X,Y,Z2,levels=np.arange(0,20,1),colors='b')
     plt.clabel(cs1)
     
     fig2 = plt.figure(2)
     ax2 = Axes3D(fig2)
     ax2.hold(True)
-    ax2.plot_wireframe(X,Y,Z1,color='y')
-    ax2.plot_wireframe(X,Y,Z2,color='r')
+    ax2.plot_wireframe(X,Y,Z1,color='r')
+    ax2.plot_wireframe(X,Y,Z2,color='b')
+    ax2.legend(['High fidelity function','Low fidelity function'])
     plt.show()
 
 if __name__=="__main__":

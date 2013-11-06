@@ -153,9 +153,9 @@ def exact_solution():
 def get_bounds(x0,delta,lb,ub):
     bnds = list()
     for i,xx in enumerate(x0):
-        bnd = (max([lb[i],xx-delta]),min([ub[i],xx+delta]))
+        bnd = [max([lb[i],xx-delta]),min([ub[i],xx+delta])]
         bnds.append(bnd)
-    return bnds
+    return array(bnds,dtype=float)
 
 def ForresterFunc(x):
     return (5.0*x-2.)**2*sin(12.*x-4)
@@ -165,14 +165,21 @@ def numerical_example_2():
 #    fLow   = lambda x: x[0] + x[1]
 
     
-    def fHigh(x):
-        x = 0.1*x
-        return ForresterFunc(np.linalg.norm(x)/1.2)+5.*(x[0]+x[1])
-    fLow  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
+#    def fHigh(x):
+#        x = 0.1*x
+#        return ForresterFunc(np.linalg.norm(x)/1.2)+5.*(x[0]+x[1])
+#    fLow  = lambda x: np.exp(x[0]/3) + np.exp(x[1]/5) - x[0]
     g1High = lambda x: x[0]**2*x[1]/20. - 1
     g1Low  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. - 2
     g2     = lambda x: (x[0]+x[1]-5)**2/30 + (x[0]-x[1]-12)**2/120 - 1
     
+    forrester = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
+    def fHigh(x):
+        x = np.array(x)*0.08
+        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x) + 10.*(x[0]+x[1])
+    def fLow(x):
+        x = np.array(x)*0.085
+        return forrester(np.linalg.norm(x)) + 1.*np.linalg.norm(x)
     tol  = 1.0e-4
     gtol = 1.0e-4
     maxIter = 50
@@ -192,7 +199,7 @@ def numerical_example_2():
     
 
     #plt.show()
-    nDoe = 4 # nDoe>20 creates numerical noise and fails to converge
+    #nDoe = 5 # nDoe>20 creates numerical noise and fails to converge
     
     err = tol+1.
     niter = 0
@@ -203,8 +210,9 @@ def numerical_example_2():
 
     #xDoe = lhs(len(x0),nDoe)
     #xDoe = ff2n(2)
-    xDoe = read_samples()
-    xDoe = denormalize(xDoe[:nDoe+1],lb,ub,1)
+    xDoe = read_samples('2DLHC.txt')
+    #xDoe = read_samples()
+    xDoe = denormalize(xDoe,lb,ub,1)
     print xDoe
     fscaled = ScaledFunction(fLow, fHigh,0,'add')
     gscaled = ScaledFunction(g1Low, g1High,0,'add')
@@ -252,11 +260,11 @@ def numerical_example_2():
         zs5 = np.array([gscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
         Z4 = zs4.reshape(Xmsh.shape)
         Z5 = zs5.reshape(Xmsh.shape)
-        cs1 = ax.contour(Xmsh,Ymsh,Z1,colors='m',levels=[0,2,4,6,9,12,15])
+        cs1 = ax.contour(Xmsh,Ymsh,Z1,colors='m')#,levels=[0,2,4,6,9,12,15]
         ax.contour(Xmsh,Ymsh,Z2,colors='r',levels=[0])
         ax.contour(Xmsh,Ymsh,Z3,colors='k',levels=[0])
-        cs2 = ax.contour(Xmsh,Ymsh,Z4,colors='g',levels=[0,2,4,6,9,12,15])
-        ax.contour(Xmsh,Ymsh,Z5,colors='b',levels=[0])
+        cs2 = ax.contour(Xmsh,Ymsh,Z4,colors='g')
+        cs3 = ax.contour(Xmsh,Ymsh,Z5,colors='b',levels=[0])
         tmpx, tmpy = [-5,-5],[1,2]
         ax.plot(tmpx,tmpy,'m')
         ax.plot(tmpx,tmpy,'g')
@@ -268,8 +276,9 @@ def numerical_example_2():
         ax.axis([-0.5,10.5,-0.5,10.5])
         plt.clabel(cs1, fontsize=9, inline=1)
         plt.clabel(cs2, fontsize=9, inline=1)
-        
-        plt.legend(['Hifi objective','Lowfi objective','Hifi constraint 1','Lofi constraint 1','constraint 2','Hifi sample points','Bounds'])
+        #plt.clabel(cs3, fontsize=9, inline=1)
+        ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        plt.legend(['Hifi objective','Lowfi objective','Hifi constraint 1','Lofi constraint 1','constraint 2','Hifi sample points','Trust region'])
         plt.show()
         plt.cla()
         #print xConverged, gConverged, xConverged and gConverged
