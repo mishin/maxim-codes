@@ -5,20 +5,22 @@ Created on Thu Oct 17 22:55:54 2013
 @author: Maxim
 """
 from numpy import array, arange
-from pointwise_mesh import AirfoilMesh
+from pointwise_mesh import AirfoilCMesh, AirfoilOMesh
 from paths import CFD_paths
 import airfoil
 from FlightConditions import FlightConditions
 from fluent_solver import FluentAirfoil
 
 class CFDsolver():
-    def __init__(self,airfoil,flightConditions,yplus=1.0):
+    def __init__(self,airfoil,flightConditions,yplus=1.0,mesh='C'):
         self.af = airfoil
         self.fc = flightConditions
         self.paths = CFD_paths()
         self._caseFilePath = self.paths.file_cas
-        self.mesh = AirfoilMesh(airfoil,dSwall=self.fc.get_wall_spacing(yplus))
-        #self.mesh.create(self.paths.file_glf,self._caseFilePath)
+        if mesh=='C':
+            self.mesh = AirfoilCMesh(airfoil,dsWall=self.fc.get_wall_spacing(yplus))
+        elif mesh=='O':
+            self.mesh = AirfoilOMesh(airfoil,dsWall=self.fc.get_wall_spacing(yplus))
         self.fluent = FluentAirfoil()
     
     def create_mesh(self):
@@ -63,6 +65,23 @@ def run_debug1():
     print lowFidelity
     print highFidelity
 
+def run_o_mesh():
+    af = airfoil.Airfoil()
+    Au = array([0.119087477, 0.160950359,0.203634413,0.192468212])
+    Al = array([-0.119087477, -0.200580639, -0.126010045, 0.107256400e-18])
+    af.create_CST(Au,Al)
+    fc = FlightConditions(0.0,9e3)
+    V = fc.atmosphere.soundSpeed * 0.73
+    fc = FlightConditions(V,9e3)
+    fc.atmosphere.pressure
+    solver = CFDsolver(af,fc,100,mesh='O')
+    solver.fluent.residuals['energy']=1e-5
+    solver.fluent.relaxationFactor['xvelocity'] = 1e-3
+    solver.mesh._airfoilPts = 100
+    solver.mesh._interiorPts = 100
+    solver.mesh._dsTE = 1e-4
+    lowFidelity = solver.run_for_single_aoa(0.0,iterMax=10000,turbulenceModel='ke-realizable')
+    print lowFidelity
 
 if __name__=="__main__":
-    run_debug1()
+    run_o_mesh()
