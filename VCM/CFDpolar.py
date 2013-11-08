@@ -18,26 +18,51 @@ class CFDsolver():
         self.paths = CFD_paths()
         self._caseFilePath = self.paths.file_cas
         self.mesh = AirfoilMesh(airfoil,dSwall=self.fc.get_wall_spacing(yplus))
-        self.mesh.create(self.paths.file_glf,self._caseFilePath)
+        #self.mesh.create(self.paths.file_glf,self._caseFilePath)
         self.fluent = FluentAirfoil()
     
+    def create_mesh(self):
+        self.mesh.create(self.paths.file_glf,self._caseFilePath)
+
     def run_for_multiple_aoa(self,alphaSequence=arange(-5,20,3),Cp=False):
         for alpha in alphaSequence:
             self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,Cp)
     
-    def run_for_single_aoa(self,alpha=0.0):
-        self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,Cp)
+    def run_for_single_aoa(self,alpha=0.0,turbulenceModel='SA',Cp=False,iterMax=5000):
+        result = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax)
+        return result
 
 def run_debug1():
     af = airfoil.Airfoil()
     #af.read_txt('GA37A315.txt')
-    af.naca4()
-    fc = FlightConditions(250,3e3)
+    Au = array([0.119087477, 0.160950359,0.203634413,0.192468212])
+    Al = array([-0.119087477, -0.200580639, -0.126010045, 0.107256400e-18])
+    af.create_CST(Au,Al)
+    fc = FlightConditions(0.0,9e3)
+    V = fc.atmosphere.soundSpeed * 0.78
+    fc = FlightConditions(V,9e3)
     fc.atmosphere.pressure
-    solver = CFDsolver(af,fc)
-    solver.fluent.residuals['energy']=1e-3
-    solver.fluent._create_journal_file(3,fc,turbulenceModel='ke-realizable')
-    
+    solver = CFDsolver(af,fc,100)
+    solver.fluent.residuals['energy']=1e-4
+    solver.fluent.relaxationFactor['xvelocity'] = 1e-3
+    solver.mesh._airfoilPts = 50
+    solver.mesh._yfarfieldPts = 33
+    solver.mesh._xfarfieldPts = 50
+    solver.mesh._frontFarfieldSpacing = 0.1
+    solver.mesh._farfieldSpacing = 1.0
+    solver.create_mesh()
+    lowFidelity = solver.run_for_single_aoa(0.0,iterMax=10000,turbulenceModel='ke-realizable')
+    solver2 = CFDsolver(af,fc,10.0)
+    solver2.mesh._airfoilPts = 100
+    solver2.mesh._xfarfieldPts = 100
+    solver2.mesh._yfarfieldPts = 100
+    solver2.mesh._farfieldSpacing = 1.0
+    solver2.mesh._frontFarfieldSpacing = 0.1
+    solver2.create_mesh()
+    highFidelity = solver2.run_for_single_aoa(0.0,iterMax=10000,turbulenceModel='ke-realizable')
+    print lowFidelity
+    print highFidelity
+
 
 if __name__=="__main__":
     run_debug1()

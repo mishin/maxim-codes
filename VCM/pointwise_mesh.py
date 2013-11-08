@@ -30,9 +30,9 @@ class AirfoilMesh():
         self._xfarfield = 20.0
         self._yfarfield = 15.0
         self._airfoilPts = 100
-        self._xfarfieldPts = 75
-        self._yfarfieldPts = 75
-        self._wallSpacing = 1e-4
+        self._xfarfieldPts = 100
+        self._yfarfieldPts = 100
+        self._wallSpacing = 1e-5
         self._farfieldSpacing = 1.0
         self._leSpacing = 1e-3
         self._teSpacing = 1e-3

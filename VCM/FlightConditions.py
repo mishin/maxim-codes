@@ -46,6 +46,10 @@ class FlightConditions:
         sets new speed
         """
         self.__init__(float(speed),self.atmosphere.altitude,self.atmosphere.dT,self.refLength)
+    
+    def set_mach_number(self,Mach):
+        a = self.atmosphere.soundSpeed
+        self.__init__(a*Mach,self.atmosphere.altitude,self.atmosphere.dT,self.refLength)
     def set_altitude(self,altitude):
         """
         sets new altitude. Atmosphere parameters are recalculated using new altitude.

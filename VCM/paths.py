@@ -128,10 +128,11 @@ class CFD_paths:
         self.file_cd_hist = self._work_file('cd', alpha)
         self.file_cm_hist = self._work_file('cm', alpha)
         self.file_cp_dist = self._work_file('cp', alpha)
+        self.list_hist_files = [self.file_cl_hist, self.file_cd_hist, self.file_cm_hist]
     
     def clean(self):
         os.remove(self.file_cas)
-        os.remove(self.file_igs)
+        #os.remove(self.file_igs)
         os.remove(self.file_glf)
         os.remove(self.file_jou)
 
