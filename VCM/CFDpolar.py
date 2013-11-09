@@ -80,7 +80,7 @@ def run_o_mesh():
     solver.mesh._airfoilPts = 100
     solver.mesh._interiorPts = 100
     solver.mesh._dsTE = 1e-4
-    lowFidelity = solver.run_for_single_aoa(0.0,iterMax=10000,turbulenceModel='ke-realizable')
+    lowFidelity = solver.run_for_single_aoa(2.0,iterMax=10000,turbulenceModel='ke-realizable')
     print lowFidelity
 
 if __name__=="__main__":

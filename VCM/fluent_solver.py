@@ -44,6 +44,8 @@ class FluentAirfoil():
     
     def _create_journal_file(self,alpha,flightConditions,caseFilePath=None,turbulenceModel='SA',Cp=False,
                              journalPath=None,outputDirectory=None):
+        ffbc = 'bc-3-5'
+        wallbc = 'bc-2-4'
         if outputDirectory==None:
             outputDirectory = self.paths.tmpdir
         if journalPath==None:
@@ -69,7 +71,7 @@ class FluentAirfoil():
         script.write('1.716e-05\n273.11\n110.56\n')
         script.write('no\nno\nno\n')
         script.write('/define/boundary-conditions/pressure-far-field/\n')
-        script.write('bc-3-4\n')
+        script.write('%s\n'%ffbc)
         script.write('no\n')
         script.write('%.2f\n'%flightConditions.atmosphere.pressure)
         script.write('no\n%.6f\n'%flightConditions.Mach)
@@ -83,23 +85,23 @@ class FluentAirfoil():
         for resid in self.residualsInput[turbulenceModel]:
             script.write('%.4e\n'%self.residuals[resid])
         script.write('/solve/monitors/force/drag-coefficient\n')
-        script.write('yes\nbc-2-5\n\nno\nyes\n')
+        script.write('yes\n%s\n\nno\nyes\n'%wallbc)
         script.write('\"%s\"\nno\nno\n'%self.paths.file_cd_hist)
         script.write('%.10f\n'%freestream[0])
         script.write('%.10f\n'%freestream[1])
         script.write('/solve/monitors/force/lift-coefficient\n')
-        script.write('yes\nbc-2-5\n\nno\nyes\n')
+        script.write('yes\n%s\n\nno\nyes\n'%wallbc)
         script.write('\"%s\"\nno\nno\n'%self.paths.file_cl_hist)
         script.write('%.10f\n'%(-freestream[1]))
         script.write('%.10f\n'%freestream[0])
         script.write('/solve/monitors/force/moment-coefficient\n')
-        script.write('yes\nbc-2-5\n\nno\nyes\n')
+        script.write('yes\n%s\n\nno\nyes\n'%wallbc)
         script.write('\"%s\"\nno\nno\n'%self.paths.file_cm_hist)
         script.write('%.4f\n'%self.momentAxis[0])
         script.write('%.4f\n'%self.momentAxis[1])
         script.write('0\n0\n1\n')
-        script.write('/report/reference-values/compute/pressure-far-field\nbc-3-4\n')
-        script.write('/solve/initialize/compute-defaults/pressure-far-field\nbc-3-4\n')
+        script.write('/report/reference-values/compute/pressure-far-field\n%s\n'%ffbc)
+        script.write('/solve/initialize/compute-defaults/pressure-far-field\n%s\n'%ffbc)
         script.write('/solve/iterate\n')
         script.write('%d\n'%self.iterMax)
         script.write('\nexit\nok\n')
