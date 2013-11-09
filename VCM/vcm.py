@@ -166,6 +166,7 @@ class ScaledFunction():
         self.nMin = minXnum
         self.oneDim = False
         self.type = scalingType
+        self.dx = 1e-3
 
     def construct_scaling_model(self,x0,f0=None):
         if hasattr(x0,'__iter__'):
@@ -201,17 +202,24 @@ class ScaledFunction():
             xrbf = xrbf + (self.betaPrev,)
             self.beta = RbfMod(xrbf)
     
-    def _initialize_by_doe_points(self,xnew,fnew=None):
+    def _initialize_by_doe_points(self,xnew,fnew=None,flow=None):
         print '--> initializing points'
         if fnew==None:
             fnew = list()
             for i,xx in enumerate(xnew):
                 fnew.append(self.funcHi(xx))
-        for _f,_x in zip(fnew,xnew):
-            self.fPrev.append(_f)
-            self.xPrev.append(_x)
-            beta = self.get_beta(_x,_f)
-            self.betaPrev.append(beta)
+        if flow==None:
+            for _f,_x in zip(fnew,xnew):
+                self.fPrev.append(_f)
+                self.xPrev.append(_x)
+                beta = self.get_beta(_x,_f)
+                self.betaPrev.append(beta)
+        else:
+            for _f,_x,_flow in zip(fnew,xnew,flow):
+                self.fPrev.append(_f)
+                self.xPrev.append(_x)
+                beta = self.get_beta(_x,_f,_flow)
+                self.betaPrev.append(beta)
         print '\n--> initialization completed'
 
     def __call__(self,x):
@@ -220,6 +228,17 @@ class ScaledFunction():
             return self.beta(x) + self.funcLo(x)
         elif self.type=='mult':
             return self.beta(x) * self.funcLo(x)
+        
+    def derivative(self,x,dx=None):
+        if dx==None:
+            dx = self.dx
+        grad = zeros(len(x))
+        fval = self.__call__(x)
+        for i,xx in enumerate(x):
+            X = copy(x)
+            X[i] = X[i]+dx
+            grad[i] = (self.__call__(X)-fval)/dx
+        return grad
     
     def get_trust_region_ratio(self,x,fHi=None):
         if fHi==None:
@@ -232,13 +251,15 @@ class ScaledFunction():
             rho = (fScaled0 - fHi) / (fScaled0 - fScaled)
             return rho,fHi
     
-    def get_beta(self,x,fHi=None):
+    def get_beta(self,x,fHi=None,fLow=None):
         if fHi==None:
             fHi = self.funcHi(x)
+        if fLow==None:
+            fLow = self.funcLo(x)
         if self.type=='add':
-            return fHi - self.funcLo(x)
+            return fHi - fLow
         elif self.type=='mult':
-            return fHi / self.funcLo(x)
+            return fHi / fLow
 
 class VCMoptimization:
     """variables will be normalized

@@ -18,6 +18,7 @@ class FluentOutput():
         self.cd = 0.0
         self.cm = 0.0
         self.cp = list()
+        self.LD = 0.0
     
     def __repr__(self):
         out = 'Mach = %.4f\n'
@@ -151,6 +152,7 @@ class FluentAirfoil():
         self.result.cl = result[0]
         self.result.cd = result[1]
         self.result.cm = result[2]
+        self.result.LD = result[0]/result[1]
 
     def _read_history_file(self,histFilePath):
         fid = open(histFilePath,'rt')
