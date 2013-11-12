@@ -1,0 +1,17 @@
+﻿0.0516323856948 0.009 0.0208059550535 -53.5311921115 0.000867
+Function evaluations: 8
+Gradient evaluations: 0
+Function evaluations: 342
+Gradient evaluations: 0
+Function evaluations: 8
+Gradient evaluations: 0
+Function evaluations: 350
+Gradient evaluations: 0
+[ 0.12071848  0.13529101  0.1749148   0.14246778 -0.15070396 -0.17601022
+ -0.04001307]
+-53.9738233261
+-53.5311921115
+0.000867
+0.0302392274266
+
+total time: 6hours 28min
