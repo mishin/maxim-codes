@@ -184,11 +184,13 @@ def get_bounds(x0,delta,lb,ub):
 
 def transonic_airfoil_design():
     x0 = array([1.19087477e-01,1.60950359e-01,2.03634413e-01,1.92468212e-01,-2.00580639e-01,-1.26010045e-01,1.07256400e-18])
-    lb = x0 - 0.075
-    ub = x0 + 0.075
+    lbDoe = x0 - 0.075
+    ubDoe = x0 + 0.075
+    lb = x0 - 0.05
+    ub = x0 + 0.05
     histPath = 'transonic_airfoil_design_history.txt'
     xDoe = read_samples('LHC_transonic_af.txt')
-    xDoe = (xDoe+1.0)/2.0*(ub-lb)+lb
+    xDoe = (xDoe+1.0)/2.0*(ubDoe-lbDoe)+lbDoe
     aa = AirfoilAnalysis()
     err = 1.0e-3
     tol = err+1.0
@@ -239,7 +241,7 @@ def transonic_airfoil_design():
         fid.write('%.4f\t'%fHighNew)
         fid.write('%.4f\n'%gHighNew)
         fid.close()
-
+        gScaledNew = gscaled(xnew)
         if (-gtol<=gHighNew<=gtol and gScaledNew<=gtol) or (gHighNew>=0.0 and gScaledNew>gtol):
             gConverged = True
         else:
