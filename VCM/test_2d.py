@@ -176,26 +176,26 @@ def numerical_example_2():
     forrester = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
     def fHigh(x):
         x = np.array(x)*0.08
-        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x) + 10.*(x[0]+x[1])
+        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x)# + 10.*(x[0]+x[1])
     def fLow(x):
         x = np.array(x)*0.085
         return forrester(np.linalg.norm(x)) + 1.*np.linalg.norm(x)
-    tol  = 1.0e-4
-    gtol = 1.0e-4
+    tol  = 1.0e-3
+    gtol = 1.0e-3
     maxIter = 50
     lb   = np.array([0.0,0.0])
     ub   = np.array([10.,10.])
     x0   = np.array([5.0,5.0])
     
-    dx = 0.1
-    xmsh = ymsh = np.arange(-0.5,10.5,dx)
-    Xmsh, Ymsh = np.meshgrid(xmsh,ymsh)
-    zs1 = np.array([fHigh(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
-    zs2 = np.array([g1High(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
-    zs3 = np.array([g2(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
-    Z1 = zs1.reshape(Xmsh.shape)
-    Z2 = zs2.reshape(Xmsh.shape)
-    Z3 = zs3.reshape(Xmsh.shape)
+#    dx = 0.1
+#    xmsh = ymsh = np.arange(-0.5,10.5,dx)
+#    Xmsh, Ymsh = np.meshgrid(xmsh,ymsh)
+#    zs1 = np.array([fHigh(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+#    zs2 = np.array([g1High(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+#    zs3 = np.array([g2(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+#    Z1 = zs1.reshape(Xmsh.shape)
+#    Z2 = zs2.reshape(Xmsh.shape)
+#    Z3 = zs3.reshape(Xmsh.shape)
     
 
     #plt.show()
@@ -213,12 +213,12 @@ def numerical_example_2():
     xDoe = read_samples('2DLHC.txt')
     #xDoe = read_samples()
     xDoe = denormalize(xDoe,lb,ub,1)
-    print xDoe
-    fscaled = ScaledFunction(fLow, fHigh,0,'add')
-    gscaled = ScaledFunction(g1Low, g1High,0,'add')
+    #print xDoe
+    fscaled = ScaledFunction(fLow, fHigh,4,'add')
+    gscaled = ScaledFunction(g1Low, g1High,4,'add')
 
-    fscaled._initialize_by_doe_points(xDoe)
-    gscaled._initialize_by_doe_points(xDoe)
+    #fscaled._initialize_by_doe_points(xDoe)
+    #gscaled._initialize_by_doe_points(xDoe)
     def print_header():
         print 'x1\tx2\tf\trho\tdelta\terr\tgScaled\tgHigh'
     while xConverged==False or gConverged==False:
@@ -253,34 +253,34 @@ def numerical_example_2():
             gConverged = False
         xbounds = np.array([bnds[0][0],bnds[0][0],bnds[0][1],bnds[0][1],bnds[0][0]])
         ybounds = np.array([bnds[1][0],bnds[1][1],bnds[1][1],bnds[1][0],bnds[1][0]])
-        fig = plt.figure(1)
-        ax = fig.add_subplot(111)
-        ax.hold(True)
-        zs4 = np.array([fscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
-        zs5 = np.array([gscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
-        Z4 = zs4.reshape(Xmsh.shape)
-        Z5 = zs5.reshape(Xmsh.shape)
-        cs1 = ax.contour(Xmsh,Ymsh,Z1,colors='m')#,levels=[0,2,4,6,9,12,15]
-        ax.contour(Xmsh,Ymsh,Z2,colors='r',levels=[0])
-        ax.contour(Xmsh,Ymsh,Z3,colors='k',levels=[0])
-        cs2 = ax.contour(Xmsh,Ymsh,Z4,colors='g')
-        cs3 = ax.contour(Xmsh,Ymsh,Z5,colors='b',levels=[0])
-        tmpx, tmpy = [-5,-5],[1,2]
-        ax.plot(tmpx,tmpy,'m')
-        ax.plot(tmpx,tmpy,'g')
-        ax.plot(tmpx,tmpy,'r')
-        ax.plot(tmpx,tmpy,'b')
-        ax.plot(tmpx,tmpy,'k')
-        ax.plot(np.array(fscaled.xPrev)[:,0],np.array(fscaled.xPrev)[:,1],'ko')
-        ax.plot(xbounds,ybounds,'k--')
-        ax.axis([-0.5,10.5,-0.5,10.5])
-        plt.clabel(cs1, fontsize=9, inline=1)
-        plt.clabel(cs2, fontsize=9, inline=1)
-        #plt.clabel(cs3, fontsize=9, inline=1)
-        ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-        plt.legend(['Hifi objective','Lowfi objective','Hifi constraint 1','Lofi constraint 1','constraint 2','Hifi sample points','Trust region'])
-        plt.show()
-        plt.cla()
+#        fig = plt.figure(1)
+#        ax = fig.add_subplot(111)
+#        ax.hold(True)
+#        zs4 = np.array([fscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+#        zs5 = np.array([gscaled(np.array([x,y])) for x,y in zip(np.ravel(Xmsh),np.ravel(Ymsh))])
+#        Z4 = zs4.reshape(Xmsh.shape)
+#        Z5 = zs5.reshape(Xmsh.shape)
+#        cs1 = ax.contour(Xmsh,Ymsh,Z1,colors='m')#,levels=[0,2,4,6,9,12,15]
+#        ax.contour(Xmsh,Ymsh,Z2,colors='r',levels=[0])
+#        ax.contour(Xmsh,Ymsh,Z3,colors='k',levels=[0])
+#        cs2 = ax.contour(Xmsh,Ymsh,Z4,colors='g')
+#        cs3 = ax.contour(Xmsh,Ymsh,Z5,colors='b',levels=[0])
+#        tmpx, tmpy = [-5,-5],[1,2]
+#        ax.plot(tmpx,tmpy,'m')
+#        ax.plot(tmpx,tmpy,'g')
+#        ax.plot(tmpx,tmpy,'r')
+#        ax.plot(tmpx,tmpy,'b')
+#        ax.plot(tmpx,tmpy,'k')
+#        ax.plot(np.array(fscaled.xPrev)[:,0],np.array(fscaled.xPrev)[:,1],'ko')
+#        ax.plot(xbounds,ybounds,'k--')
+#        ax.axis([-0.5,10.5,-0.5,10.5])
+#        plt.clabel(cs1, fontsize=9, inline=1)
+#        plt.clabel(cs2, fontsize=9, inline=1)
+#        plt.clabel(cs3, fontsize=9, inline=1)
+#        ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+#        plt.legend(['Hifi objective','Lowfi objective','Hifi constraint 1','Lofi constraint 1','constraint 2','Hifi sample points','Trust region'])
+#        plt.show()
+#        plt.cla()
         #print xConverged, gConverged, xConverged and gConverged
     fscaled.funcHi.display()
     fscaled.funcLo.display()
