@@ -12,8 +12,8 @@ def cst_fit():
     import matplotlib.pyplot as plt
     
     af = airfoil.Airfoil()
-    #af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
-    af.naca4()
+    af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
+    #af.naca4()
     print af.coord
     #af.naca4(nPts=30)
     #af.naca4()
@@ -40,8 +40,9 @@ def cst_fit():
     #xnew[:4] += +0.075
     #xnew[4:] += -0.075
     print xnew
+    xnew += -0.075
     afnew = airfoil.cst(xnew[0:4],[-xnew[0],xnew[4],xnew[5],xnew[6]])
-    
+    print afnew.thickness
     plt.figure(1)
     plt.plot(af.coord[:,0],af.coord[:,1],'bo-')
     plt.grid(True)

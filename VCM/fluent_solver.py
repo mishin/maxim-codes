@@ -129,6 +129,7 @@ class FluentAirfoil():
             maximum number of iterations
         """
         self.result.alpha = alpha
+        self.paths.set_name_alpha(alpha)
         self.result.Mach = flightConditions.Mach
         self.result.Re = flightConditions.Re
         self.iterMax = iterMax

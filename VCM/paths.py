@@ -136,6 +136,9 @@ class CFD_paths:
         #os.remove(self.file_igs)
         os.remove(self.file_glf)
         os.remove(self.file_jou)
+        os.remove(self.file_cd_hist)
+        os.remove(self.file_cl_hist)
+        os.remove(self.file_cm_hist)
 
 if __name__=="__main__":
     testFcn()

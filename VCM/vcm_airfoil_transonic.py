@@ -15,21 +15,22 @@ class AirfoilAnalysis:
     def __init__(self):
         self.alphaCruise = 2.00     
         self.MachCruise = 0.73
-        self.thicknessMin = 0.08
+        self.thicknessMin = 0.10
         self.thicknessMax = 0.14
         self.af = None
         fc = FlightConditions(0.0,9e3)
         V = fc.atmosphere.soundSpeed * self.MachCruise
         self.fc = FlightConditions(V,9e3)
-        self.CmMax = 0.08
+        self.CmMax = 0.15
         self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_1.txt'
         self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_1.txt'
     
     def _read_cfd_history_file(self,path):
-        fid = open(self.path,'rt')
+        fid = open(path,'rt')
         lines = fid.readlines()
         fid.close()
-        x = zeros([7,n])
+        n = len(lines)
+        x = zeros([n,7])
         cl = zeros(n)
         cd = zeros(n)
         cm = zeros(n)
@@ -37,17 +38,17 @@ class AirfoilAnalysis:
         for i,line in enumerate(lines):
             if line.strip()!='':
                 sLine = line.split()
-                x[0,i] = sLine[0]
-                x[1,i] = sLine[1]
-                x[2,i] = sLine[2]
-                x[3,i] = sLine[3]
-                x[4,i] = sLine[4]
-                x[5,i] = sLine[5]
-                x[6,i] = sLine[6]
-                cl[i] = sLine[7]
-                cd[i] = sLine[8]
-                cm[i] = sLine[9]
-                ld[i] = sLine[10]
+                x[i,0] = float(sLine[0])
+                x[i,1] = float(sLine[1])
+                x[i,2] = float(sLine[2])
+                x[i,3] = float(sLine[3])
+                x[i,4] = float(sLine[4])
+                x[i,5] = float(sLine[5])
+                x[i,6] = float(sLine[6])
+                cl[i] = float(sLine[7])
+                cd[i] = float(sLine[8])
+                cm[i] = float(sLine[9])
+                ld[i] = float(sLine[10])
         return x,cl,cd,cm,ld
     
     def _append_cfd_history_file(self,path,x,cl,cd,cm,ld):
@@ -72,7 +73,7 @@ class AirfoilAnalysis:
         path = self.lofiHistoryFilePath
         idx = self._check_cfd_history(path,x)
         if idx==-1:
-            cl,cd,cm,ld = _run_low_fidelity_cfd(x)
+            cl,cd,cm,ld = self._run_low_fidelity_cfd(x)
             self._append_cfd_history_file(path,x,cl,cd,cm,ld)
             return -ld
         else:
@@ -83,7 +84,7 @@ class AirfoilAnalysis:
         path = self.hifiHistoryFilePath
         idx = self._check_cfd_history(path,x)
         if idx==-1:
-            cl,cd,cm,ld = _run_high_fidelity_cfd(x)
+            cl,cd,cm,ld = self._run_high_fidelity_cfd(x)
             self._append_cfd_history_file(path,x,cl,cd,cm,ld)
             return -ld
         else:
@@ -94,7 +95,7 @@ class AirfoilAnalysis:
         path = self.lofiHistoryFilePath
         idx = self._check_cfd_history(path,x)
         if idx==-1:
-            cl,cd,cm,ld = _run_low_fidelity_cfd(x)
+            cl,cd,cm,ld = self._run_low_fidelity_cfd(x)
             self._append_cfd_history_file(path,x,cl,cd,cm,ld)
             return self.CmMax - cm
         else:
@@ -105,7 +106,7 @@ class AirfoilAnalysis:
         path = self.hifiHistoryFilePath
         idx = self._check_cfd_history(path,x)
         if idx==-1:
-            cl,cd,cm,ld = _run_high_fidelity_cfd(x)
+            cl,cd,cm,ld = self._run_high_fidelity_cfd(x)
             self._append_cfd_history_file(path,x,cl,cd,cm,ld)
             return self.CmMax - cm
         else:
@@ -114,32 +115,34 @@ class AirfoilAnalysis:
     
     def _run_high_fidelity_cfd(self,x):
         self._upd_cst(x)
-        solver = CFDsolver(af,fc,10,mesh='O')
+        solver = CFDsolver(self.af,self.fc,100,mesh='O')
         solver.fluent.residuals['energy']=1e-6
         solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-        solver.mesh._airfoilPts = 90
-        solver.mesh._interiorPts = 90
-        solver.mesh._dsTE = 1e-4
-        solver.mesh._growthRate = 1.18
+        solver.mesh._airfoilPts = 110
+        solver.mesh._interiorPts = 70
+        solver.mesh._dsTE = 2e-4
+        solver.mesh._dsLE = 2e-3
+        solver.mesh._growthRate = 1.2
         solver.create_mesh()
         result = solver.run_for_single_aoa(self.alphaCruise,iterMax=10000,
                                            turbulenceModel='ke-realizable')
-        solver.paths.clean()
+        solver.fluent.paths.clean()
         return result.cl, result.cd, result.cm, result.LD
     
     def _run_low_fidelity_cfd(self,x):
         self._upd_cst(x)
-        solver = CFDsolver(af,fc,10,mesh='O')
+        solver = CFDsolver(self.af,self.fc,50,mesh='O')
         solver.fluent.residuals['energy']=1e-4
         solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-        solver.mesh._airfoilPts = 40
-        solver.mesh._interiorPts = 55
-        solver.mesh._dsTE = 1e-3
-        solver.mesh._growthRate = 1.25
+        solver.mesh._airfoilPts = 50
+        solver.mesh._interiorPts = 45
+        solver.mesh._dsTE = 5e-4
+        solver.mesh._dsLE = 2e-3
+        solver.mesh._growthRate = 1.3
         solver.create_mesh()
-        result = solver.run_for_single_aoa(self.alphaCruise,iterMax=10000,
+        result = solver.run_for_single_aoa(self.alphaCruise,iterMax=5000,
                                            turbulenceModel='ke-realizable')
-        solver.paths.clean()
+        solver.fluent.paths.clean()
         return result.cl, result.cd, result.cm, result.LD
     
     def g2(self,x):
@@ -180,15 +183,16 @@ def get_bounds(x0,delta,lb,ub):
     return array(bnds,dtype=float)
 
 def transonic_airfoil_design():
-    x0 = array([0.17042532,0.14831629,0.14576823,0.134351,-0.15162484,-0.13875406,-0.14055989])
+    x0 = array([1.19087477e-01,1.60950359e-01,2.03634413e-01,1.92468212e-01,-2.00580639e-01,-1.26010045e-01,1.07256400e-18])
     lb = x0 - 0.075
     ub = x0 + 0.075
+    histPath = 'transonic_airfoil_design_history.txt'
     xDoe = read_samples('LHC_transonic_af.txt')
     xDoe = (xDoe+1.0)/2.0*(ub-lb)+lb
     aa = AirfoilAnalysis()
-    err = 1.0e-4
+    err = 1.0e-3
     tol = err+1.0
-    gtol = 1.0e-4
+    gtol = 1.0e-3
     maxIter = 20
     nIter = 0
     gConverged = False
@@ -197,24 +201,25 @@ def transonic_airfoil_design():
     delta = min([min(xu-x,x-xl) for x,xu,xl in zip(x0,ub,lb)])
     trustRegion = TrustRegionManagement(delta, 0.25, 0.75, 1.25, 0.3, 2.0)
     
-    clHigh, cdHigh, cmHigh, LDHigh = read_cfd_output('LHC_transonic_CFD_results_omesh.txt',20)
-    clLow, cdLow, cmLow, LDLow = read_cfd_output('LHC_transonic_CFD_results_omesh_low.txt',20)
+    clHigh, cdHigh, cmHigh, LDHigh = read_cfd_output('LHC_transonic_CFD_results_omesh_rae2822.txt',20)
+    #TODO: precalculate low fidelity solutions
+    clLow, cdLow, cmLow, LDLow = read_cfd_output('LHC_transonic_CFD_results_omesh_rae2822_low.txt',20)
 
-    raw_input()
     fscaled = ScaledFunction(aa.fLow, aa.fHigh, 0, 'add')
     gscaled = ScaledFunction(aa.g1Low, aa.g1High, 0, 'add')
     
-    fscaled._initialize_by_doe_points(xDoe, LDHigh, LDLow)
-    gscaled._initialize_by_doe_points(xDoe, cmHigh, cmLow)
-    
+    fscaled._initialize_by_doe_points(xDoe, -LDHigh, -LDLow)
+    gscaled._initialize_by_doe_points(xDoe, aa.CmMax-cmHigh, aa.CmMax-cmLow)
+    fscaled.dx = 1e-4
+    gscaled.dx = 1e-4
     while xConverged==False or gConverged==False:
         fscaled.construct_scaling_model(x0)
         gscaled.construct_scaling_model(x0)
         bnds = get_bounds(x0,delta,lb,ub)
-        cnstr = ({'type':'ineq','fun':gscaled},{'type':'ineq','fun':aa.g2},
-                 {'type':'ineq','fun':aa.g3})
+        cnstr = ({'type':'ineq','fun':gscaled,'jac':gscaled.derivative},
+                 {'type':'ineq','fun':aa.g2},{'type':'ineq','fun':aa.g3})
         rslt = minimize(fscaled,x0,method='SLSQP',bounds=bnds,constraints=cnstr,
-                        tol=1e-10,jac=fscaled.derivative)
+                        tol=5e-4,jac=fscaled.derivative)
         xnew = rslt.x
         fnew = rslt.fun
         rho1, fHighNew = fscaled.get_trust_region_ratio(xnew)
@@ -224,6 +229,16 @@ def transonic_airfoil_design():
         delta = trustRegion.adjust(rho,err)
         x0 = xnew
         nIter += 1
+        fid = open(histPath,'a')
+        for _x in xnew:
+            fid.write('%.6f\t'%_x)
+        print rho, delta, err, fHighNew, gHighNew
+        fid.write('%.4f\t'%rho)
+        fid.write('%.4e\t'%delta)
+        fid.write('%.4e\t'%err)
+        fid.write('%.4f\t'%fHighNew)
+        fid.write('%.4f\n'%gHighNew)
+        fid.close()
 
         if (-gtol<=gHighNew<=gtol and gScaledNew<=gtol) or (gHighNew>=0.0 and gScaledNew>gtol):
             gConverged = True
