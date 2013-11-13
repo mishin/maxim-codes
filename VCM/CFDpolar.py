@@ -66,22 +66,25 @@ def run_debug1():
     print highFidelity
 
 def run_o_mesh():
+    array([0.12071848, 0.13529101, 0.1749148, 0.14246778,-0.15070396,-0.17601022,-0.04001307])
     af = airfoil.Airfoil()
-    Au = array([0.119087477, 0.160950359,0.203634413,0.192468212])
-    Al = array([-0.119087477, -0.200580639, -0.126010045, 0.107256400e-18])
+    Au = array([0.12071848, 0.13529101, 0.1749148, 0.14246778])
+    Al = array([-0.12071848, -0.15070396,-0.17601022,-0.04001307])
     af.create_CST(Au,Al)
     fc = FlightConditions(0.0,9e3)
     V = fc.atmosphere.soundSpeed * 0.73
     fc = FlightConditions(V,9e3)
     fc.atmosphere.pressure
     solver = CFDsolver(af,fc,100,mesh='O')
-    solver.fluent.residuals['energy']=1e-5
+    solver.fluent.residuals['energy']=1e-6
     solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-    solver.mesh._airfoilPts = 100
-    solver.mesh._interiorPts = 100
-    solver.mesh._dsTE = 1e-4
+    solver.mesh._airfoilPts = 110
+    solver.mesh._interiorPts = 70
+    solver.mesh._dsTE = 2e-4
+    solver.mesh._dsLE = 2e-3
+    solver.mesh._growthRate = 1.2
+    solver.create_mesh()
     lowFidelity = solver.run_for_single_aoa(2.0,iterMax=10000,turbulenceModel='ke-realizable')
-    print lowFidelity
 
 if __name__=="__main__":
     run_o_mesh()
