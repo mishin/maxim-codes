@@ -8,6 +8,8 @@ from numpy import array, linspace, cos, sin, pi, hstack, vstack, flipud, transpo
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
 import dbTools
+import airfoil
+import paths
 
 class LargeTypeASM:
     def __init__(self):
@@ -19,6 +21,7 @@ class LargeTypeASM:
         self.tail = Tail()
         self.CG = zeros(3)
         self.mass = 0.0
+        self.paths = paths.MyPaths()
     
     def read_from_db(self,name,dbFile=None):
         if dbFile==None:
@@ -38,7 +41,7 @@ class LargeTypeASM:
         self.wing.sectionSpan    = sh.readRow(i+3,1)
         self.wing.leSweep        = sh.readRow(i+4,1)
         self.wing.dihedral       = sh.readRow(i+5,1)
-        self.wing.airfoilPath    = sh.readRow(i+6,1)
+        self.wing._set_airfoil(sh.readRow(i+6,1))
         self.wing.location       = sh.readRow(i+7,1)
         
         i = sh.findHeader('SECTION: TAIL')
@@ -47,7 +50,7 @@ class LargeTypeASM:
         self.tail.sectionSpan        = sh.readRow(i+3,1)
         self.tail.leSweep            = sh.readRow(i+4,1)
         self.tail.dihedral           = sh.readRow(i+5,1)
-        self.tail.airfoilPath        = sh.readRow(i+6,1)
+        self.tail._set_airfoil(sh.readRow(i+6,1))
         self.tail.location           = sh.readRow(i+7,1)
         self.tail.xangle             = sh.readRow(i+8,1)
         self.tail.centerOffset       = sh.readRow(i+9,1)
@@ -157,6 +160,7 @@ class Wing:
         self.incidenceAngle = zeros(nSec)
         self.location       = zeros(2)
         self.dihedral       = zeros(nSec-1)
+        self.paths = paths.MyPaths()
     
     def _analyze_geometry(self):
         self.mac = 0.0
@@ -167,6 +171,13 @@ class Wing:
             self.span += b
         self.area *= 2.0
         self.span *= 2.0
+    
+    def _set_airfoil(self,dbEntry):
+        if dbEntry[0]==u'NACA':
+            self.airfoil = airfoil.naca4(dbEntry[1],dbEntry[2],dbEntry[3],20)
+        else:
+            self.airfoil = airfoil.Airfoil()
+            self.airfoil.read_txt(self.paths.get_airfoil_txt_path(dbEntry))
         
 
 class Tail(Wing):
@@ -182,8 +193,6 @@ def test():
     gb.read_from_db('example1')
     gb.body.set_naca_profile(2,0.5)
     gb.wing.sectionSpan
-    gb.write_to_db('new')
-    
 
 if __name__=="__main__":
     test()

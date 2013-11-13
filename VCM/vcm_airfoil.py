@@ -241,6 +241,6 @@ def plot_result_af():
     plt.show()
     
 if __name__=="__main__":
-    #vcm_airfoil_optimization()
+    vcm_airfoil_optimization()
     #vcm_airfoil_optimization()
     run_doe_cfd()

@@ -24,6 +24,7 @@ class MyPaths:
         self.mhclasses = os.path.abspath(self.wdir + '/Jfoil/mhclasses.jar')
         self.tmpdir    = os.path.abspath(self.wdir + '/temp')        
         self.platform  =determinePlatform()
+        self.airfoilTxtFolder = os.path.abspath(self.wdir + '/airfoils')
         if self.platform=='lin32':
             self.avl       = self.wdir + '/Avl/avl_lin32'
             self.Xfoil     = self.wdir + '/Xfoil/xfoil_lin32'
@@ -52,6 +53,9 @@ class MyPaths:
         fileName = self.tmpdir + '/' + self.NamePrefix + addSymbol
         if fileExt != "" : fileName  = fileName + "." + fileExt
         return os.path.abspath(fileName)
+    
+    def get_airfoil_txt_path(self,fileName):
+        return os.path.abspath(self.airfoilTxtFolder + '/%s'%fileName)
 
 class Database:
     def __init__(self):

@@ -75,14 +75,14 @@ def run_o_mesh():
     V = fc.atmosphere.soundSpeed * 0.73
     fc = FlightConditions(V,9e3)
     fc.atmosphere.pressure
-    solver = CFDsolver(af,fc,100,mesh='O')
+    solver = CFDsolver(af,fc,50,mesh='O')
     solver.fluent.residuals['energy']=1e-6
     solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-    solver.mesh._airfoilPts = 110
-    solver.mesh._interiorPts = 70
-    solver.mesh._dsTE = 2e-4
+    solver.mesh._airfoilPts = 50
+    solver.mesh._interiorPts = 45
+    solver.mesh._dsTE = 5e-4
     solver.mesh._dsLE = 2e-3
-    solver.mesh._growthRate = 1.2
+    solver.mesh._growthRate = 1.3
     solver.create_mesh()
     lowFidelity = solver.run_for_single_aoa(2.0,iterMax=10000,turbulenceModel='ke-realizable')
 
