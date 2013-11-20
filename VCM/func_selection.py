@@ -153,12 +153,14 @@ def test_function_selection4():
 
 def test_function_selection5():
     forrester = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
-    def f(x):
-        x = np.array(x)*0.08
-        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x) + 10.*(x[0]+x[1])
+#    def f(x):
+#        x = np.array(x)*0.08
+#        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x) + 10.*(x[0]+x[1])
     def f2(x):
         x = np.array(x)*0.085
         return forrester(np.linalg.norm(x))
+    def f(x):
+        return forrester(np.linalg.norm(0.08*np.array(x))) + 0.1*np.linalg.norm(x) + 0.5*(x[0]+x[1])
 
     #f2 = lambda x: np.exp(x[0]/3)+np.exp(x[1]/5)-x[0]
     lb = [0, 0.0]
