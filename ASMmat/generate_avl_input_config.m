@@ -50,7 +50,12 @@ write_tail(fid,tail,4);
         fprintf(fileID,'%.4f %.4f %.4f %.4f %.4f\n',tail.rootSection(n,1),tail.rootSection(n,2),tail.rootSection(n,3),tail.secChords(1),0);
         fprintf(fileID,'CONTROL\n');
         fprintf(fileID,'elevator%d ',n);
-        fprintf(fileID,'1 %.4f 0 0 0 +1\n',tail.elevatorChordRatio);
+        if tail.elevatorChordRatio==0
+            zdir = 1;
+        else
+            zdir = 0;
+        end
+        fprintf(fileID,'1 %.4f 0 0 0 +1\n',tail.elevatorChordRatio,zdir);
         fprintf(fileID,'# ---------- tail section 2 ----------\n');
         fprintf(fileID,'SECTION\n');
         fprintf(fileID,'%.4f %.4f %.4f %.4f %.4f\n',tail.tipSection(n,1),tail.tipSection(n,2),tail.tipSection(n,3),tail.secChords(2),0);

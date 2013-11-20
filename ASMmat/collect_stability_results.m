@@ -6,6 +6,7 @@ if nargin==0
 end
 
 out = fileread(filePath);
+radDeg = rad2deg(1);
 
 iAlpha    =strfind(out,'Alpha')+7;
 iElevator =strfind(out,'elevator')+17;
@@ -78,7 +79,7 @@ iCnd4     =strfind(out,'Cnd4')+6;
 iCDffd4   =strfind(out,'CDffd4')+8;
 ied4      =strfind(out,'ed4')+5;
 
-result.alpha        = str2double(out(iAlpha:iAlpha+10))*pi/180;
+result.alpha        = str2double(out(iAlpha:iAlpha+10));%*pi/180;
 result.elevator     = str2double(out(iElevator:iElevator+10))*pi/180;
 result.xNP          = str2double(out(iNP:iNP+11));
 result.CL           = str2double(out(iCL:iCL+10));
@@ -87,23 +88,23 @@ result.CDind        = str2double(out(iCDind:iCDind+10));
 result.CDff         = str2double(out(iCDff:iCDff+10));
 result.k            = result.CDff/result.CL^2;
 
-result.e         =str2double(out(ie:ie+10));            
-result.Cl        =str2double(out(iCl:iCl+10));
-result.Cn        =str2double(out(iCn:iCn+10));
-result.Cm        =str2double(out(iCm:iCm+10));
-result.spiral    =str2double(out(iSpiral:iSpiral+11));
-result.derivs.CLa=str2double(out(iCLa:iCLa+11));
-result.a         =result.derivs.CLa;
-result.derivs.CYa=str2double(out(iCYa:iCYa+11));
-result.derivs.Cla=str2double(out(iCla:iCla+11));
-result.derivs.Cma=str2double(out(iCma:iCma+11));
-result.derivs.Cna=str2double(out(iCna:iCna+11));
-result.derivs.CLb=str2double(out(iCLb:iCLb+11));
-result.derivs.CYb=str2double(out(iCYb:iCYb+11));
-result.derivs.Clb=str2double(out(iClb:iClb+11));
-result.derivs.Cmb=str2double(out(iCmb:iCmb+11));
-result.derivs.Cnb=str2double(out(iCnb:iCnb+11));
-result.CL0=result.CL-result.derivs.CLa*result.alpha;
+result.e         = str2double(out(ie:ie+10));            
+result.Cl        = str2double(out(iCl:iCl+10));
+result.Cn        = str2double(out(iCn:iCn+10));
+result.Cm        = str2double(out(iCm:iCm+10));
+result.spiral    = str2double(out(iSpiral:iSpiral+11));
+result.derivs.CLa = str2double(out(iCLa:iCLa+11)) /radDeg;
+result.a          = result.derivs.CLa;
+result.derivs.CYa = str2double(out(iCYa:iCYa+11)) /radDeg;
+result.derivs.Cla = str2double(out(iCla:iCla+11)) /radDeg;
+result.derivs.Cma = str2double(out(iCma:iCma+11)) /radDeg;
+result.derivs.Cna = str2double(out(iCna:iCna+11)) /radDeg;
+result.derivs.CLb = str2double(out(iCLb:iCLb+11)) /radDeg;
+result.derivs.CYb = str2double(out(iCYb:iCYb+11)) /radDeg;
+result.derivs.Clb = str2double(out(iClb:iClb+11)) /radDeg;
+result.derivs.Cmb = str2double(out(iCmb:iCmb+11)) /radDeg;
+result.derivs.Cnb = str2double(out(iCnb:iCnb+11)) /radDeg;
+result.CL0 = result.CL-result.derivs.CLa*result.alpha;
 
 result.derivs.CLp=str2double(out(iCLp:iCLp+11));
 result.derivs.CYp=str2double(out(iCYp:iCYp+11));
