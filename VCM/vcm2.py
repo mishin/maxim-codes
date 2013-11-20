@@ -113,7 +113,8 @@ def run_test1():
     plt.show()
 
 def run_test2():
-    x = np.array([0,0.1,0.5,0.8,1.0])
+    #x = np.array([0,0.1,0.5,0.8,1.0])
+    x = np.linspace(0,1,8)
     func = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
     y = np.array([func(_x) for _x in x])
     approx = RbfMod(x,y)
