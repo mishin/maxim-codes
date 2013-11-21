@@ -20,7 +20,7 @@ controls = cs.defaults();
 x0 = [controls.fin1; controls.alpha];
 aero = missile_analysis_AVL(gb,fc,controls);
 CLtrim0 = liftWeightRatio*2*gb.mass*9.81/(fc.density*fc.velocity^2*gb.wing.area) - aero.CL;
-Cmtrim0 = - aero.Cm;
+Cmtrim0 = 0 - aero.Cm;
 
 while err>=tol && iter<=iterMax
     if iter>0
@@ -34,8 +34,8 @@ while err>=tol && iter<=iterMax
     iter = iter +1;
     controls = cs.set_de(controls,x0(1));
     controls.alpha = x0(2);
-    %CL(iter) = aero.CL;
-    %plot(1:iter,CL,'bo-');
+    Cm(iter) = aero.Cm;
+    plot(1:iter,Cm,'bo-');
 end
 
 results = aero;
