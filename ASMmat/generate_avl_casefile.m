@@ -19,7 +19,7 @@ fprintf(fid,'d3 d3 %.6f\n',setup.fin3);
 fprintf(fid,'d4 d4 %.6f\n',setup.fin4);
 fprintf(fid,'x\n');
 fprintf(fid,'st\n\n');
-fprintf(fid,'st\n%s\n',stabilityOutput);
+fprintf(fid,'st\n%s\no\n\n',stabilityOutput);
 fprintf(fid,'\nquit\n');
 fclose(fid);
 end

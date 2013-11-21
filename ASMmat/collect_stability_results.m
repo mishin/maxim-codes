@@ -1,4 +1,4 @@
-function result = collect_stability_results(filePath)
+function result = collect_stability_results(filePath,configuration)
 
 if nargin==0
     collect_stability_results('xtail.stab');
@@ -20,6 +20,9 @@ iCm       =strfind(out,'Cmtot')+7;
 iCDind    =strfind(out,'CDind')+7;
 iCDff     =strfind(out,'CDff')+7;
 iSpiral   =strfind(out,'Clb Cnr / Clr Cnb')+20;
+iCX       =strfind(out,'CXtot')+7;
+iCY       =strfind(out,'CYtot')+7;
+iCZ       =strfind(out,'CZtot')+7;
 
 iCLa      =strfind(out,'CLa')+5;
 iCYa      =strfind(out,'CYa')+5;
@@ -80,13 +83,19 @@ iCDffd4   =strfind(out,'CDffd4')+8;
 ied4      =strfind(out,'ed4')+5;
 
 result.alpha        = str2double(out(iAlpha:iAlpha+10));%*pi/180;
-result.elevator     = str2double(out(iElevator:iElevator+10))*pi/180;
+result.elevator     = str2double(out(iElevator:iElevator+10));%*pi/180;
 result.xNP          = str2double(out(iNP:iNP+11));
+result.SM           = (result.xNP - configuration.CG(1)) / configuration.wing.MAC;
 result.CL           = str2double(out(iCL:iCL+10));
 result.CD           = str2double(out(iCD:iCD+10));
 result.CDind        = str2double(out(iCDind:iCDind+10));
 result.CDff         = str2double(out(iCDff:iCDff+10));
 result.k            = result.CDff/result.CL^2;
+result.LD           = result.CL/result.CD;
+
+result.CX           = str2double(out(iCX:iCX+10));
+result.CY           = str2double(out(iCY:iCY+10));
+result.CZ           = str2double(out(iCZ:iCZ+10));
 
 result.e         = str2double(out(ie:ie+10));            
 result.Cl        = str2double(out(iCl:iCl+10));
@@ -105,6 +114,7 @@ result.derivs.Clb = str2double(out(iClb:iClb+11)) /radDeg;
 result.derivs.Cmb = str2double(out(iCmb:iCmb+11)) /radDeg;
 result.derivs.Cnb = str2double(out(iCnb:iCnb+11)) /radDeg;
 result.CL0 = result.CL-result.derivs.CLa*result.alpha;
+result.Cm0 = result.Cm-result.derivs.Cma*result.alpha;
 
 result.derivs.CLp=str2double(out(iCLp:iCLp+11));
 result.derivs.CYp=str2double(out(iCYp:iCYp+11));
@@ -126,7 +136,7 @@ result.control.CYd1=str2double(out(iCYd1:iCYd1+11));
 result.control.Cld1=str2double(out(iCld1:iCld1+11));
 result.control.Cmd1=str2double(out(iCmd1:iCmd1+11));
 result.control.Cnd1=str2double(out(iCnd1:iCnd1+11));
-result.control.CLd1=str2double(out(iCDffd1:iCDffd1+11));
+result.control.CDffd1=str2double(out(iCDffd1:iCDffd1+11));
 result.control.ed1=str2double(out(ied1:ied1+11));
 
 result.control.CLd2=str2double(out(iCLd2:iCLd2+11));
@@ -134,7 +144,7 @@ result.control.CYd2=str2double(out(iCYd2:iCYd2+11));
 result.control.Cld2=str2double(out(iCld2:iCld2+11));
 result.control.Cmd2=str2double(out(iCmd2:iCmd2+11));
 result.control.Cnd2=str2double(out(iCnd2:iCnd2+11));
-result.control.CLd2=str2double(out(iCDffd2:iCDffd2+11));
+result.control.CDffd2=str2double(out(iCDffd2:iCDffd2+11));
 result.control.ed2=str2double(out(ied2:ied2+11));
 
 result.control.CLd3=str2double(out(iCLd3:iCLd3+11));
@@ -142,7 +152,7 @@ result.control.CYd3=str2double(out(iCYd3:iCYd3+11));
 result.control.Cld3=str2double(out(iCld3:iCld3+11));
 result.control.Cmd3=str2double(out(iCmd3:iCmd3+11));
 result.control.Cnd3=str2double(out(iCnd3:iCnd3+11));
-result.control.CLd3=str2double(out(iCDffd3:iCDffd3+11));
+result.control.CDffd3=str2double(out(iCDffd3:iCDffd3+11));
 result.control.ed3=str2double(out(ied3:ied3+11));
 
 result.control.CLd4=str2double(out(iCLd4:iCLd4+11));
@@ -150,10 +160,12 @@ result.control.CYd4=str2double(out(iCYd4:iCYd4+11));
 result.control.Cld4=str2double(out(iCld4:iCld4+11));
 result.control.Cmd4=str2double(out(iCmd4:iCmd4+11));
 result.control.Cnd4=str2double(out(iCnd4:iCnd4+11));
-result.control.CLd4=str2double(out(iCDffd4:iCDffd4+11));
+result.control.CDffd4=str2double(out(iCDffd4:iCDffd4+11));
 result.control.ed4=str2double(out(ied4:ied4+11));
 
-result.control.CLde = result.control.CLd1 - result.control.CLd2 + result.control.CLd3 - result.control.CLd4;
-
+result.control.CLde = result.control.CLd1 - result.control.CLd2 - result.control.CLd3 + result.control.CLd4;
+result.control.Cmde = result.control.Cmd1 - result.control.Cmd2 - result.control.Cmd3 + result.control.Cmd4;
+result.control.CLda = result.control.CLd1 + result.control.CLd2 + result.control.CLd3 + result.control.CLd4;
+result.control.Cmda = result.control.Cmd1 + result.control.Cmd2 + result.control.Cmd3 + result.control.Cmd4;
 
 end
