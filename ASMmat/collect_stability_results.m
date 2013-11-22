@@ -113,8 +113,8 @@ result.derivs.CYb = str2double(out(iCYb:iCYb+11)) /radDeg;
 result.derivs.Clb = str2double(out(iClb:iClb+11)) /radDeg;
 result.derivs.Cmb = str2double(out(iCmb:iCmb+11)) /radDeg;
 result.derivs.Cnb = str2double(out(iCnb:iCnb+11)) /radDeg;
-result.CL0 = result.CL-result.derivs.CLa*result.alpha;
-result.Cm0 = result.Cm-result.derivs.Cma*result.alpha;
+%result.CL0 = result.CL-result.derivs.CLa*result.alpha;
+%result.Cm0 = result.Cm-result.derivs.Cma*result.alpha;
 
 result.derivs.CLp=str2double(out(iCLp:iCLp+11));
 result.derivs.CYp=str2double(out(iCYp:iCYp+11));

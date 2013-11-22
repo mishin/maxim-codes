@@ -27,8 +27,8 @@ dosCommand=sprintf('%s %s < %s ',avlPath,files.input,files.case);
 [~,~] = dos(dosCommand);
 results = collect_stability_results(files.output,missile);
 
-delete(files.input);
+%delete(files.input);
 delete(files.case);
-delete(files.output);
+%delete(files.output);
 
 end

@@ -12,30 +12,31 @@ fc = flightConditions;
 cs = control_deflections;
 liftWeightRatio = gb.liftToWeigthRatio;
 
-tol = 1e-6;
-iterMax = 10;
+tol = 1e-4;
+iterMax = 5;
 err = inf;
 iter = 0;
 controls = cs.defaults();
 x0 = [controls.fin1; controls.alpha];
-aero = missile_analysis_AVL(gb,fc,controls);
-CLtrim0 = liftWeightRatio*2*gb.mass*9.81/(fc.density*fc.velocity^2*gb.wing.area) - aero.CL;
-Cmtrim0 = 0 - aero.Cm;
+
+CLtrim0 = liftWeightRatio*2*gb.mass*9.81/(fc.density*fc.velocity^2*gb.wing.area);
+Cmtrim0 = 0;
 
 while err>=tol && iter<=iterMax
-    if iter>0
-        aero = missile_analysis_AVL(gb,fc,controls);
-    end
-    A = [aero.control.Cmde aero.derivs.Cma; aero.control.CLde aero.derivs.CLa];
-    b = [Cmtrim0; CLtrim0];
-    xnew = A\b;
-    err = norm(x0-xnew);
-    x0 = xnew;
+    controls = cs.set_de(controls,x0(2));
+    controls.alpha = x0(1);
+    aero = missile_analysis_AVL(gb,fc,controls);
+    CL0 = aero.CL - x0(1)*aero.derivs.CLa - x0(2)*aero.control.CLde;
+    Cm0 = aero.Cm - x0(1)*aero.derivs.Cma - x0(2)*aero.control.Cmde;
+        CLtrim = CLtrim0 - CL0;
+        Cmtrim = Cmtrim0 - Cm0;
+    %end
+    A = [aero.derivs.Cma aero.control.Cmde; aero.derivs.CLa aero.control.CLde];
+    b = [Cmtrim; CLtrim];
+    xNew = A\b;
+    err = norm(x0-xNew);
+    x0 = xNew;
     iter = iter +1;
-    controls = cs.set_de(controls,x0(1));
-    controls.alpha = x0(2);
-    Cm(iter) = aero.Cm;
-    plot(1:iter,Cm,'bo-');
 end
 
 results = aero;
