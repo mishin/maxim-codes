@@ -21,7 +21,7 @@ faert = 0.75;              % aeroelastic tailoring factor
 fcomp = 0.75;              % composite material factor 
 fult = 3.5;                % ultimate load factor
 Kvs = 1.19;                % factor for variable sweep angle wing (from Raymer's text book p.592 ) 
-%fm_f = 4;                  % material factor for fin, weight per area : 4 lbs/ft2 
+fm_f = 4;                  % material factor for fin, weight per area : 4 lbs/ft2 
 
 Mpod = 0;                           % Engine pod mass (kg)   
 Sflap = 0;                          % flap area (m2)   
@@ -130,12 +130,13 @@ Mw = convmass(Mw,'lbm','kg');
 
 % fin weight
 Af = U_m2ft^2*Aexp_f;       % exposed wing area, unit conversion (m2 to ft2)
+%{
 AR_AS = AR_f;       % fin AR
 E_AS = U_m2ft^2*Aexp_f;  % exposed wing area, unit conversion (m2 to ft2)
 
 Mfin_p1_lb = 6.77483 *(E_AS)^1.02 *(AR_AS)^0.56;       % fin weight per each panel (lbs) 
-
-%Mfin_p1_lb = fm_f*Af;                                 % fin weight per each panel (lbs)  
+%}
+Mfin_p1_lb = fm_f*Af;                                 % fin weight per each panel (lbs)  
 
 Mfin_lb = Mfin_p1_lb*Nf;                               % total fin weight (lbs) 
 

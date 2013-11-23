@@ -1,17 +1,17 @@
-function R = range(gb, hStart, hEnd, Vstart)
+function [R,aero] = range(gb, hStart, hEnd, Vstart)
 
 if nargin==0
     clc
     gb = load_configuration(1);
     tic
-    R = range(gb,8500, 1000, 640/3.6);
+    [R,~] = range(gb,8500, 1000, 640/3.6);
     toc
     return
 end
 
 % assumption: constant velocity at lift = 0.6 Weight
 
-nSeg = 5;
+nSeg = 10;
 hStep = (hEnd-hStart)/nSeg;
 
 V = ones(nSeg,1) * Vstart;
@@ -27,15 +27,12 @@ for i = 1:nSeg;
     aero = missile_trim_AVL(gb, fc);
     dR(i) = -hStep*aero.LD;
     dt(i) = dR(i)/V(i);
-    alpha(i) = aero.alpha;
-    de(i) = aero.elevator;
-    LD(i) = aero.LD;
-    SM(i) = aero.SM;
+%    alpha(i) = aero.alpha;
+%    de(i) = aero.elevator;
+%    LD(i) = aero.LD;
+%    SM(i) = aero.SM;
 end
-R =sum(dR)/1e3
-t = sum(dt)/60
-alpha
-de
-LD
-SM
+R =sum(dR)/1e3;
+t = sum(dt)/60;
+
 end
