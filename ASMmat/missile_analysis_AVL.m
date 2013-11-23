@@ -16,11 +16,12 @@ end
 
 avlPath = 'avl_win32.exe';
 name = 'xtail';
+files.body = strcat(name,'.fus');
 files.input = strcat(name,'.avl');
 files.case = strcat(name,'.case');
 files.output = strcat(name,'.stab');
 
-generate_avl_input_config(missile,files.input);
+generate_avl_input_config(missile,files);
 generate_avl_casefile(files,flightConditions,setup);
 
 dosCommand=sprintf('%s %s < %s ',avlPath,files.input,files.case);
@@ -29,6 +30,7 @@ results = collect_stability_results(files.output,missile);
 %fprintf('.')
 
 delete(files.input);
+delete(files.body);
 delete(files.case);
 delete(files.output);
 

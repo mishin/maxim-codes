@@ -16,14 +16,15 @@ config.VLMpanels.tail = [8, 8];
 
 config.body.length = 1.7784;
 config.body.diameter = 0.1778;
+config.body.type = 'cylinder';
 
 config.wing.secChords = [0.0889, 0.0889];
 config.wing.secIncidence = [1,1];
 config.wing.span = 1.3995;
 config.wing.sweepAngle = 0;
-config.wing.dihedral = 0;
+config.wing.dihedral = 5;
 config.wing.thickness = 0.15;
-config.wing.location = [0.9, 0.2];
+config.wing.location = [0.9, 0.05];
 config.wing.airfoil = 0;
 config.wing.skinThickness = 0.0005;
 
@@ -32,7 +33,7 @@ config.fin.halfSpan = 0.1;
 config.fin.sweepAngle = 0;
 config.fin.thickness = 0.12;
 config.fin.locationX = 1.6;
-config.fin.centerOffsetRatio = 0.1;
+config.fin.centerOffset = config.body.diameter/2;
 config.fin.elevatorChordRatio = 0;
 config.fin.numberOfTails = 4;
 config.fin.xAngle = 45;

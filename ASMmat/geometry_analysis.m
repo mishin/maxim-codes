@@ -11,6 +11,9 @@ end
 %% general
 missile.weight = missile.mass*9.81;
 
+%% body
+bodyFunction = fuselage_coordinate_generator(missile.body.type);
+missile.body.coord = bodyFunction(missile.body.length,missile.body.diameter);
 %% wing
 
 missile.wing.halfSpan = missile.wing.span/2;
@@ -28,31 +31,31 @@ halfSpan = missile.fin.halfSpan;
 missile.fin.areaPerSide = sum(missile.fin.secChords)*halfSpan/2;
 missile.fin.area = missile.fin.areaPerSide*missile.fin.numberOfTails;
 
-centerOffset = missile.fin.centerOffsetRatio * missile.fin.halfSpan;
+%centerOffset = missile.fin.centerOffsetRatio * missile.fin.halfSpan;
 
-secXm = centerOffset * tand(missile.fin.sweepAngle);
-secYm = centerOffset;
-secZm = 0.0;
+%secXm = centerOffset * tand(missile.fin.sweepAngle);
+%secYm = centerOffset;
+%secZm = 0.0;
 
 secX = halfSpan * tand(missile.fin.sweepAngle);
-secY = halfSpan;
+secY = halfSpan+missile.fin.centerOffset;
 secZ = 0.0;
-rootSection = [0, 0, 0];
-middleSection = [secXm, secYm,secZm];
+rootSection = [0, missile.fin.centerOffset, 0];
+%middleSection = [secXm, secYm,secZm];
 tipSection  = [secX, secY, secZ];
 missile.fin.rootSection = [];
-missile.fin.middleSection = [];
+%missile.fin.middleSection = [];
 missile.fin.tipSection = [];
-missile.fin.middleChord = (missile.fin.secChords(2)+(missile.fin.secChords(1)-missile.fin.secChords(2))*(1-missile.fin.centerOffsetRatio));
+%missile.fin.middleChord = (missile.fin.secChords(2)+(missile.fin.secChords(1)-missile.fin.secChords(2))*(1-missile.fin.centerOffsetRatio));
 for i=0:3
     angle = -missile.fin.xAngle - i*90;
     RotMatrix = [1, 0, 0; 0, cosd(angle), -sind(angle); 0, sind(angle), cosd(angle)];
     newRoot = rootSection*RotMatrix;
     newTip  = tipSection *RotMatrix;
-    newMiddle = middleSection*RotMatrix;
+    %newMiddle = middleSection*RotMatrix;
     missile.fin.rootSection = [missile.fin.rootSection; newRoot];
     missile.fin.tipSection  = [missile.fin.tipSection; newTip];
-    missile.fin.middleSection = [missile.fin.middleSection; newMiddle];
+    %missile.fin.middleSection = [missile.fin.middleSection; newMiddle];
 end
 
 %% for mass analysis
