@@ -26,16 +26,16 @@ class Function1D:
             self._histF.append(f)
             return f
         
-    def get_gradient(self,x,dx=1e-3):
+    def get_gradient(self,x,dx=1e-3,fval=None):
+        if fval==None:
+            fval = self.__call__(x)
         self._nGrad += 1
         f = self.__call__(x)
         df = self.__call__(x+dx)
-        return (df-f)/dx
+        return fval,(df-f)/dx
     
     def get_taylor(self,x,dx=1e-3,fval=None):
-        if fval==None:
-            fval = self.__call__(x)
-        grad = self.get_gradient(x,dx)
+        fval,grad = self.get_gradient(x,dx,fval)
         return Taylor1D(x,fval,grad)
 
 
@@ -49,9 +49,10 @@ class FunctionND:
     
     def __call__(self,x):
         if self._nEval==0:
-            self._histX = x
+            self._histX = np.array([x])
             fval = self.func(x)
-            self._histF = fval
+            self._histF = np.array([fval])
+            self._nEval += 1
         else:
             for i,xval in enumerate(self._histX):
                 if all(x==xval):
@@ -60,24 +61,23 @@ class FunctionND:
             else:
                 self._nEval += 1
                 fval = self.func(x)
-                self._histX = np.vstack(self._histX,x)
+                self._histX = np.vstack([self._histX,x])
                 self._histF = np.hstack([self._histF,fval])
         return fval
 
-    def get_gradient(self,x,dx=1e-3):
-        fval = self.__call__(x)
+    def get_gradient(self,x,dx=1e-3,fval=None):
+        if fval==None:
+            fval = self.__call__(x)
         grad = np.zeros(len(x))
         for i in range(len(x)):
             X = np.copy(x)
             X[i] = X[i]+dx
-            grad[i] = (self(X,False)-fval)/dx
+            grad[i] = (self.__call__(X)-fval)/dx
         return fval, grad
-    
+
     def get_taylor(self,x,dx=1e-3,fval=None):
-        if fval==None:
-            fval = self.__call__(x)
-        grad = self.get_gradient(x,dx)
-        return Taylor1D(x,fval,grad)
+        fval, grad = self.get_gradient(x,dx,fval)
+        return TaylorND(x,fval,grad)
 
 
 class Taylor1D:
@@ -100,9 +100,9 @@ class TaylorND:
 
 def test1d():
     x = np.linspace(0,1,50)
-    func = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
+    func = lambda x: (6.0*x-2.0)**2.0*np.sin(12.*x-4.)
     f = Function1D(func)
-    approxF = f.get_taylor(0.9)
+    approxF = f.get_taylor(0.4)
     
     plt.figure(1)
     plt.grid(True)
@@ -113,7 +113,12 @@ def test1d():
     plt.show()
 
 def test2d():
-    func = lambda x: 1
+    func1d = lambda x: (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
+    func = lambda x: func1d(np.linalg.norm(x))
+    f = FunctionND(func)
+    approx = f.get_taylor(np.array([0.5,0.5]))
+    print approx(np.array([0.5,0.5]))
+    print approx(np.array([0.51,0.51]))
 
 if __name__=="__main__":
     test1d()
