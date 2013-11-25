@@ -10,28 +10,33 @@ import matplotlib.pyplot as plt
 class Function1D:
     def __init__(self,func):
         self.func = func
-        self._histX = list()
-        self._histF = list()
+        self._histXfull = list()
+        self._histFfull = list()
+        self._histXpart = list()
+        self._histFpart = list()
         self._nEval = 0
         self._nGrad = 0
     
-    def __call__(self,x):
-        for i,xval in enumerate(self._histX):
+    def __call__(self,x,save=True):
+        for i,xval in enumerate(self._histXfull):
             if x==xval:
-                return self._histF[i]
+                return self._histFfull[i]
         else:
             self._nEval += 1
             f = self.func(x)
-            self._histX.append(x)
-            self._histF.append(f)
+            self._histXfull.append(x)
+            self._histFfull.append(f)
+            if save:
+                self._histXpart.append(x)
+                self._histFpart.append(x)
             return f
         
     def get_gradient(self,x,dx=1e-3,fval=None):
         if fval==None:
             fval = self.__call__(x)
         self._nGrad += 1
-        f = self.__call__(x)
-        df = self.__call__(x+dx)
+        f = self.__call__(x,True)
+        df = self.__call__(x+dx,False)
         return fval,(df-f)/dx
     
     def get_taylor(self,x,dx=1e-3,fval=None):
@@ -42,37 +47,44 @@ class Function1D:
 class FunctionND:
     def __init__(self,func):
         self.func = func
-        self._histX = 0
-        self._histF = 0
+        self._histXfull = 0
+        self._histFfull = 0
+        self._histXpart = 0
+        self._histFpart = 0
         self._nEval = 0
         self._nGrad = 0
     
-    def __call__(self,x):
+    def __call__(self,x,save=True):
         if self._nEval==0:
-            self._histX = np.array([x])
-            fval = self.func(x)
-            self._histF = np.array([fval])
             self._nEval += 1
+            fval = self.func(x)
+            self._histXfull = np.array([x])
+            self._histFfull = np.array([fval])
+            if save:
+                self._histXpart = np.array([x])
+                self._histFpart = np.array([fval])
         else:
-            for i,xval in enumerate(self._histX):
+            for i,xval in enumerate(self._histXfull):
                 if all(x==xval):
-                    fval = self._histF[i]
-                    break
+                    return self._histFfull[i]
             else:
                 self._nEval += 1
                 fval = self.func(x)
-                self._histX = np.vstack([self._histX,x])
-                self._histF = np.hstack([self._histF,fval])
+                self._histXfull = np.vstack([self._histXfull,x])
+                self._histFfull = np.hstack([self._histFfull,fval])
+                if save:
+                    self._histXpart = np.vstack([self._histXpart,x])
+                    self._histFpart = np.hstack([self._histFpart,fval])
         return fval
 
     def get_gradient(self,x,dx=1e-3,fval=None):
         if fval==None:
-            fval = self.__call__(x)
+            fval = self.__call__(x,True)
         grad = np.zeros(len(x))
         for i in range(len(x)):
             X = np.copy(x)
             X[i] = X[i]+dx
-            grad[i] = (self.__call__(X)-fval)/dx
+            grad[i] = (self.__call__(X,False)-fval)/dx
         return fval, grad
 
     def get_taylor(self,x,dx=1e-3,fval=None):
@@ -107,9 +119,9 @@ def test1d():
     plt.figure(1)
     plt.grid(True)
     plt.plot(x,[f(_x) for _x in x],'b-')
-    plt.plot(x,[f(_x) for _x in x],'g--')
     plt.hold(True)
     plt.plot(x,[approxF(_x) for _x in x],'r-')
+    plt.plot(f._histXpart,f._histFpart,'go')
     plt.show()
 
 def test2d():
@@ -119,6 +131,8 @@ def test2d():
     approx = f.get_taylor(np.array([0.5,0.5]))
     print approx(np.array([0.5,0.5]))
     print approx(np.array([0.51,0.51]))
+    print f._histFfull
+    print f._histFpart
 
 if __name__=="__main__":
-    test1d()
+    test2d()
