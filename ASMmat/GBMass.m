@@ -1,7 +1,7 @@
 % Mass Estimation Module
 % programed by Kwon-Su Jeon
 %
-function [MassOut]=GBMass(Config, MassIn) 
+function [MassOut]=GBMass_re(Config, MassIn) 
 
 format short
 
@@ -130,12 +130,11 @@ Mw = convmass(Mw,'lbm','kg');
 
 % fin weight
 Af = U_m2ft^2*Aexp_f;       % exposed wing area, unit conversion (m2 to ft2)
-%{
-AR_AS = AR_f;       % fin AR
-E_AS = U_m2ft^2*Aexp_f;  % exposed wing area, unit conversion (m2 to ft2)
+%AR_AS = AR_f;       % fin AR
+%E_AS = U_m2ft^2*Aexp_f;  % exposed wing area, unit conversion (m2 to ft2)
 
-Mfin_p1_lb = 6.77483 *(E_AS)^1.02 *(AR_AS)^0.56;       % fin weight per each panel (lbs) 
-%}
+%Mfin_p1_lb = 6.77483 *(E_AS)^1.02 *(AR_AS)^0.56;       % fin weight per each panel (lbs) 
+
 Mfin_p1_lb = fm_f*Af;                                 % fin weight per each panel (lbs)  
 
 Mfin_lb = Mfin_p1_lb*Nf;                               % total fin weight (lbs) 
@@ -168,8 +167,8 @@ M_batt = 2.718;                         % thermal battery (kg)
 % aft body part
 
 Vmax = Vmax*Ukph2fps;                   % max velocity (ft/sec)
-Sf = 0.061;                             % fin exposed area (unit : m^2)
-Sf = Sf*U_m2ft^2;
+Sf = Af*Nf;                             % fin exposed area (unit : ft^2)
+%Sf = Sf*U_m2ft^2;
 Nfcs = 1;                               % number of flight control system
 
 M_cas = 0.00002*Vmax^2*Sf*Nfcs;         % control actuation system weight (lbs)
@@ -200,7 +199,7 @@ MassOut.Mfin_p1 = Mfin_p1;              % fin mass per 1 fin (kg)
 MassOut.Mfin = Mfin;                    % total fin mass (kg)
 MassOut.Mbs = Mbs;                      % body structural mass (kg) : fuselage
 MassOut.Msub = Msub;                    % subsystem mass (kg)
-MassOut.Mairframe = Mairframe;          % airframe mass (kg)
+MassOut.Mainframe = Mairframe;          % airframe mass (kg)
 MassOut.Mpl = Mpl;                      % payload mass (kg)
 MassOut.Xcg = Xcg;                      % total cg x-location (m)
 

@@ -130,6 +130,20 @@ class TrustRegionManagement:
 
 class VCM:
     def __init__(self):
+        self._histScaled
+        self._histScFactor
+        self._histRho
+        self._histDelta
+        
+    def set_exact_objective(self,func):
+        pass
+    def set_approximate_objective(self,funcHigh,funcLow):
+        pass
+    def add_exact_constraint(self,func):
+        pass
+    def add_approximate_constraint(self,funcHigh,funcLow):
+        pass
+    def solve(self):
         pass
 
 def run_test1():
@@ -160,10 +174,10 @@ def run_test2():
     flow = lambda x: fhigh(x)+20*np.linalg.norm(x) + 15*sum(x)
     
     fsc = ScalingFunction(fhigh,flow,'add',3,False)
-    fsc.construct_scaling_model(np.array([0.1,0.1]))
-    fsc.construct_scaling_model(np.array([0.1,0.9]))
+    fsc.construct_scaling_model(np.array([0.5,0.8]))
+    fsc.construct_scaling_model(np.array([0.8,0.5]))
+    fsc.construct_scaling_model(np.array([0.3,0.4]))
     fsc.construct_scaling_model(np.array([0.9,0.1]))
-    fsc.construct_scaling_model(np.array([0.9,0.9]))
     lb = [0, 0.0]
     ub = [1., 1.]
     dx = 0.05
