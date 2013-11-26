@@ -204,13 +204,17 @@ class TrustRegionManagement:
             x0new = xnew
         else:
             x0new = xnew
-            xerr = np.array(xnew-x0)
-            if xerr.any==delta0:
-                delta = self.c2*delta0
-            else:
-                delta = delta0
+            delta = delta0 * self._get_gamma(x0,xnew,delta0)
         self.delta0 = delta
         return delta, x0new
+    
+    def _get_gamma(self,x0,xnew,delta):
+        err = np.linalg.norm(x0-xnew)
+        if err==np.linalg.norm(delta):
+            return self.c2
+        else:
+            return 1.0
+
 
 def run_test3():
     func1 = lambda x: (1.-x[0])**2 + 100*(x[1]-x[0]**2)**2

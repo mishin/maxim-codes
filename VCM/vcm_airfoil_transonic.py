@@ -22,8 +22,8 @@ class AirfoilAnalysis:
         V = fc.atmosphere.soundSpeed * self.MachCruise
         self.fc = FlightConditions(V,9e3)
         self.CmMax = 0.15
-        self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_1.txt'
-        self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_1.txt'
+        self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_20131125.txt'
+        self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_20131125.txt'
     
     def _read_cfd_history_file(self,path):
         fid = open(path,'rt')
@@ -115,10 +115,10 @@ class AirfoilAnalysis:
     
     def _run_high_fidelity_cfd(self,x):
         self._upd_cst(x)
-        solver = CFDsolver(self.af,self.fc,100,mesh='O')
+        solver = CFDsolver(self.af,self.fc,10,mesh='O')
         solver.fluent.residuals['energy']=1e-6
         solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-        solver.mesh._airfoilPts = 110
+        solver.mesh._airfoilPts = 220
         solver.mesh._interiorPts = 70
         solver.mesh._dsTE = 2e-4
         solver.mesh._dsLE = 2e-3
@@ -188,12 +188,12 @@ def transonic_airfoil_design():
     ubDoe = x0 + 0.075
     lb = x0 - 0.05
     ub = x0 + 0.05
-    histPath = 'transonic_airfoil_design_history.txt'
+    histPath = 'transonic_airfoil_design_history_20131125.txt'
     xDoe = read_samples('LHC_transonic_af.txt')
     xDoe = (xDoe+1.0)/2.0*(ubDoe-lbDoe)+lbDoe
     aa = AirfoilAnalysis()
-    err = 1.0e-3
-    tol = err+1.0
+    tol = 1.0e-3
+    err = tol+1.0
     gtol = 1.0e-3
     maxIter = 20
     nIter = 0
@@ -210,8 +210,10 @@ def transonic_airfoil_design():
     fscaled = ScaledFunction(aa.fLow, aa.fHigh, 0, 'add')
     gscaled = ScaledFunction(aa.g1Low, aa.g1High, 0, 'add')
     
-    fscaled._initialize_by_doe_points(xDoe, -LDHigh, -LDLow)
-    gscaled._initialize_by_doe_points(xDoe, aa.CmMax-cmHigh, aa.CmMax-cmLow)
+    #fscaled._initialize_by_doe_points(xDoe, -LDHigh, -LDLow)
+    #gscaled._initialize_by_doe_points(xDoe, aa.CmMax-cmHigh, aa.CmMax-cmLow)
+    fscaled._initialize_by_doe_points(xDoe)
+    gscaled._initialize_by_doe_points(xDoe)
     fscaled.dx = 1e-4
     gscaled.dx = 1e-4
     while xConverged==False or gConverged==False:
@@ -224,22 +226,30 @@ def transonic_airfoil_design():
                         tol=5e-4,jac=fscaled.derivative)
         xnew = rslt.x
         fnew = rslt.fun
+        gnew = gscaled(xnew)
         rho1, fHighNew = fscaled.get_trust_region_ratio(xnew)
         rho2, gHighNew = gscaled.get_trust_region_ratio(xnew)
-        rho = min([rho1,rho2])
+        rho = max([abs(rho1-1),abs(rho2-1)])+1.0
         err = np.linalg.norm([x0-xnew])
         delta = trustRegion.adjust(rho,err)
-        x0 = xnew
+        if rho1<0:
+            x0 = x0
+        else:
+            x0 = xnew
         nIter += 1
         fid = open(histPath,'a')
         for _x in xnew:
             fid.write('%.6f\t'%_x)
         print rho, delta, err, fHighNew, gHighNew
+        fid.write('%.4f\t'%rho1)
+        fid.write('%.4f\t'%rho2)
         fid.write('%.4f\t'%rho)
         fid.write('%.4e\t'%delta)
         fid.write('%.4e\t'%err)
         fid.write('%.4f\t'%fHighNew)
-        fid.write('%.4f\n'%gHighNew)
+        fid.write('%.4f\t'%gHighNew)
+        fid.write('%.4f\t'%fnew)
+        fid.write('%.4f\n'%gnew)
         fid.close()
         gScaledNew = gscaled(xnew)
         if (-gtol<=gHighNew<=gtol and gScaledNew<=gtol) or (gHighNew>=0.0 and gScaledNew>gtol):
