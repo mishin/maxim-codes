@@ -32,6 +32,11 @@ class RbfMod():
             xTuple += (x,)
         return xTuple
 
+
+class HybridScaling:
+    def __init__(self,fhigh,flow,weight,onedim=False,dx=1e-4):
+        self.funcHigh
+    
 class ScalingFunction:
     def __init__(self,funcHigh,funcLow,scalingType='add',warmUpRuns=3,onedim=False,dx=1e-4):
         self.type = scalingType
