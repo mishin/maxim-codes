@@ -1,7 +1,6 @@
 function fc = get_flight_conditions(altitude, velocity)
 
 fc.altitude = altitude;
-fc.velocity = velocity;
 P0 = 101325;
 T0 = 288.15;
 G0 = 9.80665;
@@ -23,6 +22,13 @@ fc.density = P/(R*T);
 fc.temperature = T;
 fc.pressure = P;
 fc.soundSpeed = (gamma*R*T)^0.5;
-fc.Mach = velocity/fc.soundSpeed;
+
+if velocity<1
+    fc.Mach = velocity;
+    fc.velocity = fc.Mach*fc.soundSpeed;
+else
+    fc.velocity = velocity;
+    fc.Mach = velocity/fc.soundSpeed;
+end
 
 end

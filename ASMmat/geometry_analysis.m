@@ -31,31 +31,32 @@ halfSpan = missile.fin.halfSpan;
 missile.fin.areaPerSide = sum(missile.fin.secChords)*halfSpan/2;
 missile.fin.area = missile.fin.areaPerSide*missile.fin.numberOfTails;
 
-%centerOffset = missile.fin.centerOffsetRatio * missile.fin.halfSpan;
+centerOffset = missile.fin.centerOffset;
 
-%secXm = centerOffset * tand(missile.fin.sweepAngle);
-%secYm = centerOffset;
-%secZm = 0.0;
+secXm = centerOffset * tand(missile.fin.sweepAngle);
+secYm = centerOffset;
+secZm = 0.0;
 
-secX = halfSpan * tand(missile.fin.sweepAngle);
+secX = (halfSpan+centerOffset) * tand(missile.fin.sweepAngle);
 secY = halfSpan+missile.fin.centerOffset;
 secZ = 0.0;
-rootSection = [0, missile.fin.centerOffset, 0];
-%middleSection = [secXm, secYm,secZm];
+rootSection = [0, 0, 0];
+middleSection = [secXm, secYm,secZm];
 tipSection  = [secX, secY, secZ];
 missile.fin.rootSection = [];
-%missile.fin.middleSection = [];
+missile.fin.middleSection = [];
 missile.fin.tipSection = [];
-%missile.fin.middleChord = (missile.fin.secChords(2)+(missile.fin.secChords(1)-missile.fin.secChords(2))*(1-missile.fin.centerOffsetRatio));
+centerOffsetRatio = missile.fin.secChords(1)/(missile.fin.secChords(1)+missile.fin.secChords(2));
+missile.fin.middleChord = (missile.fin.secChords(2)+(missile.fin.secChords(1)-missile.fin.secChords(2))*(1-centerOffsetRatio));
 for i=0:3
     angle = -missile.fin.xAngle - i*90;
     RotMatrix = [1, 0, 0; 0, cosd(angle), -sind(angle); 0, sind(angle), cosd(angle)];
     newRoot = rootSection*RotMatrix;
     newTip  = tipSection *RotMatrix;
-    %newMiddle = middleSection*RotMatrix;
+    newMiddle = middleSection*RotMatrix;
     missile.fin.rootSection = [missile.fin.rootSection; newRoot];
     missile.fin.tipSection  = [missile.fin.tipSection; newTip];
-    %missile.fin.middleSection = [missile.fin.middleSection; newMiddle];
+    missile.fin.middleSection = [missile.fin.middleSection; newMiddle];
 end
 
 %% for mass analysis

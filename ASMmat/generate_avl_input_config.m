@@ -42,10 +42,15 @@ fprintf(fid,'%.4f %.4f %.4f\n',wing.location(1),0,wing.location(2));
 fprintf(fid,'# ---------- wing section 1 ----------\n');
 fprintf(fid,'SECTION\n');
 fprintf(fid,'%.4f %.4f %.4f %.4f %.4f\n',wing.rootSection(1),wing.rootSection(2),wing.rootSection(3),wing.secChords(1),wing.secIncidence(1));
+if wing.airfoil~=0
+    fprintf(fid,'AFILE\n%s\n',wing.airfoil);
+end
 fprintf(fid,'# ---------- wing section 2 ----------\n');
 fprintf(fid,'SECTION\n');
 fprintf(fid,'%.4f %.4f %.4f %.4f %.4f\n',wing.tipSection(1),wing.tipSection(2),wing.tipSection(3),wing.secChords(2),wing.secIncidence(2));
-
+if wing.airfoil~=0
+    fprintf(fid,'AFILE\n%s\n',wing.airfoil);
+end
 write_tail(fid,fin,1);
 write_tail(fid,fin,2);
 write_tail(fid,fin,3);
@@ -61,20 +66,25 @@ write_tail(fid,fin,4);
         fprintf(fileID,'# ---------- tail section 1 ----------\n');
         fprintf(fileID,'SECTION\n');
         fprintf(fileID,'%.4f %.4f %.4f %.4f %.4f\n',fin.rootSection(n,1),fin.rootSection(n,2),fin.rootSection(n,3),fin.secChords(1),0);
-        %fprintf(fileID,'# ---------- tail section 2 ----------\n');
-        %fprintf(fileID,'SECTION\n');
-        %fprintf(fileID,'%.4f %.4f %.4f %.4f %.4f\n',fin.middleSection(n,1),fin.middleSection(n,2),fin.middleSection(n,3),fin.middleChord,0);
-        fprintf(fileID,'CONTROL\n');
-        fprintf(fileID,'elevator%d ',n);
-        if fin.elevatorChordRatio==0
-            zdir = 1;
-        else
-            zdir = 0;
+        if fin.airfoil~=0
+            fprintf(fileID,'AFILE\n%s\n',fin.airfoil);
         end
-        fprintf(fileID,'1 %.4f 0 0 0 +1\n',fin.elevatorChordRatio,zdir);
         fprintf(fileID,'# ---------- tail section 2 ----------\n');
         fprintf(fileID,'SECTION\n');
+        fprintf(fileID,'%.4f %.4f %.4f %.4f %.4f\n',fin.middleSection(n,1),fin.middleSection(n,2),fin.middleSection(n,3),fin.middleChord,0);
+        if fin.airfoil~=0
+            fprintf(fileID,'AFILE\n%s\n',fin.airfoil);
+        end
+        fprintf(fileID,'CONTROL\n');
+        fprintf(fileID,'elevator%d ',n);
+
+        fprintf(fileID,'1 %.4f 0 0 0 +1\n',fin.elevatorChordRatio);
+        fprintf(fileID,'# ---------- tail section 3 ----------\n');
+        fprintf(fileID,'SECTION\n');
         fprintf(fileID,'%.4f %.4f %.4f %.4f %.4f\n',fin.tipSection(n,1),fin.tipSection(n,2),fin.tipSection(n,3),fin.secChords(2),0);
+        if fin.airfoil~=0
+            fprintf(fileID,'AFILE\n%s\n',fin.airfoil);
+        end
         fprintf(fileID,'CONTROL\n');
         fprintf(fileID,'elevator%d ',n);
         fprintf(fileID,'1 %.4f 0 0 0 +1\n',fin.elevatorChordRatio);
