@@ -51,7 +51,7 @@ def vcm_test_1d():
     tol = 1.0e-3
     err = tol + 1
     niter = 0
-    fscaled = HybridScaledFunction(_flow,_fhi,0,weight=0.5)
+    fscaled = HybridScaledFunction(_flow,_fhi,3,weight=1.0)
     #fscaled = ScaledFunction(_flow,_fhi,3,'mult')
     lb = 0.0
     ub = 1.0
@@ -64,8 +64,10 @@ def vcm_test_1d():
     #output.write_array('Ylow',forrester_low(x))
     xdoe = [x0-delta,x0+delta]
     xdoe = [lb,ub]
-    fscaled._initialize_by_doe_points(xdoe)
+    #fscaled._initialize_by_doe_points(xdoe)
     fhiNew = fscaled.funcHi(x0)
+    fid = open('1d_convergence.txt','at')
+    fid.write('->\n')
     while err>tol:
         fscaled.construct_scaling_model(x0,fhiNew)
         x0plt = x0
@@ -101,6 +103,7 @@ def vcm_test_1d():
         
         x0 = xnew
         print 'rho:%.4f\tx:%.4f\tf:%.4f\tdelta:%.4e'%(rho, xnew, fnew, delta)
+        fid.write('%.6f\t%.6f\t%.6f\n'%(fnew,fhiNew,fscaled.funcLo(xnew,False)))
         niter += 1
     y = array([fscaled(_x) for _x in x])
     output.write_array('YgvfmHybr',y)
@@ -112,6 +115,7 @@ def vcm_test_1d():
     fscaled.fAdd.funcHi.display()
     fscaled.fAdd.funcLo.display()
     print niter
+    fid.close()
 
 if __name__=="__main__":
     vcm_test_1d()
