@@ -6,7 +6,7 @@ Created on Wed Dec 04 16:06:11 2013
 """
 
 import numpy as np
-
+from scipy.interpolate import Rbf
 
 class Function:
     def __init__(self,func):
@@ -20,7 +20,6 @@ class Function:
         self._dx         = 1e-6
         self._nEval      = 0
         self._nGrad      = 0
-    
     def __call__(self,x,save=True):
         if not hasattr(x,'__iter__'):
             x = np.array([x])
@@ -37,8 +36,8 @@ class Function:
         self._histFfull = np.array([fval])
         if save:
             self._histIsPart.append(1)
-            self._histXpart = self._histXfull[-1]
-            self._histFpart = self._histFfull[-1]
+            self._histXpart = self._histXfull
+            self._histFpart = self._histFfull
         else:
             self._histIsPart.append(0)
         return fval
@@ -134,6 +133,30 @@ class Taylor1:
         self.grad = gradF
     def __call__(self,x):
         return self.f0 + np.dot((np.array(x)-self.x0),self.grad)
+
+
+class RbfMod():
+    def __init__(self,x,y):
+        if x.ndim>1:
+            x = np.transpose(x)
+            x = self._get_tuple(x)
+            args = x + (y,)
+        else:
+            args = (x,y)
+        self.rbf = Rbf(*args)
+
+    def __call__(self,x):
+        if hasattr(x,'__iter__'):
+            x = self._get_tuple(x)
+            return self.rbf(*x)
+        else:
+            return self.rbf(x)
+
+    def _get_tuple(self,xArray):
+        xTuple = tuple()
+        for x in xArray:
+            xTuple += (x,)
+        return xTuple
 
 
 # --- Debug section ---
