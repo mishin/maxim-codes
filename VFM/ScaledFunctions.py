@@ -8,7 +8,7 @@ Created on Wed Dec 04 15:51:15 2013
 from FunctionHandling import *
 import matplotlib.pyplot as plt
 
-class ScaledFunction:
+class ScaledFunction(object):
     """
     fhigh, flow - functions
     fH, fL - function values
@@ -83,11 +83,22 @@ class MultiplicativeScaling(ScaledFunction):
         return (gradH*fL - fH*gradL)/(fL*fL)
 
 class HybridScaling:
-    def __init__(self):
-        pass
-    def __call__(self):
-        pass
+    def __init__(self,fHigh,fLow,warmUpRun=3,dx=1e-4):
+        self._histScalingFactor = None
+        self._scalingAdd = AdditiveScaling(fHigh,fLow,warmUpRun,dx)
+        self._scalingMult = MultiplicativeScaling(fHigh,fLow,warmUpRun,dx)
+        self._w = 0.5
 
+    def __call__(self,x,save=True):
+        w = self._w
+        return w *self._scalingAdd(x,save) + (1.-w) *self._scalingMult(x,save)
+
+    def construct_scaling_model(self,x0):
+        pass
+    def get_trust_region_ratio(self):
+        pass
+    def get_gradient(self):
+        pass
 
 class TrustRegionManagement:
     def __init__(self,delta,eta1=0.25,eta2=0.75,eta3=1.25,c1=0.3,c2=2.0):
@@ -125,6 +136,12 @@ class TrustRegionManagement:
             return 1.0
 
 
+def debug1():
+    fhigh = forrester
+    flow = lambda x: 0.5*fhigh(x) + 10.*(x-.5)+5
+    fsc = HybridScaling(fhigh,flow,3,1e-6)
+    
+
 def run_test1():
     x = np.linspace(0,1,50)
     fhigh = lambda x: forrester(x) + 5
@@ -158,4 +175,4 @@ def run_test1():
     plt.show()
 
 if __name__=="__main__":
-    run_test1()
+    debug1()
