@@ -30,7 +30,7 @@ class ScaledFunction(object):
         _list = zip(self.fHigh._histFpart,self.fLow._histFpart)
         _hist = [self._get_scaling_factor(fh,fl) for fh,fl in _list]
         self._histScalingFactor = np.array(_hist)
-        self._histX = self.fHigh._histXpart
+        self._histX = np.copy(self.fHigh._histXpart)
         if len(self.fHigh._histFpart)<self._warmup:
             gradSc = self._get_scaling_factor_gradient(x0)
             self.scalingFunc = Taylor1(x0,scFactor,gradSc)
@@ -47,10 +47,9 @@ class ScaledFunction(object):
             return (fSc0 - fH) / (fSc0 - fSc)
     
     def initialize_by_points(self,X):
-        for x in X[:-1]:
+        for x in X:
             self.fHigh(x,True)
             self.fLow(x,True)
-        self.construct_scaling_model(X[-1])
     
     def get_gradient(self,x):
         fval = self.__call__(x,False)
@@ -82,51 +81,7 @@ class MultiplicativeScaling(ScaledFunction):
         fL, gradL = self.fLow.get_gradient(x,self._dx)
         return (gradH*fL - fH*gradL)/(fL*fL)
 
-class HybridScaling:
-    def __init__(self,fHigh,fLow,warmUpRun=3,dx=1e-4):
-        self._histScalingFactor = None
-        self._scalingAdd = AdditiveScaling(fHigh,fLow,warmUpRun,dx)
-        self._scalingMult = MultiplicativeScaling(fHigh,fLow,warmUpRun,dx)
-        self._w = 1.0
 
-    def __call__(self,x,save=True):
-        w = self._w
-        return w *self._scalingAdd(x,save) + (1.-w) *self._scalingMult(x,save)
-    
-    def _call_high(self,x,save=True):
-        fH = self._scalingAdd.fHigh(x,save)
-        self._copy_history()
-        return fH
-
-    def construct_scaling_model(self,x0):
-        self._scalingAdd.construct_scaling_model(x0)
-        self._copy_history()
-        self._scalingMult.construct_scaling_model(x0)
-        self.f0 = self._scalingAdd.f0
-    
-    def _copy_history(self):
-        self._scalingMult.fHigh._histFfull = self._scalingAdd.fHigh._histFfull
-        self._scalingMult.fHigh._histFpart = self._scalingAdd.fHigh._histFpart
-        self._scalingMult.fHigh._histXfull = self._scalingAdd.fHigh._histXfull
-        self._scalingMult.fHigh._histXpart = self._scalingAdd.fHigh._histXpart
-
-    def get_trust_region_ratio(self,x):
-        fSc = self(x)
-        fH = self._call_high(x)
-        fSc0 = self.f0
-        if fSc==fSc0:
-            return float('inf')
-        else:
-            return (fSc0 - fH) / (fSc0 - fSc)
-
-    def get_gradient(self):
-        fval = self.__call__(x,False)
-        grad = np.zeros(len(x))
-        for i in range(len(x)):
-            X = np.copy(x)
-            X[i] = X[i] + self._dx
-            grad[i] = (self.__call__(X,False)-fval)/self._dx
-        return grad
 
 class TrustRegionManagement:
     def __init__(self,delta,eta1=0.25,eta2=0.75,eta3=1.25,c1=0.3,c2=2.0):
@@ -137,20 +92,27 @@ class TrustRegionManagement:
         self.c2 = c2
         self.delta0 = delta
     
-    def adjust(self,rho,x0,xnew):
+    def _adjust_x0(self,rho,x0,xnew):
+        print rho, rho>0
+        if rho>0:
+            return xnew
+        else:
+            return x0
+    
+    def _adjust_delta(self,rho,x0,xnew):
         delta0 = self.delta0
         if rho<=self.eta1 or rho>=self.eta3:
-            delta = self.c1*delta0
+            return self.c1*delta0
         elif self.eta1<rho<self.eta2:
-            delta = delta0
+            return delta0
         else:
-            delta = delta0 * self._get_gamma(x0,xnew,delta0)
-        if rho>0:
-            x0new = xnew
-        else:
-            x0new = x0
-        self.delta0 = delta
-        return delta, x0new
+            return delta0 * self._get_gamma(x0,xnew,delta0)
+
+    def adjust(self,rho,x0,xnew):
+        deltaNew = self._adjust_delta(rho,x0,xnew)
+        self.delta0 = deltaNew
+        x0new = self._adjust_x0(rho,x0,xnew)
+        return deltaNew, x0new
     
     def _get_gamma(self,x0,xnew,delta):
         err = np.linalg.norm(x0-xnew)
@@ -164,6 +126,18 @@ class TrustRegionManagement:
             return 1.0
 
 
+def get_bounds(x,delta,lb,ub):
+    if hasattr(x,'__iter__'):
+        bnds = np.zeros([len(x),2])
+        for i,_x in enumerate(x):
+            bnds[i,0] = max([lb[i],_x-delta])
+            bnds[i,1] = min([ub[i],_x+delta])
+    else:
+        bnds = np.zeros([1,2])
+        bnds[0,0] = max([lb,x-delta])
+        bnds[0,1] = min([ub,x+delta])
+    return bnds
+
 def debug1():
     fhigh = forrester
     flow = lambda x: 0.5*fhigh(x) + 10.*(x-.5)+5
@@ -175,12 +149,12 @@ def run_test1():
     fhigh = lambda x: forrester(x) + 5
     flow = lambda x: 0.5*fhigh(x) + 10.*(x-.5)+5.
     
-    fsc = HybridScaling(fhigh,flow,2,1e-6)
-    fsc.construct_scaling_model(0.5)
-    fsc.construct_scaling_model(0.2)
-    fsc.construct_scaling_model(0.8)
-    fsc.construct_scaling_model(0.7)
-    print fsc.get_trust_region_ratio(0.34)
+    fsc = AdditiveScaling(fhigh,flow,0,1e-6)
+    fsc.initialize_by_points([0.1,0.6,0.8,0.9])
+    fsc.construct_scaling_model(0.45)
+#    fsc.construct_scaling_model(0.8)
+#    fsc.construct_scaling_model(0.7)
+#    print fsc.get_trust_region_ratio(0.34)
 #    fsc.construct_scaling_model(0.9)
 #    fsc.construct_scaling_model(0.5)
     #print fsc.get_trust_region_ratio(0.8)
@@ -199,7 +173,7 @@ def run_test1():
     plt.plot(x,y2,'b-')
     plt.plot(x,y3,'g-')
 #    plt.plot(x,y4,'k-')
-    plt.plot(fsc._scalingAdd.fHigh._histXpart, fsc._scalingAdd.fHigh._histFpart,'ko')
+    plt.plot(fsc.fHigh._histXpart, fsc.fHigh._histFpart,'ko')
     plt.axis([-0.,1.,-10,20])
     plt.show()
 
