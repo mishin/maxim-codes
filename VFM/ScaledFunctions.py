@@ -110,7 +110,7 @@ class HybridScaling:
         self._scalingMult.fHigh._histXfull = self._scalingAdd.fHigh._histXfull
         self._scalingMult.fHigh._histXpart = self._scalingAdd.fHigh._histXpart
 
-    def get_trust_region_ratio(self):
+    def get_trust_region_ratio(self,x):
         fSc = self(x)
         fH = self._call_high(x)
         fSc0 = self.f0
@@ -180,6 +180,7 @@ def run_test1():
     fsc.construct_scaling_model(0.2)
     fsc.construct_scaling_model(0.8)
     fsc.construct_scaling_model(0.7)
+    print fsc.get_trust_region_ratio(0.34)
 #    fsc.construct_scaling_model(0.9)
 #    fsc.construct_scaling_model(0.5)
     #print fsc.get_trust_region_ratio(0.8)
