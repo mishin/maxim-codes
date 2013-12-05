@@ -87,18 +87,46 @@ class HybridScaling:
         self._histScalingFactor = None
         self._scalingAdd = AdditiveScaling(fHigh,fLow,warmUpRun,dx)
         self._scalingMult = MultiplicativeScaling(fHigh,fLow,warmUpRun,dx)
-        self._w = 0.5
+        self._w = 1.0
 
     def __call__(self,x,save=True):
         w = self._w
         return w *self._scalingAdd(x,save) + (1.-w) *self._scalingMult(x,save)
+    
+    def _call_high(self,x,save=True):
+        fH = self._scalingAdd.fHigh(x,save)
+        self._copy_history()
+        return fH
 
     def construct_scaling_model(self,x0):
-        pass
+        self._scalingAdd.construct_scaling_model(x0)
+        self._copy_history()
+        self._scalingMult.construct_scaling_model(x0)
+        self.f0 = self._scalingAdd.f0
+    
+    def _copy_history(self):
+        self._scalingMult.fHigh._histFfull = self._scalingAdd.fHigh._histFfull
+        self._scalingMult.fHigh._histFpart = self._scalingAdd.fHigh._histFpart
+        self._scalingMult.fHigh._histXfull = self._scalingAdd.fHigh._histXfull
+        self._scalingMult.fHigh._histXpart = self._scalingAdd.fHigh._histXpart
+
     def get_trust_region_ratio(self):
-        pass
+        fSc = self(x)
+        fH = self._call_high(x)
+        fSc0 = self.f0
+        if fSc==fSc0:
+            return float('inf')
+        else:
+            return (fSc0 - fH) / (fSc0 - fSc)
+
     def get_gradient(self):
-        pass
+        fval = self.__call__(x,False)
+        grad = np.zeros(len(x))
+        for i in range(len(x)):
+            X = np.copy(x)
+            X[i] = X[i] + self._dx
+            grad[i] = (self.__call__(X,False)-fval)/self._dx
+        return grad
 
 class TrustRegionManagement:
     def __init__(self,delta,eta1=0.25,eta2=0.75,eta3=1.25,c1=0.3,c2=2.0):
@@ -147,32 +175,32 @@ def run_test1():
     fhigh = lambda x: forrester(x) + 5
     flow = lambda x: 0.5*fhigh(x) + 10.*(x-.5)+5.
     
-    fsc = MultiplicativeScaling(fhigh,flow,2,1e-6)
+    fsc = HybridScaling(fhigh,flow,2,1e-6)
     fsc.construct_scaling_model(0.5)
-#    fsc.construct_scaling_model(0.2)
-#    fsc.construct_scaling_model(0.8)
-#    fsc.construct_scaling_model(0.7)
+    fsc.construct_scaling_model(0.2)
+    fsc.construct_scaling_model(0.8)
+    fsc.construct_scaling_model(0.7)
 #    fsc.construct_scaling_model(0.9)
 #    fsc.construct_scaling_model(0.5)
     #print fsc.get_trust_region_ratio(0.8)
-    print fsc.fHigh._nEval
+#    print fsc.fHigh._nEval
     #fsc.construct_scaling_model(0.8)
-    print fsc.fHigh._nEval
+    #print fsc.fHigh._nEval
 
     y1 = np.array([fhigh(_x) for _x in x])
     y2 = np.array([flow(_x) for _x in x])
     y3 = np.array([fsc(_x) for _x in x])
-    y4 = np.array([fsc.scalingFunc(_x) for _x in x])
+#    y4 = np.array([fsc.scalingFunc(_x) for _x in x])
     plt.figure(1)
     plt.hold(True)
     plt.grid(True)
     plt.plot(x,y1,'r-')
     plt.plot(x,y2,'b-')
     plt.plot(x,y3,'g-')
-    plt.plot(x,y4,'k-')
-    plt.plot(fsc.fHigh._histXpart, fsc.fHigh._histFpart,'ko')
+#    plt.plot(x,y4,'k-')
+    plt.plot(fsc._scalingAdd.fHigh._histXpart, fsc._scalingAdd.fHigh._histFpart,'ko')
     plt.axis([-0.,1.,-10,20])
     plt.show()
 
 if __name__=="__main__":
-    debug1()
+    run_test1()
