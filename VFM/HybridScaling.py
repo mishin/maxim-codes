@@ -14,36 +14,26 @@ class HybridScaling:
 class _HybridScaling:
     def __init__(self,fHigh,fLow,warmUpRun=3,dx=1e-4,w=0.5):
         self._histScalingFactor = None
-        self._scalingAdd = AdditiveScaling(fHigh,fLow,warmUpRun,dx)
-        self._scalingMult = MultiplicativeScaling(fHigh,fLow,warmUpRun,dx)
+        self._scalingAdd  = AdditiveScaling(None,None,warmUpRun,dx)
+        self._scalingMult = MultiplicativeScaling(None,None,warmUpRun,dx)
+        self.fHigh = Function(fHigh)
+        self.fLow  = Function(fLow)
+        self._scalingAdd.fHigh = self.fHigh
+        self._scalingAdd.fLow  = self.fLow
+        self._scalingMult.fHigh = self.fHigh
+        self._scalingMult.fLow = self.fLow
         self._w = w
+        self._dx = dx
 
     def __call__(self,x,save=True):
         w = self._w
         return w *self._scalingAdd(x,save) + (1.-w) *self._scalingMult(x,save)
-    
-    def _call_high(self,x,save=True):
-        fH = self._scalingAdd.fHigh(x,save)
-        self._copy_history()
-        return fH
+
 
     def construct_scaling_model(self,x0):
         self._scalingAdd.construct_scaling_model(x0)
-        self._copy_history()
         self._scalingMult.construct_scaling_model(x0)
         self.f0 = self._scalingAdd.f0
-    
-    def _copy_history(self):
-        self._scalingMult.fHigh._histFfull = self._scalingAdd.fHigh._histFfull
-        self._scalingMult.fHigh._histFpart = self._scalingAdd.fHigh._histFpart
-        self._scalingMult.fHigh._histXfull = self._scalingAdd.fHigh._histXfull
-        self._scalingMult.fHigh._histXpart = self._scalingAdd.fHigh._histXpart
-        self._scalingMult.fLow._histFfull = self._scalingAdd.fLow._histFfull
-        self._scalingMult.fLow._histFpart = self._scalingAdd.fLow._histFpart
-        self._scalingMult.fLow._histXfull = self._scalingAdd.fLow._histXfull
-        self._scalingMult.fLow._histXpart = self._scalingAdd.fLow._histXpart
-        self._scalingMult.fHigh._nEval = self._scalingAdd.fHigh._nEval
-        self._scalingMult.fLow._nEval = self._scalingAdd.fLow._nEval
 
     def get_trust_region_ratio(self,x):
         fSc = self(x,True)
