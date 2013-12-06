@@ -14,21 +14,16 @@ class HybridScaling:
 class _HybridScaling:
     def __init__(self,fHigh,fLow,warmUpRun=3,dx=1e-4,w=0.5):
         self._histScalingFactor = None
-        self._scalingAdd  = AdditiveScaling(None,None,warmUpRun,dx)
-        self._scalingMult = MultiplicativeScaling(None,None,warmUpRun,dx)
         self.fHigh = Function(fHigh)
         self.fLow  = Function(fLow)
-        self._scalingAdd.fHigh = self.fHigh
-        self._scalingAdd.fLow  = self.fLow
-        self._scalingMult.fHigh = self.fHigh
-        self._scalingMult.fLow = self.fLow
+        self._scalingAdd  = AdditiveScaling(self.fHigh,self.fLow,warmUpRun,dx)
+        self._scalingMult = MultiplicativeScaling(self.fHigh,self.fLow,warmUpRun,dx)
         self._w = w
         self._dx = dx
 
     def __call__(self,x,save=True):
         w = self._w
         return w *self._scalingAdd(x,save) + (1.-w) *self._scalingMult(x,save)
-
 
     def construct_scaling_model(self,x0):
         self._scalingAdd.construct_scaling_model(x0)
@@ -46,9 +41,8 @@ class _HybridScaling:
     
     def initialize_by_points(self,X):
         for x in X:
-            self._scalingAdd.fHigh(x,True)
-            self._scalingAdd.fLow(x,True)
-        self._copy_history()
+            self.fHigh(x,True)
+            self.fLow(x,True)
 
     def get_gradient(self):
         fval = self.__call__(x,False)

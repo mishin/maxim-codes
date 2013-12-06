@@ -16,10 +16,11 @@ class Function:
         self._histFfull  = list()
         self._histFpart  = list()
         self._histIsPart = list()
-        self._histTol    = 1e-15
+        self._histTol    = 1e-10
         self._dx         = 1e-6
         self._nEval      = 0
         self._nGrad      = 0
+
     def __call__(self,x,save=True):
         if not hasattr(x,'__iter__'):
             x = np.array([x])
@@ -45,19 +46,27 @@ class Function:
     def _call_next_iteration(self,x,save=True):
         for i,xval in enumerate(self._histXfull):
             if all(abs(x-xval)<=self._histTol):
-                return self._histFfull[i]
+                fval = self._histFfull[i]
         else:
             self._nEval += 1
             fval = self._feval(x)
             self._histXfull = np.vstack([self._histXfull, x])
             self._histFfull = np.hstack([self._histFfull, fval])
-            if save:
-                self._histIsPart.append(1)
-                self._histXpart = np.vstack([self._histXpart,self._histXfull[-1]])
-                self._histFpart = np.hstack([self._histFpart,self._histFfull[-1]])
-            else:
-                self._histIsPart.append(0)
-            return fval
+        if save:
+            self._add_part_history(x,fval)
+        else:
+            self._histIsPart.append(0)
+        return fval
+
+    def _add_part_history(self,xval,fval):
+        exist = False
+        for _x in self._histXpart:
+            if all(abs(_x-xval)<=self._histTol):
+                exist = True
+        if not exist:
+            self._histIsPart.append(1)
+            self._histXpart = np.vstack([self._histXpart,self._histXfull[-1]])
+            self._histFpart = np.hstack([self._histFpart,self._histFfull[-1]])
 
     def _feval(self,x):
         if len(x)==1:
@@ -117,6 +126,8 @@ class Function:
                             self._histXpart = xval
                         else:
                             self._histXpart = np.vstack([self._histXpart,xval])
+    
+
 
     def _initialize_history(self):
         self._histXfull = list()
