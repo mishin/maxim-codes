@@ -68,8 +68,8 @@ def cst_fit():
     ax1.axis('equal')
     ax1.legend(['Original','CST fit'])
     ax2.hold(True)
-    ax2.plot(up[:,0],upErr,'k.-')
-    ax2.plot(lo[1:,0],lowErr[1:],'b-')
+    ax2.plot(up[:,0],upErr,'ks-',markevery=3)
+    ax2.plot(lo[1:,0],lowErr[1:],'k-',markevery=3)
     ax2.set_ylabel('error')
     ax2.legend(['Upper curve','Lower curve'])
     plt.show()
@@ -83,4 +83,4 @@ def tmp_cst_plot():
     af.plot()
 
 if __name__=="__main__":
-    tmp_cst_plot()
+    cst_fit()
