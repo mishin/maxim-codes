@@ -76,8 +76,7 @@ def func(x):
     return (6.*x-2.)**2*np.sin(12.*x-4)
 
 def run_test():
-    #x = np.linspace(0,1,7)
-    x = np.array([0.0,0.1,0.3,0.5,0.7,0.9,1.0])
+    x = np.array([0.1,0.5,0.8])
     y = np.array([func(_x) for _x in x])
     xp = np.linspace(0,1,100)
     yp = func(xp)
@@ -90,6 +89,7 @@ def run_test():
         yk[i],dk[i] = krig(xx)
     
     plt.figure(1)
+    plt.title('Kriging test')
     plt.hold(True)
     plt.plot(x,y,'ro')
     plt.plot(xp,yp,'b-')
