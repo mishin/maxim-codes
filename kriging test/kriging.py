@@ -33,6 +33,12 @@ class Kriging1D:
         self._beta = popt[0]
         self._gamma = popt[1]
         self._calc_model_matrix()
+        plt.figure(2)
+        plt.hold(True)
+        plt.plot(rho,nu,'go')
+        _r = np.linspace(0,1,50)
+        plt.plot(_r,self._dispersion_func(_r,beta,gamma),'r-')
+        plt.plot()
 
     def _d(self,a,b):
         rho = np.linalg.norm([a-b])
@@ -76,7 +82,8 @@ def func(x):
     return (6.*x-2.)**2*np.sin(12.*x-4)
 
 def run_test():
-    x = np.array([0.1,0.5,0.8])
+    #x = np.array([0.0,.1,.2,.4,.75,.9,1.])
+    x = np.array([0.0,0.2,0.8,1.0])
     y = np.array([func(_x) for _x in x])
     xp = np.linspace(0,1,100)
     yp = func(xp)
@@ -88,6 +95,7 @@ def run_test():
     for i,xx in enumerate(xk):
         yk[i],dk[i] = krig(xx)
     
+    print sum(dk)
     plt.figure(1)
     plt.title('Kriging test')
     plt.hold(True)
