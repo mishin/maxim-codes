@@ -7,6 +7,7 @@ Created on Tue Dec 17 17:24:53 2013
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.interpolate import Rbf
 
 class Kriging1D:
     def __init__(self,x,y):
@@ -83,29 +84,35 @@ def func(x):
 
 def run_test():
     #x = np.array([0.0,.1,.2,.4,.75,.9,1.])
-    x = np.array([0.0,0.2,0.8,1.0])
+    #x = np.array([0.0,0.1,0.2,0.3,0.4,0.5,0.7,0.8,0.9,0.95,1.0,0.6])
+    x = np.linspace(0,1,4)
     y = np.array([func(_x) for _x in x])
     xp = np.linspace(0,1,100)
     yp = func(xp)
 
     krig = Kriging1D(x,y)
+    rbf = Rbf(x,y)
     xk = np.linspace(0,1,100)
     yk = np.zeros(len(xk))
+    yr = np.zeros(len(xk))
     dk = np.zeros(len(xk))
     for i,xx in enumerate(xk):
         yk[i],dk[i] = krig(xx)
-    
+        yr[i] = rbf(xx)
+
     print sum(dk)
     plt.figure(1)
     plt.title('Kriging test')
     plt.hold(True)
-    plt.plot(x,y,'ro')
+    plt.plot(x,y,'rs')
     plt.plot(xp,yp,'b-')
     plt.plot(xk,yk,'r-')
-    plt.fill_between(xk,yk+0.5*dk,yk-0.5*dk,color='#cccccc')
+    #plt.plot(xk,yr,'g-')
+    plt.fill_between(xk,yk+0.5*dk,yk-0.5*dk,color='#dddddd')
     plt.grid(True)
     plt.axis([0,1,-10,20])
-    plt.legend(['sample point','exact function','kriging','confidence interval'],'upper left')
+    plt.legend(['sample point','exact function','kriging'],'upper left')
+    #plt.legend(['sample point','exact function','kriging','rbf'],'upper left')
     plt.show()
 
 
