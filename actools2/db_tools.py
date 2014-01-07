@@ -159,16 +159,26 @@ class LoadDatabase(object):
 
 
 class ReadDatabase():
-    def __init__(self,filePath,sheetName):
-        pass
+    def __init__(self,filePath,sheetName,secKeyword=None):
+        db = LoadDatabase(filePath,'r')
+        self._sheet = db.select_by_name(sheetName)
+        if not secKeyword==None:
+            self.sectionMap = SectionMap(self._sheet,secKeyword)
+    
+    def read_row(self,rowIdx,colIdx,iterable=False):
+        row = self._sheet.row(rowIdx)
+        #TODO: read string or float numbers
 
 class WriteDatabase():
-    pass
+    def __init__(self,filePath,sheetName):
+        db = LoadDatabase(filePath,'w')
 
 # --- debug section ---
 def run_test1():
     pth = MyPaths()
-    sh = ReadDatabase(pth.db.aircraft,'V0510')
+    db = LoadDatabase(pth.db.aircraft)
+    sh = db.select_by_name('V0510')
+    
 
 if __name__=="__main__":
     run_test1()
