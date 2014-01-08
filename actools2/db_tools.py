@@ -12,19 +12,15 @@ import xlwt
 import numpy as np
 from paths import MyPaths
 
+# --- text files ---
+
 def read_txt_table(filePath,hasHeader=True):
     pass
 
 def write_txt_table(filePath,hasHeader=True):
     pass
 
-def load_xls_read(xlsPath,sheetName):
-    pass
-
-def load_xls_write(xlsPath,sheetName):
-    pass
-
-
+# --- xls operations ---
 class SectionMap:
     r"""
     Creates map of given xls sheet by searching locations of cells containing 
@@ -103,7 +99,7 @@ class LoadDatabase(object):
             sheet=None
         return sheet
     
-    def _check_name(self):
+    def _check_name(self, name):
         """
         Optional function used to check if name of sheet to save already exists. 
         If name exists then name will be updated in format name_copyN where 
@@ -159,16 +155,139 @@ class LoadDatabase(object):
 
 
 class ReadDatabase():
-    def __init__(self,filePath,sheetName,secKeyword=None):
-        db = LoadDatabase(filePath,'r')
-        self._sheet = db.select_by_name(sheetName)
+    def __init__(self,xlsPath,sheetName,secKeyword=None):
+        db = LoadDatabase(xlsPath,'r')
+        self._inputSheet = db.select_by_name(sheetName)
+        self._irowPrev = -1
         if not secKeyword==None:
-            self.sectionMap = SectionMap(self._sheet,secKeyword)
+            self.sectionMap = SectionMap(self._inputSheet,secKeyword)
     
-    def read_row(self,rowIdx,colIdx,iterable=False):
-        row = self._sheet.row(rowIdx)
-        #TODO: read string or float numbers
+    def find_header(self,header):
+        """
+        Finds specific header in a first row of the open sheet and 
+        returns row number of this header if exists otherwise returns -1
+        """
+        found = False
+        out = list()
+        for irow in range(self._inputSheet.nrows):
+            if str(self._inputSheet.row(irow)[0].value)==header:
+                out.append(irow)
+                found = True
+        if not found:
+            print "Error: specified header not found"
+        if len(out)==1:
+            return out[0]
+        else:
+            return out
 
+    def read_row(self,rowIdx=-1,colIdx=0,iterable=False):
+        """
+        Reads row of data specified by row index and first column.
+        
+        Parameters
+        ----------
+        
+        rowIdx : integer
+            row index. If rowIdx=-1 then next row from previous function call 
+            will be used.
+        colIdx : integer
+            first column index. To skip the first column with parameters 
+            description colIdx should be 1.
+        iterable : bool
+            if row contains single value then single value will be returned if 
+            iterable=False. If iterable=True then array with single value will 
+            be returned
+        """
+        row = self._get_row_by_index(rowIdx)
+        rowValues = self._filter_cells(row[colIdx:])
+        output = np.array(rowValues)
+        if len(output)==1 and not iterable:
+            output = output[0]
+        return output
+    
+    def read_column(self,colIdx,rowIdx=0,numRow=1,iterable=False):
+        """
+        Reads column of data specified by column index, starting row index and 
+        number of rows to be read
+        
+        Parameters
+        ----------
+        
+        colIdx : integer
+            column index
+        rowIdx : integer
+            starting row index
+        numRow : integer
+            number of rows to be read
+        """
+        col = self._inputSheet.col_slice(colIdx,rowIdx,rowIdx+numRow)
+        colValues = self._filter_cells(col)
+        output = np.array(colValues)
+        if len(output)==1 and not iterable:
+            output = output[0]
+        return output
+    
+    def read_row_range(self,startRow,startCol,numRow):
+        """
+        Reads range of rows. Useful for tabulated data: for example airfoil 
+        C81 tables. 
+        
+        Parameters
+        ----------
+        
+        startRow : integer
+            starting row index
+        startCol : integer
+            starting column index
+        numRow : integer
+            number of rows to read
+        
+        Note
+        ----
+        
+        All values of the table to be read should have same data type 
+        (float, string etc.)
+        """
+        line1 = self.read_row(startRow,startCol,True)
+        output = np.zeros([numRow,len(line1)])
+        output[0] = line1
+        for i in range(numRow-1):
+            output[i+1] = self.read_row(startRow+i+1,startCol,True)
+        return output
+    
+    def read_section(self,sectionName,startCol=1):
+        """
+        Creates map of given input sheet using SectionMap and reads all data 
+        in given section starting from startCol column
+        
+        Paramters
+        ---------
+        
+        sectionName : string
+            name of the section to be read
+        startCol : integer
+            index of the first column
+        """
+        data = list()
+        for irow in self.sectionMap[sectionName]:
+            data.append(self.read_row(irow,startCol))
+        return data
+    
+    def _filter_cells(self,cells):
+        values = list()
+        for cell in cells:
+            if not cell.value=='':
+                values.append(cell.value)
+        return values
+    
+    def _get_row_by_index(self,rowIdx):
+        if rowIdx==-1:
+            self._irowPrev += 1
+            rowIdx = self._irowPrev
+        else:
+            self._irowPrev = rowIdx
+        return self._inputSheet.row(rowIdx)
+        
 class WriteDatabase():
     def __init__(self,filePath,sheetName):
         db = LoadDatabase(filePath,'w')
@@ -176,8 +295,11 @@ class WriteDatabase():
 # --- debug section ---
 def run_test1():
     pth = MyPaths()
-    db = LoadDatabase(pth.db.aircraft)
-    sh = db.select_by_name('V0510')
+    sh = ReadDatabase(pth.db.aircraft,'V0510','SECTION: ')
+    for line in sh.read_section('LANDING GEAR'):
+        print line
+
+    
     
 
 if __name__=="__main__":

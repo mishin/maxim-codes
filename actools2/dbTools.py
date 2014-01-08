@@ -298,7 +298,8 @@ class readDB:
         else:
             output=list()
             print "Error: input row not recognized on row ",rowNum
-        return output    
+        return output
+
     def readRowAsArray(self,rowNum,headerNum):
         row=self._inputSheet.row(rowNum)
         values=list()
