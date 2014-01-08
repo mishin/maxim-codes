@@ -2,6 +2,8 @@
 """
 Created on Tue Jan 07 16:21:10 2014
 
+Provides easy interface to XLS and TXT format data.
+
 @author: Maxim
 """
 
@@ -155,6 +157,20 @@ class LoadDatabase(object):
 
 
 class ReadDatabase():
+    """
+    This class provides easy interface for xls database reading. 
+    
+    Parameters
+    ----------
+    
+    xlsPath : string
+        path to xls file
+    sheetName : string
+        name of workbook sheet to be read
+    secKeyword : string
+        name of the keyword to create section map. If not specified then 
+        no section map will be created.
+    """
     def __init__(self,xlsPath,sheetName,secKeyword=None):
         db = LoadDatabase(xlsPath,'r')
         self._inputSheet = db.select_by_name(sheetName)
@@ -287,20 +303,85 @@ class ReadDatabase():
         else:
             self._irowPrev = rowIdx
         return self._inputSheet.row(rowIdx)
-        
+
+
 class WriteDatabase():
     def __init__(self,filePath,sheetName):
-        db = LoadDatabase(filePath,'w')
+        self.db = LoadDatabase(filePath,'w')
+        self._irowPrev = -1
+        self._outputSheet = self.db.add_sheet(sheetName)
+    
+    def save(self):
+        self.db.save()
+    
+    def write_row(self,label='',data=None,rowIdx=-1,colIdx=0):
+        """
+        Writes label to the first cell of the row and data starting from second.
+        If rowIdx = -1 then data will be written to the next row from 
+        previous function call
+        
+        Parameters
+        ----------
+        
+        label : string
+            value of the first cell in row
+        data : array
+            data that will be written into the cells next by label cell
+        rowIdx : integer
+            index of the row the data will be written to
+        colIdx : integer
+            index of the first column the data will be written to
+        """
+        rowIdx = self._get_next_row_index(rowIdx)
+        icol = colIdx
+        if not label=='':
+            self._outputSheet.write(rowIdx,icol,label)
+            icol += 1
+        if not data==None:
+            if hasattr(data,'__iter__'):
+                for i,cellValue in enumerate(data):
+                    self._outputSheet.write(rowIdx,icol+i,cellValue)
+            else:
+                self._outputSheet.write(rowIdx,icol,cellValue)
+    
+    def write_column(self,data,startRow,colIdx):
+        """
+        Writes data to the column specified
+        """
+        startRow = self._get_next_row_index(startRow)
+        if hasattr(data,'__iter__'):
+            for i,cellValue in enumerate(data):
+                self._outputSheet.write(i+startRow,colIdx,cellValue)
+                self._irowPrev += 1
+        else:
+            self._outputSheet.write(startRow,colIdx,data)
+    
+    def write_row_range(self,data,startRow,startCol):
+        """
+        Writes data to the range of rows
+        """
+        startRow = self._get_next_row_index(startRow)
+        if hasattr(data,'__iter__'):
+            for irow,line in enumerate(data):
+                for icol,cellValue in enumerate(line):
+                    self._outputSheet.write(startRow+irow,startCol+icol,cellValue)
+        else:
+            self._outputSheet.write(startRow,startCol,data)
+    
+    def _get_next_row_index(self,rowIdx):
+        if rowIdx==-1:
+            self._irowPrev += 1
+            rowIdx = self._irowPrev
+        else:
+            self._irowPrev = rowIdx
+        return rowIdx
 
 # --- debug section ---
 def run_test1():
     pth = MyPaths()
-    sh = ReadDatabase(pth.db.aircraft,'V0510','SECTION: ')
-    for line in sh.read_section('LANDING GEAR'):
-        print line
-
-    
-    
+    sh1 = ReadDatabase(pth.db.airfoil,'Clark-Y')
+    data = sh1.read_row_range(10,1,35)
+    print data
 
 if __name__=="__main__":
     run_test1()
