@@ -27,12 +27,16 @@ for i = 1:nSeg;
     aero = missile_trim_AVL(gb, fc);
     dR(i) = -hStep*aero.LD;
     dt(i) = dR(i)/V(i);
-%    alpha(i) = aero.alpha;
-%    de(i) = aero.elevator;
-%    LD(i) = aero.LD;
-%    SM(i) = aero.SM;
+    alpha(i) = aero.alpha;
+    de(i) = aero.elevator;
+    LD(i) = aero.LD;
+    SM(i) = aero.SM;
 end
-R =sum(dR)/1e3;
-t = sum(dt)/60;
+alpha
+de
+LD
+SM
+R =sum(dR)/1e3
+t = sum(dt)/60
 
 end

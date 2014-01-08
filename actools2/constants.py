@@ -1,53 +1,34 @@
 # -*- coding: utf-8 -*-
 """
-Class for loading global constants from the excel constants database file
-Provides functions for loading cosntant values.
+Created on Wed Jan 08 13:37:27 2014
+
+@author: Maxim
 """
+from paths import MyPaths
+from db_tools import ReadDatabase
 
-import paths
-import dbTools
+g = 9.80665
 
-g = 9.81
+def load(sheetName):
+    """
+    loads list of constants from xls database
+    """
+    pth    = MyPaths()
+    output = {}
+    sh = ReadDatabase(pth.db.constants,sheetName)
+    for irow in range(1,sh.nrows):
+        name  = sh.read_cell(irow,1)
+        value = sh.read_row(irow,2,False)
+        output[str(name)] = value
+    return output
 
-def load(sheetName,overrideColumn=0):
-    const = Constants()
-    const.load(sheetName,overrideColumn)
-    return const
 
-
-class Constants():
-    def __init__(self):
-        pth=paths.Database()
-        self.db=dbTools.loadDB(pth.constants)
-        self.data=list()
-        self.dict=dict()
-        self._headers=1
-    def load(self,sheetName,overrideColumn=0):
-        data=self.db.readSheet(sheetName)
-        self.data=data
-        for i in range(1,len(self.data),1):
-            row=data[i]
-            try:
-                value=float(row[overrideColumn+self._headers])
-            except:
-                value=float(row[self._headers])
-            key=str(row[0])
-            self.dict.update([(key,value)])
-    def listConstants(self):
-        for key in self.dict.keys():print key
-    def getValue(self,name):
-        value=None
-        try:
-            value=self.dict.get(name)
-        except:
-            print('error in constants(): entry not found')
-        return value
-
+# --- debug ---
 def run_test1():
-    const = Constants()
-    const.load('mass',0)
-    const.listConstants()
-    print const.getValue('fuseCGratio')
+    mass = load('mass')
+    print mass['compCorr']
+    print mass['fuseCGratio']
+    print mass['wingCGratio']
 
-if __name__=='__main__':
+if __name__=="__main__":
     run_test1()

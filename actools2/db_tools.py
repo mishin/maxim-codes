@@ -7,10 +7,8 @@ Provides easy interface to XLS and TXT format data.
 @author: Maxim
 """
 
-import os
 import xlrd
 import xlutils.copy
-import xlwt
 import numpy as np
 from paths import MyPaths
 
@@ -175,6 +173,8 @@ class ReadDatabase():
         db = LoadDatabase(xlsPath,'r')
         self._inputSheet = db.select_by_name(sheetName)
         self._irowPrev = -1
+        self.nrows = self._inputSheet.nrows
+        self.ncols = self._inputSheet.ncols
         if not secKeyword==None:
             self.sectionMap = SectionMap(self._inputSheet,secKeyword)
     
@@ -272,7 +272,7 @@ class ReadDatabase():
         return output
     
     def read_section(self,sectionName,startCol=1):
-        """
+        """\
         Creates map of given input sheet using SectionMap and reads all data 
         in given section starting from startCol column
         
@@ -289,6 +289,9 @@ class ReadDatabase():
             data.append(self.read_row(irow,startCol))
         return data
     
+    def read_cell(self,rowIdx,colIdx):
+        return self._inputSheet.cell(rowIdx,colIdx).value
+
     def _filter_cells(self,cells):
         values = list()
         for cell in cells:

@@ -37,7 +37,21 @@ class MyPaths:
         self.mhclasses = os.path.abspath(self.wdir + '/Jfoil/mhclasses.jar')
         self.tmpDir    = os.path.abspath(self.wdir + '/temp')
         self.platform  = determine_platform()
+        if self.platform=='lin32':
+            self.avl       = self.wdir + '/Avl/avl_lin32'
+            self.Xfoil     = self.wdir + '/Xfoil/xfoil_lin32'
+        elif self.platform=='lin64':
+            self.avl       = self.wdir + '/Avl/avl_lin64'
+            self.Xfoil     = self.wdir + '/Xfoil/xfoil_lin64'
+        elif self.platform=='nt':
+            self.avl       = self.wdir + '\\Avl\\avl_win32.exe'
+            self.Xfoil     = self.wdir + '\\Xfoil\\xfoil_win32.exe'
+        else:
+            print 'Error: unrecognized platform' 
     
+    def _init_xfoilpath(self):
+        pass
+
     def set_file_prefix(self,prefix):
         """
         sets temporal filename prefix that will be used with get_tmp_file
