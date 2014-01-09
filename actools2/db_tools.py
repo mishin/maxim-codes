@@ -345,9 +345,9 @@ class WriteDatabase():
                 for i,cellValue in enumerate(data):
                     self._outputSheet.write(rowIdx,icol+i,cellValue)
             else:
-                self._outputSheet.write(rowIdx,icol,cellValue)
+                self._outputSheet.write(rowIdx,icol,data)
     
-    def write_column(self,data,startRow,colIdx):
+    def write_column(self,data,startRow=-1,colIdx=0):
         """
         Writes data to the column specified
         """
@@ -359,17 +359,20 @@ class WriteDatabase():
         else:
             self._outputSheet.write(startRow,colIdx,data)
     
-    def write_row_range(self,data,startRow,startCol):
+    def write_row_range(self,data,startRow=-1,startCol=0):
         """
         Writes data to the range of rows
         """
-        startRow = self._get_next_row_index(startRow)
-        if hasattr(data,'__iter__'):
-            for irow,line in enumerate(data):
-                for icol,cellValue in enumerate(line):
-                    self._outputSheet.write(startRow+irow,startCol+icol,cellValue)
-        else:
-            self._outputSheet.write(startRow,startCol,data)
+        for line in data:
+            self.write_row('',line,-1,1)
+#        startRow = self._get_next_row_index(startRow)
+#        if hasattr(data,'__iter__'):
+#            for irow,line in enumerate(data):
+#                self._irowPrev += 1
+#                for icol,cellValue in enumerate(line):
+#                    self._outputSheet.write(startRow+irow,startCol+icol,cellValue)
+#        else:
+#            self._outputSheet.write(startRow,startCol,data)
     
     def _get_next_row_index(self,rowIdx):
         if rowIdx==-1:
