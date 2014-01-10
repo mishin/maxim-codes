@@ -61,7 +61,7 @@ class AirfoilPolar:
             self.alphaClmax = np.zeros(n)
             for i in range(n):
                 _cl = self.cl[i]
-                self.clmax[i],self.alphaClmax = self._get_clmax(_cl,self.alpha,simple)
+                self.clmax[i],self.alphaClmax[i] = self._get_clmax(_cl,self.alpha,simple)
         else:
             self.clmax,self.alphaClmax = self._get_clmax(self.cl,self.alpha,simple)
 

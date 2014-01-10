@@ -809,7 +809,7 @@ class Airfoil:
             self.upPts = upPts
             self.loPts = loPts
         else:
-            return coord
+            return coord    
     def scale_thickness(self,newThickness,analysis=True):
         """
         Scales airfoil in Y-direction to achieve required thickness. Useful 

@@ -8,6 +8,7 @@ from paths import MyPaths
 from db_tools import ReadDatabase
 
 g = 9.80665
+Rearth = 6371.0e3
 
 def load(sheetName):
     """
@@ -22,6 +23,10 @@ def load(sheetName):
         output[str(name)] = value
     return output
 
+
+def get_gravity_acceleration(altitude):
+    c = Rearth*Rearth/(Rearth+altitude)**2.0
+    return g*c
 
 # --- debug ---
 def run_test1():

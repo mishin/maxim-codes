@@ -44,7 +44,7 @@ class Timer:
         if display:
             self._disp_lap(-1)
     
-    def stop(self,header,detailed=False):
+    def stop(self,header='',detailed=False):
         self.lap(header, detailed==False)
         print 'Timer =>',self._header
         self.display(detailed)

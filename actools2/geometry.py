@@ -20,6 +20,14 @@ import math
 from math import radians, pi,sin,cos
 from numpy import flipud, vstack, arange, array, zeros,linspace,hstack,transpose
 
+def sort_airfoil_coordinates(coordinates,start=0.1,end=0.9):
+    crdNew = ny.zeros(coordinates.shape)
+    i = 0
+    for pt in coordinates:
+        if start<=pt[0]<=end:
+            crdNew[i] = pt
+            i += 1
+    return crdNew[:i]
 
 def cross_section_cst(kUp,kLo,width,heightUp,heightLo,numPts=25):
     x = linspace(0,pi,numPts,True)

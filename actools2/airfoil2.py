@@ -6,19 +6,19 @@ Created on Wed Jan 08 14:02:55 2014
 """
 from paths import MyPaths
 import numpy as np
-import shlex
-import os
-from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
 import db_tools
 from scipy.interpolate import interp1d
+from scipy.optimize import fminbound
 from misc_tools import Timer
 import geometry as geom
-from airfoil_polar import *
+from airfoil_polar import AirfoilPolar
+import xfoil_analysis as xf
+import javafoil_analysis as jf
 
 pth = MyPaths()
 
-def load(airfoilName,dbPath=''):
+def load(airfoilName,dbPath=None):
     """
     loads airfoil from .xls database
     
@@ -41,7 +41,7 @@ def load(airfoilName,dbPath=''):
     >>> af.plot()
     """
     af = Airfoil()
-    af.read_xls(airfoilName,dbPath)
+    af.read_db(airfoilName,dbPath)
     return af
 
 def cst(Au,Al):
@@ -106,27 +106,6 @@ class CstCurve():
         return self.classCurve(x) * self.shapeCurve(x)
 
 
-
-
-
-class Xfoil:
-    def __init__(self,graphic=False):
-        args = shlex.split(pth.Xfoil,False,os.name=='posix')
-        self.ps=Popen(args,stdin=PIPE,stderr=PIPE,stdout=PIPE)
-        if graphic==False:
-            self.cmd('PLOP\nG\n')
-    def cmd(self,command,echo=False):
-        self.ps.stdin.write(command+'\n')
-        if echo: print command
-    def terminate(self):
-        self.cmd('\n\n\nQUIT')
-        self.ps.stderr.close()
-        self.ps.stdout.read()
-
-
-
-
-
 class Airfoil:
     def __init__(self):
         self._db = pth.db.airfoil
@@ -155,6 +134,7 @@ class Airfoil:
         xCoord    = db.read_row(0,1)
         yCoord    = db.read_row(1,1)
         self.coord = np.transpose([xCoord,yCoord])
+        self._separate_coordinates()
         # geometry
         i = db.find_header('GEOMETRY')
         if i==-1:
@@ -162,6 +142,7 @@ class Airfoil:
         else:
             self.thickness = db.read_row(i+1,1)
             self.camber    = db.read_row(i+2,1)
+            self._analyze_geometry()
         # analysis
         i = db.find_header('ANALYSIS')
         if i==-1:
@@ -234,6 +215,7 @@ class Airfoil:
             self._read_txt_type2(lines[1:],iup,ilo)
         else:
             self._read_txt_type1(lines)
+        self._analyze_geometry()
         
     def write_txt(self,filePath,tab=True,writeName=True):
         """
@@ -350,14 +332,30 @@ class Airfoil:
         create cubic splines for x and y coordinate with respect to curve 
         length parameter
         """
-        lenUp = geom.curve_pt_dist_normalized(self.upPts)
-        lenLo = geom.curve_pt_dist_normalized(self.loPts)
-        self.upCurve = CurveXyt(self.upPts[:,0],self.upPts[:,1],lenUp)
-        self.loCurve = CurveXyt(self.loPts[:,0],self.loPts[:,1],lenLo)
+        # parametric splines x = x(t), y = y(t)
+        lenUp = geom.curve_pt_dist_normalized(self.ptsUp)
+        lenLo = geom.curve_pt_dist_normalized(self.ptsLo)
+        self.upCurve = CurveXyt(self.ptsUp[:,0],self.ptsUp[:,1],lenUp)
+        self.loCurve = CurveXyt(self.ptsLo[:,0],self.ptsLo[:,1],lenLo)
+        # non parametric splines y = y(x)
+        ptsUpSorted = geom.sort_airfoil_coordinates(self.ptsUp)
+        ptsLoSorted = geom.sort_airfoil_coordinates(self.ptsLo)
+        self.upCurve2 = interp1d(ptsUpSorted[:,0],ptsUpSorted[:,1],'cubic')
+        self.loCurve2 = interp1d(ptsLoSorted[:,0],ptsLoSorted[:,1],'cubic')
 
     def _analyze_geometry(self):
-        pass
-    
+        """
+        calculates airfoil geometry parameters
+        """
+        self._create_splines()
+        _tc  = lambda x: -(self.upCurve2(x) - self.loCurve2(x))
+        _cam = lambda x: -(self.upCurve2(x) + self.loCurve2(x))
+        xtc = fminbound(_tc,0.1,0.9)
+        xcam = fminbound(_cam,0.1,0.9)
+        self.thickness = -_tc(xtc)
+        self.camber = -_cam(xcam)
+        self.camberLocation = xcam
+
     def redim(self,nPts,overwrite=False,updCurves=False):
         """
         Redimension and redistribution of airfoil points using cosine function. 
@@ -425,19 +423,130 @@ class Airfoil:
         if analysis:
             self.build_aero_table()
     
-    def build_aero_table(self):
-        pass
-    def get_xfoil_polar():
-        pass
-    def get_jfoil_polar():
-        pass
+    def build_aero_table(self,MachSeq=[0.1,0.9,0.1],alphaSeq=[-10,25,1.0],
+                         mode='javafoil'):
+        """
+        builds full table of aerodynamic coefficients using *fast* solvers
+        Coefficients to be caclulated are as follows:
+            
+            - lift coefficient vs. alpha, Mach
+            - drag coefficient vs. alpha, Mach
+            - moment coefficient vs. alpha, Mach
+        
+        Parameters
+        ----------
+        
+        MachSeq : array float
+            array of Mach number to be analyzed in format [start, end, step]
+        alphaSeq : array float
+            array of angle of attack sequence to be analyzed in format 
+            [start, end, step]
+        mode : string
+            if mode='javafoil' then coefficients will be generated using 
+            javafoil, if 'xfoil' then using xfoil
+        """
+        Mach = np.arange(MachSeq[0], MachSeq[1], MachSeq[2])
+        Re = list()
+        for i,M in enumerate(Mach):
+            Re.append(fc.FlightConditions(speed=M).Re)
+            if mode=='javafoil':
+                tmpPolar = self.get_J_polar(M, Re[i], alphaSeq)
+            elif mode=='xfoil':
+                tmpPolar = self.get_X_polar(M, Re[i], alphaSeq, 200)
+            if i==0:
+                self.polar.cl = tmpPolar.cl
+                self.polar.cd = tmpPolar.cd
+                self.polar.cm = tmpPolar.cm
+            else:
+                self.polar.cl = np.vstack([self.polar.cl, tmpPolar.cl])
+                self.polar.cd = np.vstack([self.polar.cd, tmpPolar.cd])
+                self.polar.cm = np.vstack([self.polar.cm, tmpPolar.cm])
+        self.polar.Re     = Re
+        self.polar.source = 'javafoil'
+        self.polar.Mach   = Mach
+        self.polar.alpha  = tmpPolar.alpha
+        self.polar.create_splines(mach=True)
+
+    def get_xfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1],nIter=10,graphic=False,smooth=False):
+        """
+        Calculates aerodynamic coefficients at given flight conditions using Xfoil.
+        
+        Parameters
+        ----------
+        
+        Mach : float
+            Mach number
+        Re : float
+            Reynolds number
+        alphaSeq : array float
+            array of angle of attack sequence to be analyzed in format 
+            [start, end, step]
+        nIter : integer
+            number of xfoil iterations. Default value is that is enough for 
+            conventional airfoil configurations. For complex airfoil shapes 
+            this number should be increased (for example while optimization 
+            using genetic algorithm)
+        
+        Returns
+        -------
+        
+        polar : AirfoilPolar
+            airfoil polar with all aerodynamic data at specified flight 
+            conditions
+        """
+        return xf.get_xfoil_analysis(self,Mach,Re,alphaSeq,nIter,graphic,smooth)
+
+    def get_jfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1]):
+        """
+        Calculates aerodynamic coefficients at given flight conditions using Xfoil.
+        
+        Parameters
+        ----------
+        
+        Mach : float
+            Mach number
+        Re : float
+            Reynolds number
+        alphaSeq : array float
+            array of angle of attack sequence to be analyzed in format 
+            [start, end, step]
+        
+        Returns
+        -------
+        
+        polar : AirfoilPolar
+            airfoil polar with all aerodynamic data at specified flight 
+            conditions
+        
+        Note
+        ----
+        
+        Javafoil requires path to java installed in system in 
+        :file:`javapath.txt`. For linux OS file should contain *java* 
+        keyword only
+        """
+        return jf.get_javafoil_analysis(self,Mach,Re,alphaSeq)
 
 
 # --- debug section ---
-def run_test1():
+def run_test_geometry():
     af = Airfoil()
-    af.read_db('NACA0012')
+    #af.read_db('NACA0012')
+    af.read_txt('clarky.txt')
+    print af.thickness
+    print af.camber
+    print af.camberLocation
     af.display()
 
+def run_test_aero_analysis():
+    af = Airfoil()
+    timer = Timer()
+    af.read_db('NACA0012')
+    timer.lap('read db')    
+    af.get_jfoil_polar(0.2,3e6)
+    timer.lap('javafoil')
+    af.get_xfoil_polar(0.2,3e6)
+    timer.stop('xfoil')
+
 if __name__=="__main__":
-    run_test1()
+    run_test_geometry()
