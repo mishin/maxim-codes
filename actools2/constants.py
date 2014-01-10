@@ -25,7 +25,7 @@ def load(sheetName):
 
 
 def get_gravity_acceleration(altitude):
-    c = Rearth*Rearth/(Rearth+altitude)**2.0
+    c = (Rearth/(Rearth+altitude))**2.0
     return g*c
 
 # --- debug ---

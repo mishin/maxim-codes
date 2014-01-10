@@ -20,7 +20,7 @@ import math
 from math import radians, pi,sin,cos
 from numpy import flipud, vstack, arange, array, zeros,linspace,hstack,transpose
 
-def sort_airfoil_coordinates(coordinates,start=0.1,end=0.9):
+def sort_airfoil_coordinates(coordinates,start=0.1,end=0.95):
     crdNew = ny.zeros(coordinates.shape)
     i = 0
     for pt in coordinates:
@@ -28,6 +28,25 @@ def sort_airfoil_coordinates(coordinates,start=0.1,end=0.9):
             crdNew[i] = pt
             i += 1
     return crdNew[:i]
+
+
+def get_sine_distribution(nPts):
+    """
+    Returns sine distribution between 0 and 1 with given number of points
+    """
+    xx = ny.linspace(0.0,1.0,nPts)
+    cos_curve = lambda x: 1.0-ny.cos(x*ny.pi/2.0)
+    return ny.array([cos_curve(_x) for _x in xx])
+
+
+def get_cosine_distribution(nPts):
+    """
+    Returns cosine distribution between 0 and 1 with given number of points
+    """
+    xx = ny.linspace(0.0,1.0,nPts)
+    cos_curve = lambda x: (ny.cos(x*ny.pi)+1.0)/2.0
+    return ny.flipud(ny.array([cos_curve(_x) for _x in xx]))
+
 
 def cross_section_cst(kUp,kLo,width,heightUp,heightLo,numPts=25):
     x = linspace(0,pi,numPts,True)
@@ -323,6 +342,16 @@ def runTest():
     plt.plot(nodes.x,nodes.y,'ro')
     plt.show()
     
+def sine_dist_test():
+    pts1 = get_cosine_distribution(25)
+    pts2 = get_sine_distribution(25)
+    plt.hold(True)
+    plt.plot(pts1,ny.zeros(pts1.shape)+.2,'ko-')
+    plt.plot(pts2,ny.zeros(pts1.shape)+.1,'ro-')
+    plt.plot(pts1[0],0.14,'r*')
+    plt.plot(pts2[0],0.24,'r*')
+    plt.axis([0,1,0,.3])
+    plt.show()
 
 if __name__=="__main__":
-    runTest2()
+    sine_dist_test()

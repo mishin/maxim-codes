@@ -37,20 +37,20 @@ class Interp2D:
 class AirfoilPolar:
     def __init__(self):
         self.source = None
-        self.cl = None
-        self.cd = None
-        self.cm = None
-        self.alpha = None
+        self.cl = list()
+        self.cd = list()
+        self.cm = list()
+        self.alpha = list()
         self.Mach = None
         self.Re  = None
-        self.cdp = None
-        self.TU = None
-        self.TL = None
-        self.SU = None
-        self.SL = None
-        self.LD = None
-        self.AC = None
-        self.CP = None
+        self.cdp = list()
+        self.TU = list()
+        self.TL = list()
+        self.SU = list()
+        self.SL = list()
+        self.LD = list()
+        self.AC = list()
+        self.CP = list()
 
     def _calc_clmax(self,simple=True):
         #FIXME: clmax trough optimization is not working

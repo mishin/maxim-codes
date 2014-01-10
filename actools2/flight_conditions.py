@@ -126,6 +126,7 @@ def run_test1():
     alt = get_density_altitude(1.0)
     fc.set_altitude(alt)
     print fc.atm.density
-
+    
+    print const.get_gravity_acceleration(10000)
 if __name__=="__main__":
     run_test1()
