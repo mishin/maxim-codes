@@ -4,12 +4,12 @@ Created on Thu Oct 17 22:55:54 2013
 
 @author: Maxim
 """
-from numpy import array, arange
+from numpy import array, arange, flipud
 from pointwise_mesh import AirfoilCMesh, AirfoilOMesh
 from paths import CFD_paths
 import airfoil
 from FlightConditions import FlightConditions
-from fluent_solver import FluentAirfoil
+from fluent_solver import FluentAirfoil, FluentOutput
 
 class CFDsolver():
     def __init__(self,airfoil,flightConditions,yplus=1.0,mesh='C'):
@@ -22,15 +22,56 @@ class CFDsolver():
         elif mesh=='O':
             self.mesh = AirfoilOMesh(airfoil,dsWall=self.fc.get_wall_spacing(yplus))
         self.fluent = FluentAirfoil()
+        self.fluent._meshtype = mesh
     
-    def create_mesh(self):
+    def create_mesh(self,reverse=False):
         self.mesh.create(self.paths.file_glf,self._caseFilePath)
 
-    def run_for_multiple_aoa(self,alphaSequence=arange(-5,20,3),Cp=False):
-        for alpha in alphaSequence:
-            self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,Cp)
+    def run_for_multiple_aoa(self,alphaSequence=arange(-5,20,3),
+                             turbulenceModel='SA',Cp=False,iterMax=5000):
+        """
+        Run fluent at sequence of angle of attacks
+        
+        Parameters
+        ----------
+        
+        alphaSequence : array, deg
+            array of angles of attack
+        turbulenceModel : string
+            fluent turbulence model. Two options are available: 'SA' and 
+            'ke-realizable'
+        Cp : bool
+            This option is not available yet.
+        iterMax : int
+            maximum number of iterations
+        """
+        result = FluentOutput(len(alphaSequence))
+        for i,alpha in enumerate(alphaSequence):
+            result1 = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax)
+            result.alpha[i] = result1.alpha
+            result.cl[i] = result1.cl
+            result.cd[i] = result1.cd
+            result.cm[i] = result1.cm
+            result.LD[i] = result1.LD
+        return result
     
     def run_for_single_aoa(self,alpha=0.0,turbulenceModel='SA',Cp=False,iterMax=5000):
+        """
+        Run fluent at single angle of attack
+        
+        Parameters
+        ----------
+        
+        alpha : float, deg
+            angle of attack
+        turbulenceModel : string
+            fluent turbulence model. Two options are available: 'SA' and 
+            'ke-realizable'
+        Cp : bool
+            This option is not available yet.
+        iterMax : int
+            maximum number of iterations
+        """
         result = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax)
         return result
 
@@ -86,5 +127,24 @@ def run_o_mesh():
     solver.create_mesh()
     lowFidelity = solver.run_for_single_aoa(2.0,iterMax=10000,turbulenceModel='ke-realizable')
 
+def run_lowRe():
+    af = airfoil.Airfoil()
+    af.read_txt(r'D:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
+    result = af.get_X_polar(0.02,0.355e6,[0,16,2.0],nIter=100)
+#    fc = FlightConditions(22.,0,0,0.24)
+#    solver = CFDsolver(af,fc,1.0,mesh='O')
+#    solver.fluent.residuals['energy']=1e-6
+#    solver.fluent.relaxationFactor['xvelocity'] = 1e-3
+#    solver.mesh._airfoilPts = 75
+#    solver.mesh._interiorPts = 75
+#    solver.mesh._dsTE = 1e-5
+#    solver.mesh._dsLE = 2e-3
+#    solver.mesh._growthRate = 1.2
+#    solver.create_mesh()
+#    alpha = array([-10.,-5,0,5,10,12,14,16,18])
+#    result = solver.run_for_multiple_aoa(alpha,turbulenceModel='SA')
+    for a,cl,cd,cm in zip(result.alpha,result.cl,result.cd,result.cm):
+        print a,'\t',cl,'\t',cd,'\t',cm
+
 if __name__=="__main__":
-    run_o_mesh()
+    run_lowRe()

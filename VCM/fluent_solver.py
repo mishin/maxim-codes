@@ -10,15 +10,23 @@ from paths import CFD_paths
 from os import system
 
 class FluentOutput():
-    def __init__(self):
+    def __init__(self,n=0):
         self.Mach = 0.0
         self.Re = 0.0
-        self.alpha = 0.0
-        self.cl = 0.0
-        self.cd = 0.0
-        self.cm = 0.0
-        self.cp = list()
-        self.LD = 0.0
+        if n==0:
+            self.alpha = 0.0
+            self.cl = 0.0
+            self.cd = 0.0
+            self.cm = 0.0
+            self.cp = list()
+            self.LD = 0.0
+        else:
+            self.alpha = zeros(n)
+            self.cl = zeros(n)
+            self.cd = zeros(n)
+            self.cm = zeros(n)
+            self.cp = list()
+            self.LD = zeros(n)
     
     def __repr__(self):
         out = 'Mach = %.4f\n'
@@ -42,11 +50,16 @@ class FluentAirfoil():
         self.turbulence = 'SA' #'ke-realizable'
         self.paths = CFD_paths()
         self.result = FluentOutput()
+        self._meshtype = 'O'
     
     def _create_journal_file(self,alpha,flightConditions,caseFilePath=None,turbulenceModel='SA',Cp=False,
                              journalPath=None,outputDirectory=None):
-        ffbc = 'bc-3-5'
-        wallbc = 'bc-2-4'
+        if self._meshtype=='O':
+            ffbc = 'bc-3-5'
+            wallbc = 'bc-2-4'
+        elif self._meshtype=='C':
+            ffbc = 'bc-3-4'
+            wallbc = 'bc-2-5'
         if outputDirectory==None:
             outputDirectory = self.paths.tmpdir
         if journalPath==None:
