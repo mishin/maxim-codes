@@ -64,7 +64,7 @@ def cst_fit():
     ax1 = fig.add_subplot(211)
     ax2 = fig.add_subplot(212)
     ax1.hold(True)
-    ax1.set_title('AG24 airfoil CST fit')
+    ax1.set_title('AG24 a')
     ax2.set_title('Fit error')
     ax1.plot(af.coord[:,0],af.coord[:,1],'k-')
     ax1.plot(afnew.coord[:,0],afnew.coord[:,1],'r.-')
