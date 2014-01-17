@@ -130,19 +130,19 @@ def run_o_mesh():
 def run_lowRe():
     af = airfoil.Airfoil()
     af.read_txt(r'D:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
-    result = af.get_X_polar(0.02,0.355e6,[0,16,2.0],nIter=100)
-#    fc = FlightConditions(22.,0,0,0.24)
-#    solver = CFDsolver(af,fc,1.0,mesh='O')
-#    solver.fluent.residuals['energy']=1e-6
-#    solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-#    solver.mesh._airfoilPts = 75
-#    solver.mesh._interiorPts = 75
-#    solver.mesh._dsTE = 1e-5
-#    solver.mesh._dsLE = 2e-3
-#    solver.mesh._growthRate = 1.2
-#    solver.create_mesh()
-#    alpha = array([-10.,-5,0,5,10,12,14,16,18])
-#    result = solver.run_for_multiple_aoa(alpha,turbulenceModel='SA')
+#    result = af.get_X_polar(0.02,0.355e6,[0,16,2.0],nIter=100)
+    fc = FlightConditions(22.,0,0,0.24)
+    solver = CFDsolver(af,fc,1.0,mesh='O')
+    solver.fluent.residuals['energy']=1e-6
+    solver.fluent.relaxationFactor['xvelocity'] = 1e-3
+    solver.mesh._airfoilPts = 75
+    solver.mesh._interiorPts = 75
+    solver.mesh._dsTE = 1e-5
+    solver.mesh._dsLE = 2e-3
+    solver.mesh._growthRate = 1.2
+    solver.create_mesh()
+    alpha = array([-10.,-5,0,5,10,12,14,16,18])
+    result = solver.run_for_multiple_aoa(alpha,turbulenceModel='SA')
     for a,cl,cd,cm in zip(result.alpha,result.cl,result.cd,result.cm):
         print a,'\t',cl,'\t',cd,'\t',cm
 
