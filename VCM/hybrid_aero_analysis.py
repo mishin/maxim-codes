@@ -10,6 +10,9 @@ import CFDpolar as cfd
 import numpy as np
 from fluent_solver import FluentOutput
 from scipy.interpolate import interp1d
+import os
+from miscTools import denormalize
+from scipy.optimize import fminbound
 
 def write_polar(path,polar,polarType):
     fid = open(path,'wt')
@@ -20,7 +23,7 @@ def write_polar(path,polar,polarType):
     fid.close()
 
 def aero_analysis(af, fc, filename):
-    result1 = af.get_X_polar(fc.Mach, fc.Re, [0,16,2.0],nIter=100)
+    result1 = af.get_J_polar(fc.Mach, fc.Re, [0,16,2.0])
     solver = cfd.CFDsolver(af,fc,1.0,mesh='O')
     solver.fluent.residuals['energy']=1e-6
     solver.fluent.relaxationFactor['xvelocity'] = 1e-3
@@ -32,10 +35,10 @@ def aero_analysis(af, fc, filename):
     solver.create_mesh()
     alpha = np.arange(0,17,2.0)
     result2 = solver.run_for_multiple_aoa(alpha,turbulenceModel='ke-realizable')
-#    write_polar('xfoil_%s'%filename, result1, 'xfoil')
-#    write_polar('cfd_%s'%filename, result2, 'cfd')
     result3 = combine_results(result1, result2)
-    write_polar('combined_%s'%filename, result3,'combined')
+    result3.thickness = af.thickness
+    write_polar(filename, result3,'combined')
+    return result3
 
 
 def combine_results(resultXfoil, resultCfd):
@@ -50,6 +53,15 @@ def combine_results(resultXfoil, resultCfd):
     resultNew.cl = clAlpha(alphaNew)
     resultNew.cd = cdAlpha(alphaNew)
     resultNew.cm = cmAlpha(alphaNew)
+    f1 = lambda x: -clAlpha(x)
+    f2 = lambda x: -clAlpha(x)/cdAlpha(x)
+    a1 = fminbound(f1,alphaMin, alphaMax, full_output=1)
+    a2 = fminbound(f2,alphaMin, alphaMax, full_output=1)
+    resultNew.alphaClmax = a1[0]
+    resultNew.alphaLDmax = a2[0]
+    resultNew.Clmax = -a1[1]
+    resultNew.LDmax = -a2[1]
+    resultNew.cdAtLDmax = cdAlpha(a2[0])
     return resultNew
 
 def run_test1():
@@ -61,6 +73,79 @@ def run_test1():
     fc = cfd.FlightConditions(22.0,0.0,0,0.24)
     result = aero_analysis(af,fc,'testPolar.txt')
 
+def calculate_bounds():
+    X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
+    lb = X - np.array([0.01, 0.05, 0.05, 0.05, 0.00, 0.05, 0.05, 0.05, 0.05, 0.05])
+    ub = X + np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.01, 0.05, 0.05, 0.05, 0.00])
+    af1 = airfoil.cst(lb[0:5],ub[5:10])
+    af1.plot()
+    af2 = airfoil.cst(ub[0:5],lb[5:10])
+    af2.plot()
+    
+    fc = cfd.FlightConditions(22.0,0.0,0,0.24)
+    result = aero_analysis(af1,fc,'thin.txt')
+    result = aero_analysis(af2,fc,'thick.txt')
+
+
+def read_doe(path):
+    fid = open(path,'rt')
+    lines = fid.readlines()
+    output = np.zeros([100,10])
+    fid.close()
+    i = 0
+    for line in lines:
+        if not line.strip()=='':
+            seg = line.split()
+            for j,val in enumerate(seg):
+                output[i,j] = float(val)
+            i += 1
+    return output
+
+def write_output(x,result, path):
+    fid = open(path,'a')
+    for val in x:
+        fid.write('%.6f\t'%val)
+    fid.write('%.6f\t'%result.LDmax)
+    fid.write('%.6f\t'%result.alphaLDmax)
+    fid.write('%.6f\t'%result.Clmax)
+    fid.write('%.6f\t'%result.alphaClmax)
+    fid.write('%.6f\t'%result.cdAtLDmax)
+    fid.write('%.6f\n'%result.thickness)
+    fid.close()
+
+def run_full_table_analysis():
+    X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
+    lb = X - np.array([0.01, 0.05, 0.05, 0.05, 0.00, 0.05, 0.05, 0.05, 0.05, 0.05])
+    ub = X + np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.01, 0.05, 0.05, 0.05, 0.00])
+    
+    fc = cfd.FlightConditions(22.0,0.0,0,0.24)
+    wdir = os.getcwd() + '\\RENNaero\\'
+    pathDOE = wdir + '1. inputDOE2.txt'
+    pathOutput = wdir + '2. outputAero2.txt'
+    
+    fid = open(pathOutput,'wt')
+    fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tthickness\n')
+    fid.close()
+    designs = read_doe(pathDOE)
+    for i,design in enumerate(designs):
+        design = denormalize(design,lb,ub)
+        af = airfoil.cst(design[0:5],design[5:10])
+        filename = wdir + 'polar_%d.txt'%(i+1)
+        result = aero_analysis(af, fc, filename)
+        write_output(design,result,pathOutput)
+        af.write_txt(wdir + 'coordinates_%d.txt'%(i+1))
+
+def run_baseline():
+    X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
+    fc = cfd.FlightConditions(22.0,0.0,0,0.24)
+    fid = open('RENNbaseline.txt','wt')
+    fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tthickness\n')
+    fid.close()
+    #designs = read_doe(pathDOE)
+    #for i,design in enumerate(designs):
+    af = airfoil.cst(X[0:5],X[5:10])
+    result = aero_analysis(af, fc, 'tmp1z.txt')
+    write_output(X,result,'RENNbaseline.txt')
 
 if __name__=="__main__":
-    run_test1()
+    run_baseline()

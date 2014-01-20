@@ -24,9 +24,8 @@ def cst_fit():
 
     def _obj(x,*args):
         up,lo = args
-        Au = array([x[0],x[1],x[2],x[3]])
-        #Al = array([-x[0],x[4],x[5],x[6]])
-        Al = array([x[4],x[5],x[6],x[7]])
+        Au = x[0:5]
+        Al = x[5:10]
         afcst = airfoil.cst(Au,Al)
         sqErr = 0.0
         for i,pt in enumerate(up[:,0]):
@@ -37,9 +36,8 @@ def cst_fit():
     
     def _err(x,*args):
         up,lo = args
-        Au = array([x[0],x[1],x[2],x[3]])
-        #Al = array([-x[0],x[4],x[5],x[6]])
-        Al = array([x[4],x[5],x[6],x[7]])
+        Au = x[0:5]
+        Al = x[5:10]
         afcst = airfoil.cst(Au,Al)
         upErr = zeros(len(up))
         loErr = zeros(len(lo))
@@ -49,8 +47,8 @@ def cst_fit():
             loErr[i] = (afcst.loCurve(pt) - lo[i,1])
         return upErr, loErr
     
-    bnds = ((0.0,1.0),(-0.3,1.0),(-0.3,1.0),(-0.3,1.0),(-1.0,0.0),(-1.0,0.3),(-1.0,0.3),(-1.0,0.3))
-    rslt = minimize(_obj,x0=0.1*ones(8),bounds=bnds,method='SLSQP',args=args1)
+    bnds = ((0.0,1.0),(-0.3,1.0),(-0.3,1.0),(-0.3,1.0),(-0.3,1.0),(-1.0,0.0),(-1.0,0.3),(-1.0,0.3),(-1.0,0.3),(-1.0,0.3))
+    rslt = minimize(_obj,x0=0.1*ones(10),bounds=bnds,method='SLSQP',args=args1)
     xnew = rslt.x
     upErr, lowErr = _err(xnew,up,lo)
     
@@ -58,7 +56,7 @@ def cst_fit():
     #xnew[4:] += -0.075
     print xnew
     #xnew += 0.05
-    afnew = airfoil.cst(xnew[0:4],xnew[4:8])
+    afnew = airfoil.cst(xnew[0:5],xnew[5:10])
     print afnew.thickness
     fig = plt.figure(1)
     ax1 = fig.add_subplot(211)
