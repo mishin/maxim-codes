@@ -5,6 +5,34 @@ Contains an assortment of tools for basic math and geometry
 @author: daniel
 """
 from datetime import datetime
+from numpy import zeros
+
+def read_tabulated_data_txt(path,idxHeader=0):
+    """
+    Read tabulated data from text file.
+    
+    Parameters
+    ----------
+    
+    path : string
+        path to text file
+    idxHeader : integer
+        index of line where header (variable names) is.
+    """
+    fid = open(path,'rt')
+    lines = fid.readlines()[idxHeader:]
+    fid.close()
+    nData = len(lines)-1
+    nVars = len(lines[0].split())
+    values = zeros([nVars,nData])
+    for i,line in enumerate(lines[1:]):
+        seg = line.split()
+        for j,val in enumerate(seg):
+            values[j,i] = float(val)
+    data = {}
+    for k,varName in enumerate(lines[0].split()):
+        data[varName] = values[k]
+    return data
 
 def normalize(X,lb,ub):
     """
@@ -23,7 +51,7 @@ def normalize(X,lb,ub):
     #return (X-lb) / (ub-lb)
     return (2.*X-(lb+ub)) / (ub-lb)
 
-def denormalize(X,lb,ub,interval=0):
+def denormalize(X,lb,ub):
     """
     Denormalize variable or vector from [-1,1]
     
@@ -38,10 +66,7 @@ def denormalize(X,lb,ub,interval=0):
         upper bound
     """
     #return (X+1.0)*(ub-lb)/2.0+lb
-    if interval==0:
-        return 0.5* (X*(ub-lb) + (lb+ub))
-    else:
-        return X*(ub-lb)+lb
+    return 0.5* (X*(ub-lb) + (lb+ub))
 
 def integrateRomberg(f,a,b,tolerance):
     """    
@@ -130,7 +155,14 @@ def testPolyCentroid():
     x=numpy.array([0,0,2,2,0])
     y=numpy.array([0,1,1,0,0])
     print polyCentroid(x,y)
-    
+
+def test_read():
+    path = r'D:\polar_40.txt'
+    data = read_tabulated_data_txt(path,1)
+    print data['alpha']
+    print data['cl']
+
 if __name__=="__main__":
-    testRomberg()
-    testPolyCentroid()
+    test_read()
+    #testRomberg()
+    #testPolyCentroid()
