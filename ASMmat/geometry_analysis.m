@@ -81,4 +81,6 @@ missile.wing.sweepLE = missile.wing.sweepAngle;
 missile.wing.Xcg = missile.wing.location(1);
 missile.wing.AR = missile.wing.span^2 / missile.wing.area;
 
+%%
+
 end

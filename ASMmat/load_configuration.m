@@ -5,6 +5,7 @@ if nargin<1
     return
 end
 
+config.type = 1; % 1 - high AR, 2 - small AR
 config.mass = 93;
 %config.CG = [0.92 0 0];
 config.Vmax = 640/3.6; %m/sec
@@ -21,11 +22,11 @@ config.body.type = 'cylinder';
 config.wing.secChords = [0.131, 0.1025];
 config.wing.secIncidence = [0,0];
 config.wing.span = 1.68;
-config.wing.sweepAngle = 13;
+config.wing.sweepAngle = 13; % leading edge sweep
 config.wing.dihedral = 0;
 config.wing.thickness = 0.15;
 config.wing.location = [0.6838, 0.05]; % XZ
-config.wing.airfoil = 0;
+%config.wing.airfoil = 0;
 config.wing.skinThickness = 0.0005;
 config.wing.airfoil = 'NASALRN1015.txt';
 
