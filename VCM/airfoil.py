@@ -613,7 +613,10 @@ class Airfoil:
         self.loPts = self.loCurve.get_coordinates(x)
         self.join_coordinates()
         self.analyze_geometry()
-        
+    
+    def set_trailing_edge(self,zTE=None):
+        pass
+    
     def naca4(self,thickness=12.0,camber=0.0,camberLoc=0.0,nPts=120,
               closedTE=True):
         """

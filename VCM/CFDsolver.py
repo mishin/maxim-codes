@@ -125,7 +125,8 @@ class Solver():
         self.resid_k = 0.001
         self.resid_omega = 0.001
         self.resid_epsilon = 0.001
-        self.momentAxis = ([0.25,0])
+        self.momentAxisPt = [0.25,0.0]
+        self.momentAxisVec = [0,0,-1]
         self.maxIter = 5000
         self.paths = paths
 
@@ -185,14 +186,20 @@ class Solver():
         input_data = ny.vstack([input_data,line])
         line = ('\"%s\"'%self.paths.file_cm_hist)
         input_data = ny.vstack([input_data,line])
-        line = ('%.4f'%self.momentAxis[0])
+        line = ('%.4f'%self.momentAxisPt[0])
         input_data = ny.vstack([input_data,line])
-        line = ('%.4f'%self.momentAxis[1])
+        line = ('%.4f'%self.momentAxisPt[1])
+        input_data = ny.vstack([input_data,line])
+        line = ('%.4f'%self.momentAxisVec[0])
+        input_data = ny.vstack([input_data,line])
+        line = ('%.4f'%self.momentAxisVec[1])
+        input_data = ny.vstack([input_data,line])
+        line = ('%.4f'%self.momentAxisVec[2])
         input_data = ny.vstack([input_data,line])
         line = ('%d'%self.maxIter)
         input_data = ny.vstack([input_data,line])
                 
-        lineNumber = ny.array([[1,3,4,25,27,29,31,33,34,36,43,46,47,54,57,58,65,68,69,78]]).T
+        lineNumber = ny.array([[1,3,4,25,27,29,31,33,34,36,43,46,47,54,57,58,65,68,69,70,71,72,78]]).T
         input_data = ny.hstack([lineNumber,input_data])
         
         template = open(self.paths.template_fl,'rt')

@@ -14,11 +14,8 @@ def cst_fit():
     
     af = airfoil.Airfoil()
     #af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
-    af.read_txt(r'D:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
-    #af.naca4()
-    print af.coord
-    #af.naca4(nPts=30)
-    #af.naca4()
+    #af.read_txt(r'D:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
+    af.read_txt('pb092_geometry.txt')
     up, lo = af.upPts, af.loPts
     args1 = up,lo
 
@@ -62,7 +59,7 @@ def cst_fit():
     ax1 = fig.add_subplot(211)
     ax2 = fig.add_subplot(212)
     ax1.hold(True)
-    ax1.set_title('AG24 a')
+    ax1.set_title(af.name)
     ax2.set_title('Fit error')
     ax1.plot(af.coord[:,0],af.coord[:,1],'k-')
     ax1.plot(afnew.coord[:,0],afnew.coord[:,1],'r.-')
@@ -72,7 +69,7 @@ def cst_fit():
     ax2.plot(up[:,0],upErr,'ks-',markevery=3)
     ax2.plot(lo[1:,0],lowErr[1:],'k^-',markevery=3)
     ax2.set_ylabel('error')
-    ax2.legend(['Upper curve','Lower curve'],'upper right')
+    ax2.legend(['Upper curve','Lower curve'],'lower left')
     plt.show()
 
 def tmp_cst_plot():

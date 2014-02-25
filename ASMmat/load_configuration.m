@@ -41,7 +41,12 @@ config.fin.numberOfTails = 4;
 config.fin.xAngle = 45;
 config.fin.airfoil = 'NACA0012.txt';
 
-config = geometry_analysis(config);
+config.fin_extra1.numberOfTails=2;
+config.fin_extra1.xAngle=45;
+config.fin_extra2.numberOfTails=2;
+config.fin_extra2.xAngle=135;
+
+config = geometry_analysis_datcom(config);
 config.massData = weight_analysis(config);
 config.CG = [config.massData.Xcg 0 0];
 

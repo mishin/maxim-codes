@@ -46,7 +46,8 @@ class FluentAirfoil():
                                'ke-realizable':['continuity','xvelocity','yvelocity','energy','k','epsilon']}
         self.turbulenceName = {'SA':'spalart-allmaras','ke-realizable':'ke-realizable'}
         self.iterMax = 5000
-        self.momentAxis = [0.25,0]
+        self.momentAxisPt = [0.25,0]
+        self.momentAxisVec = [0,0,-1]
         self.turbulence = 'SA' #'ke-realizable'
         self.paths = CFD_paths()
         self.result = FluentOutput()
@@ -111,9 +112,9 @@ class FluentAirfoil():
         script.write('/solve/monitors/force/moment-coefficient\n')
         script.write('yes\n%s\n\nno\nyes\n'%wallbc)
         script.write('\"%s\"\nno\nno\n'%self.paths.file_cm_hist)
-        script.write('%.4f\n'%self.momentAxis[0])
-        script.write('%.4f\n'%self.momentAxis[1])
-        script.write('0\n0\n1\n')
+        script.write('%.4f\n'%self.momentAxisPt[0])
+        script.write('%.4f\n'%self.momentAxisPt[1])
+        script.write('%.4f\n%.4f\n%.4f\n'%(self.momentAxisVec[0],self.momentAxisVec[1],self.momentAxisVec[2]))
         script.write('/report/reference-values/compute/pressure-far-field\n%s\n'%ffbc)
         script.write('/solve/initialize/compute-defaults/pressure-far-field\n%s\n'%ffbc)
         script.write('/solve/iterate\n')

@@ -1,5 +1,16 @@
 function fc = get_flight_conditions(altitude, velocity)
 
+if nargin<2
+    get_flight_conditions(0,100)
+    return
+end
+
+%% datcom required input
+fc.alpha = [-10,10];
+fc.beta = [-10,10];
+fc.deflection = [0, 0, 0, 0];
+
+%% standard atmosphere
 fc.altitude = altitude;
 P0 = 101325;
 T0 = 288.15;
