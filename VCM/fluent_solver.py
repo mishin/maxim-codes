@@ -8,6 +8,8 @@ from numpy import arange, radians, sin, cos, zeros
 from pointwise_mesh import ScriptFile
 from paths import CFD_paths
 from os import system
+from scipy.interpolate import interp1d
+from scipy.optimize import fminbound
 
 class FluentOutput():
     def __init__(self,n=0):
@@ -34,6 +36,11 @@ class FluentOutput():
         out += 'cl\tcd\tcm\n'
         out += '%.2e\t%.2e\t%.2e\n'%(self.cl,self.cd, self.cm)
         return out
+    
+    def _calc_clmax(self):
+        clCurve = interp1d(self.alpha,-self.cl,'cubic')
+        self.alphaClmax = fminbound(clCurve,self.alpha[0],self.alpha[-1],xtol=1e-3)
+        self.clmax = -clCurve(self.alphaClmax)
 
 class FluentAirfoil():
     def __init__(self):
@@ -52,6 +59,7 @@ class FluentAirfoil():
         self.paths = CFD_paths()
         self.result = FluentOutput()
         self._meshtype = 'O'
+        self.densityBased = True
     
     def _create_journal_file(self,alpha,flightConditions,caseFilePath=None,turbulenceModel='SA',Cp=False,
                              journalPath=None,outputDirectory=None):
@@ -75,7 +83,8 @@ class FluentAirfoil():
         script.write('/define/operating-conditions/operating-pressure\n')
         script.write('0\n')
         script.write('/define/models/viscous/%s\nyes\n'%self.turbulenceName[turbulenceModel])
-        if flightConditions.Mach>=0.7:
+        #if flightConditions.Mach>=0.7:
+        if self.densityBased:
             script.write('/define/models/solver/density-based-implicit\nyes\n')
         script.write('/define/materials/change-create\n')
         script.write('air\n\nyes\n')
@@ -123,7 +132,7 @@ class FluentAirfoil():
         script.close()
     
     def run_at_aoa(self,alpha,flightConditions,caseFilePath=None,
-                   turbulenceModel='SA',Cp=False,iterMax=5000):
+                   turbulenceModel='SA',Cp=False,iterMax=5000,densityBased=False):
         """
         Run Ansys fluent airfoil analysis at single angle of attack
         
@@ -142,6 +151,7 @@ class FluentAirfoil():
         iterMax : int
             maximum number of iterations
         """
+        self.densityBased = densityBased
         self.result.alpha = alpha
         self.paths.set_name_alpha(alpha)
         self.result.Mach = flightConditions.Mach

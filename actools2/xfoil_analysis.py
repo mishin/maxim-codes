@@ -8,7 +8,7 @@ Created on Fri Jan 10 11:59:44 2014
 from subprocess import Popen, PIPE
 import shlex
 import os
-from airfoil_polar import AirfoilPolar
+from airfoil_polar import AirfoilPolar, AirfoilPolar1D
 from paths import MyPaths
 import numpy as np
 
@@ -29,7 +29,8 @@ class Xfoil:
         self.ps.stdout.read()
 
 
-def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq,nIter=10,graphic=False,smooth=False):
+def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq=[-10,20,1.0],
+                       nIter=10,graphic=False,smooth=False):
 
     pth.set_file_prefix_random()
     tmpAfFile = pth.get_tmp_file('txt','_crd')
@@ -60,6 +61,7 @@ def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq,nIter=10,graphic=False,smooth=Fa
     polar = _read_xfoil_polar(tmpPolar)
     polar.Mach = Mach
     polar.Re   = Re
+    polar._calc_clmax()
     os.remove(tmpAfFile)
     os.remove(tmpPolar)
     return polar
@@ -69,7 +71,7 @@ def _read_xfoil_polar(polarPath):
     """
     reads polar file of Xfoil and returns AirfoilPolar object
     """
-    polar = AirfoilPolar()
+    polar = AirfoilPolar1D()
     polarFile = open(polarPath,'rt')
     lines = polarFile.readlines()
     polarFile.close()
@@ -82,10 +84,8 @@ def _read_xfoil_polar(polarPath):
     polar.alpha = np.array(newLines[newIdx,0])
     polar.cl    = np.array(newLines[newIdx,1])
     polar.cd    = np.array(newLines[newIdx,2])
-    polar.cd_p  = np.array(newLines[newIdx,3])
+    polar.cdp  = np.array(newLines[newIdx,3])
     polar.cm    = np.array(newLines[newIdx,4])
-    polar.TU    = np.array(newLines[newIdx,5])
-    polar.TL    = np.array(newLines[newIdx,6])
     return polar
 
 

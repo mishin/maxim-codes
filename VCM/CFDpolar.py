@@ -4,7 +4,7 @@ Created on Thu Oct 17 22:55:54 2013
 
 @author: Maxim
 """
-from numpy import array, arange, flipud
+from numpy import array, arange, flipud, hstack, vstack
 from pointwise_mesh import AirfoilCMesh, AirfoilOMesh
 from paths import CFD_paths
 import airfoil
@@ -28,7 +28,7 @@ class CFDsolver():
         self.mesh.create(self.paths.file_glf,self._caseFilePath)
 
     def run_for_multiple_aoa(self,alphaSequence=arange(-5,20,3),
-                             turbulenceModel='SA',Cp=False,iterMax=5000):
+                             turbulenceModel='SA',Cp=False,iterMax=5000,densityBased=False):
         """
         Run fluent at sequence of angle of attacks
         
@@ -47,7 +47,7 @@ class CFDsolver():
         """
         result = FluentOutput(len(alphaSequence))
         for i,alpha in enumerate(alphaSequence):
-            result1 = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax)
+            result1 = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax,densityBased)
             result.alpha[i] = result1.alpha
             result.cl[i] = result1.cl
             result.cd[i] = result1.cd
@@ -55,7 +55,7 @@ class CFDsolver():
             result.LD[i] = result1.LD
         return result
     
-    def run_for_single_aoa(self,alpha=0.0,turbulenceModel='SA',Cp=False,iterMax=5000):
+    def run_for_single_aoa(self,alpha=0.0,turbulenceModel='SA',Cp=False,iterMax=5000,densityBased=False):
         """
         Run fluent at single angle of attack
         
@@ -72,7 +72,7 @@ class CFDsolver():
         iterMax : int
             maximum number of iterations
         """
-        result = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax)
+        result = self.fluent.run_at_aoa(alpha,self.fc,self._caseFilePath,turbulenceModel,Cp,iterMax,densityBased)
         return result
 
 def run_debug1():

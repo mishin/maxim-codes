@@ -52,6 +52,18 @@ def cst(Au,Al):
     af.create_cst(Au,Al)
     return af
 
+def cst_x(A):
+    af = Airfoil()
+    n = len(A)
+    if n%2==0:
+        Au = A[:n/2]
+        Al = A[n/2:]
+    else:
+        Au = np.array(A[:int(n/2)+1])
+        Al = np.hstack([-A[0],A[int(n/2)+1:]])
+    af.create_cst(Au,Al)
+    return af
+
 def naca4(thickness,camber,camberLocation):
     af = Airfoil()
     af.create_naca4(thickness,camber,camberLocation)
@@ -123,7 +135,7 @@ class Airfoil:
     def __init__(self):
         self._db = pth.db.airfoil
         self.name             = None
-        self.coord            = None
+        self.pts              = None
         self.ptsUp            = None
         self.ptsLo            = None
         self.thickness        = None
@@ -146,7 +158,7 @@ class Airfoil:
         self.name = name
         xCoord    = db.read_row(0,1)
         yCoord    = db.read_row(1,1)
-        self.coord = np.transpose([xCoord,yCoord])
+        self.pts = np.transpose([xCoord,yCoord])
         self._separate_coordinates()
         # geometry
         i = db.find_header('GEOMETRY')
@@ -184,8 +196,8 @@ class Airfoil:
         if xlsPath==None:
             xlsPath=pth.db.airfoil
         db = db_tools.WriteDatabase(xlsPath,self.name)
-        db.write_row('X',self.coord[:,0])
-        db.write_row('Y',self.coord[:,1])
+        db.write_row('X',self.pts[:,0])
+        db.write_row('Y',self.pts[:,1])
         db.write_row('GEOMETRY')
         db.write_row('thickness',self.thickness)
         db.write_row('camber'   ,self.camber)
@@ -254,7 +266,7 @@ class Airfoil:
             whiteSpace = '\t'
         else:
             whiteSpace = '    '
-        for point in self.coord:
+        for point in self.pts:
             afFile.write('%.6f%s%.6f\n'%(point[0],whiteSpace,point[1]))
         afFile.close()
 
@@ -270,10 +282,10 @@ class Airfoil:
         return np.array(output)
     
     def _separate_coordinates(self):
-        self.ptsUp, self.ptsLo = geom.separate_coordinates(self.coord)
+        self.ptsUp, self.ptsLo = geom.separate_coordinates(self.pts)
 
     def _join_coordinates(self):
-        self.coord = geom.join_coordinates(self.ptsUp, self.ptsLo)
+        self.pts = geom.join_coordinates(self.ptsUp, self.ptsLo)
 
     def _read_txt_type1(self,lines):
         """
@@ -298,7 +310,7 @@ class Airfoil:
         name : string
             airfoil name
         """
-        self.coord = self._line_coord_to_float(lines)
+        self.pts = self._line_coord_to_float(lines)
         self._separate_coordinates()
 
     def _read_txt_type2(self,lines,nPtsUp,nPtsLo):
@@ -337,7 +349,7 @@ class Airfoil:
         ax.grid(True)
         ax.axis('equal')
         ax.set_title(self.name)
-        ax.plot(self.coord[:,0],self.coord[:,1],linetype)
+        ax.plot(self.pts[:,0],self.pts[:,1],linetype)
         plt.show()
     
     def _create_splines(self):
@@ -384,9 +396,9 @@ class Airfoil:
             as source airfoil, points will be redistributed to make smooth 
             surface
         overwrite : bool
-            If True then self.coord, self.upPts and self.loPts will be 
+            If True then self.pts, self.upPts and self.loPts will be 
             overwritten, otherwise will return array of redimensioned points 
-            in format of self.coord
+            in format of self.pts
         """
         nPts *= 0.5
         tUp = geom.get_sine_distribution(nPts)
@@ -398,7 +410,7 @@ class Airfoil:
         loPts = np.transpose(np.vstack([xLo,yLo]))
         coord = geom.join_coordinates(upPts,loPts)
         if overwrite:
-            self.coord = coord
+            self.pts = coord
             self.upPts = upPts
             self.loPts = loPts
         else:
@@ -421,7 +433,7 @@ class Airfoil:
         """
         scale = thicknessNew / self.thickness
         self.name = self.name + '_tc%.2f'%(thicknessNew*100.0)
-        self.coord[:,1] = self.coord[:,1]*scale
+        self.pts[:,1] = self.pts[:,1]*scale
         self._separate_coordinates()
         self.redim(50,overwrite=True)
         if analysis:
@@ -573,6 +585,16 @@ class Airfoil:
             self.loPts = np.transpose(np.vstack([x,-y]))
         self._join_coordinates()
 
+    def set_trailing_edge(self,zTEnew=0.0):
+        zTEcurrent = self.ptsUp[-1,1] - self.ptsLo[-1,1]
+        dzTE = zTEnew - zTEcurrent
+        ptsUpNew = self.ptsUp[:,1] + self.ptsUp[:,0]*dzTE/2.
+        ptsLoNew = self.ptsLo[:,1] - self.ptsLo[:,0]*dzTE/2.
+        self.ptsUp[:,1] = ptsUpNew
+        self.ptsLo[:,1] = ptsLoNew
+        self._join_coordinates()
+        self._analyze_geometry()
+
 # --- debug section ---
 def run_test_geometry():
     af = Airfoil()
@@ -583,14 +605,21 @@ def run_test_geometry():
     af.display('ko-')
 
 def run_test_aero_analysis():
-    af = Airfoil()
     timer = Timer()
-    af.read_db('NACA0012')
+    af = cst_x(np.array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, -0.08874038]))
+    af.set_trailing_edge(0.0)
+    af.display('ko-')
     timer.lap('read db')    
-    af.get_jfoil_polar(0.2,3e6)
+    pol1 = af.get_jfoil_polar(0.2,3e6)
     timer.lap('javafoil')
-    af.get_xfoil_polar(0.2,3e6)
+    pol2 = af.get_xfoil_polar(0.2,3e6)
     timer.stop('xfoil')
+    plt.figure(1)
+    plt.hold(True)
+    plt.grid(True)
+    plt.plot(pol1.alpha,pol1.cd)
+    plt.plot(pol2.alpha,pol2.cd)
+    plt.show()
 
 if __name__=="__main__":
-    run_test_geometry()
+    run_test_aero_analysis()

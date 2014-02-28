@@ -34,6 +34,43 @@ class Interp2D:
         return self._model(x,y)[0,0]
 
 
+class AirfoilPolar1D:
+    def __init__(self):
+        self.source = None
+        self.cl = list()
+        self.cd = list()
+        self.cm = list()
+        self.alpha = list()
+        self.cdp = list()
+        self.Mach = None
+        self.Re = None
+        self.clmax = None
+        self.alphaClmax = None
+        self._alphaCl = None
+    
+    def _create_splines(self):
+        self._alphaCl = interp1d(self.alpha,self.cl,'cubic')
+        self._alphaCd = interp1d(self.alpha,self.cd,'cubic')
+        self._alphaCm = interp1d(self.alpha,self.cm,'cubic')
+        
+    def _calc_clmax(self):
+        if self._alphaCl==None:
+            self._create_splines()
+        f = lambda alpha: -self._alphaCl(alpha)
+        alphaClmax = fminbound(f, self.alpha[0], self.alpha[-1])
+        self.alphaClmax = alphaClmax
+        self.clmax = self._alphaCl(alphaClmax)
+        
+    def get_clmax(self):
+        if self.clmax==None:
+            self._calc_clmax()
+        return self.clmax
+        
+    def get_alpha_clmax(self):
+        if self.alphaClmax==None:
+            self._calc_clmax()
+        return self.alphaClmax
+
 class AirfoilPolar:
     def __init__(self):
         self.source = None

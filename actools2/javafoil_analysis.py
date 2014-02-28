@@ -8,7 +8,7 @@ Created on Fri Jan 10 13:28:36 2014
 import shlex
 from subprocess import Popen, PIPE
 import os
-from airfoil_polar import AirfoilPolar
+from airfoil_polar import AirfoilPolar1D
 from paths import MyPaths
 import numpy as np
 
@@ -44,6 +44,7 @@ def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq):
     polar = _read_javafoil_polar(tmpPolar)
     polar.Mach  = Mach
     polar.Re = Re
+    polar._calc_clmax()
     os.remove(tmpJournal)
     os.remove(tmpAfFile)
     os.remove(tmpPolar)
@@ -54,7 +55,7 @@ def _read_javafoil_polar(polarPath):
     """
     reads polar file of javafoil and returns AirfoilPolar object
     """
-    polar = AirfoilPolar()
+    polar = AirfoilPolar1D()
     polarFile = open(polarPath,'rt')
     lines = polarFile.readlines()
     polarFile.close()
@@ -67,13 +68,13 @@ def _read_javafoil_polar(polarPath):
                 polar.cl    = np.append(polar.cl, float(segLine[1]))
                 polar.cd    = np.append(polar.cd, float(segLine[2]))
                 polar.cm    = np.append(polar.cm, float(segLine[3]))
-                polar.TU    = np.append(polar.TU, float(segLine[4]))
-                polar.TL    = np.append(polar.TL, float(segLine[5]))
-                polar.SU    = np.append(polar.SU, float(segLine[6]))
-                polar.SL    = np.append(polar.SL, float(segLine[7]))
-                polar.LD    = np.append(polar.LD, float(segLine[8]))
-                polar.AC    = np.append(polar.AC, float(segLine[9]))
-                polar.CP    = np.append(polar.CP, float(segLine[10]))
+#                polar.TU    = np.append(polar.TU, float(segLine[4]))
+#                polar.TL    = np.append(polar.TL, float(segLine[5]))
+#                polar.SU    = np.append(polar.SU, float(segLine[6]))
+#                polar.SL    = np.append(polar.SL, float(segLine[7]))
+#                polar.LD    = np.append(polar.LD, float(segLine[8]))
+#                polar.AC    = np.append(polar.AC, float(segLine[9]))
+#                polar.CP    = np.append(polar.CP, float(segLine[10]))
             except ValueError:
                 print 'Polar processing failed'
     return polar

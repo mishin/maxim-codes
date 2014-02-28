@@ -10,28 +10,38 @@ import sys
 from vcm import *
 from miscTools import normalize, denormalize
 import airfoil as Af
-from CFDsolver import *
+#from CFDsolver import *
+from CFDpolar import *
+from FlightConditions import FlightConditions
 
 class AirfoilAnalysis:
     def __init__(self):
         self._clmax = 1.50
-        self.clCruise = [0.3,0.4,0.5,0.6]
-        self.thicknessMin = 0.12
-        self.thicknessMax = 0.16
+        self.clCruise = [0.2,0.3]
+        self.thicknessMin = 0.135
+        self.thicknessMax = 0.145
         self.af = None
-        self.Mcrs = 0.18
-        self.Recrs = 4.4e6
-        self.Mldg = 0.09
-        self.Reldg = 2.7e6
+        self.Mcrs = 0.1644
+        self.hCrs = 1500.0
+        self.Mldg = 0.0726
+        self.hLdg = 0.0
+        self.cruise = FlightConditions(self.Mcrs, self.hCrs)
+        self.landing = FlightConditions(self.Mldg, self.hLdg)
         self.lb = array([0.1, 0.1, 0.1, 0.1, -0.3, -0.3, -0.3])
         self.ub = array([0.3, 0.3, 0.3, 0.3, 0.1, 0.1, 0.1])
-    
+        self.zTE = 0.01
+
     def fLow(self,x):
         self._upd_cst(x)
-        pol = self.af.get_X_polar(self.Mcrs,self.Recrs,alphaSeq=[-5,10,1.0])
-        cd = [pol.get_cd_at_cl(cl) for cl in self.clCruise]
-        return sum(cd)/len(self.clCruise)
-    
+        self.af.set_trailing_edge(self.zTE)
+        try:
+            pol = self.af.get_J_polar(self.Mldg,self.landing.Re,alphaSeq=[-10,10,1.0])
+            cd = array([pol.get_cd_at_cl(cl) for cl in self.clCruise])
+        except ValueError:
+            pol.display()
+            self.af.plot()
+        return cd.mean()
+
     def fLowDeriv(self,x,dx=1e-3):
         grad = zeros(len(x))
         fval = self.fLow(x)
@@ -43,101 +53,120 @@ class AirfoilAnalysis:
 
     def gLow(self,x):
         self._upd_cst(x)
-        pol = self.af.get_X_polar(self.Mldg,self.Reldg,alphaSeq=[0,20,1.0])
+        self.af.set_trailing_edge(self.zTE)
+        pol = self.af.get_J_polar(self.Mldg,self.landing.Re,alphaSeq=[0,20,1.0])
         pol.calc_clmax()
         sys.stdout.write('.')
         return -(self._clmax - pol.clmax)
-    
+
     def gHigh(self,x):
         self._upd_cst(x)
-        pol = self.af.get_J_polar(self.Mldg, self.Reldg)
-        pol.calc_clmax()
+        pol = self._run_fluent(x)
         sys.stdout.write('-')
         return -(self._clmax - pol.clmax)
-    
+
     def g2(self,x):
         self._upd_cst(x)
-        return -(self.thicknessMin - self.af.thickness)
+        return -(self.thicknessMin - self.thickness)
 
     def g3(self,x):
         self._upd_cst(x)
-        return -(self.af.thickness - self.thicknessMax)
-    
+        return -(self.thickness - self.thicknessMax)
+
     def _upd_cst(self,x):
         x = denormalize(x,self.lb,self.ub)
-        Au = x[:4]
-        Al = array([-x[0],x[4],x[5],x[6]])
-        self.af = Af.cst(Au,Al)
-        self.thickness = self.af.thickness
-    
-    def _run_cfd(self,x,cnstr=True):
-        self._upd_cst(x)
-        #alphaSeq = array([10.,12,14,16,18])
-        alphaSeq = array([2.0])
-        #alphaSeq = array([12,18])
-        path = paths.CFD_paths()
-        landing = Flight_conditions(0.0,30.0)
-        V = landing.ISA.soundSpeed*0.73
-        landing = Flight_conditions(0.0,V)
-        self.af.create_af_CAT(save=path.file_igs)
-        Airfoil_mesh(path,landing)
-        Airfoil_mesh.yplus_wall = 1.0
-        fluent = Solver(path,landing)
-        #fluent.turb_model = 'ke-realizable'
-        fluent.turb_model = 'spalart-allmaras'
-        for alpha in alphaSeq:
-            fluent.run_fluent(alpha)
-        print fluent.alpha
-        print fluent.cl
-        print fluent.cd
-        print fluent.cm
-        self.af.polar = Af.AirfoilPolar()
-        self.af.polar.Re = landing.Re
-        self.af.polar.Mach = landing.Mach
-        self.af.polar.alpha = fluent.alpha
-        self.af.polar.cl = fluent.cl
-        self.af.polar.cd = fluent.cd
-        self.af.polar.cm = fluent.cm
-        self.af.polar.calc_clmax()
-        path.clean()
-        if cnstr:
-            return -(self._clmax - self.af.polar.clmax)
+        n = len(x)
+        if n%2==0:
+            Au = x[:n/2]
+            Al = x[n/2:]
         else:
-            return self.af.polar.clmax
+            Au = x[:int(n/2)+1]
+            Al = hstack([-x[0],x[int(n/2)+1:]])
+        self.af = Af.cst(Au,Al,25,'cos')
+        self.thickness = self.af.thickness
+#    def _run_cfd(self,x):
+#        self._upd_cst(x)
+#        alphaSeq = array([10.,12,14,16,18])
+#        path = paths.CFD_paths()
+#        landing = Flight_conditions(0.0,30.0)
+#        V = landing.ISA.soundSpeed*0.73
+#        landing = Flight_conditions(0.0,V)
+#        self.af.create_af_CAT(save=path.file_igs)
+#        Airfoil_mesh(path,landing)
+#        Airfoil_mesh.yplus_wall = 1.0
+#        fluent = Solver(path,landing)
+#        fluent.turb_model = 'ke-realizable'
+#        for alpha in alphaSeq:
+#            fluent.run_fluent(alpha)
+#        print fluent.alpha
+#        print fluent.cl
+#        print fluent.cd
+#        print fluent.cm
+#        self.af.polar = Af.AirfoilPolar()
+#        self.af.polar.Re = landing.Re
+#        self.af.polar.Mach = landing.Mach
+#        self.af.polar.alpha = fluent.alpha
+#        self.af.polar.cl = fluent.cl
+#        self.af.polar.cd = fluent.cd
+#        self.af.polar.cm = fluent.cm
+#        self.af.polar.calc_clmax()
+#        path.clean()
+#        return self.af.polar
+    def _run_fluent(self,x):
+        self._upd_cst(x)
+        solver = CFDsolver(self.af,self.landing,1.0,mesh='O')
+        solver.fluent.residuals['energy']=1e-5
+        solver.fluent.relaxationFactor['xvelocity'] = 1e-4
+        solver.fluent.residuals['continuity']=1e-4
+        solver.mesh._airfoilPts = 75
+        solver.mesh._interiorPts = 100
+        solver.mesh._dsTE = 2e-4
+        solver.mesh._dsLE = 1e-3
+        solver.mesh._growthRate = 1.15
+        solver.create_mesh()
+        result = solver.run_for_multiple_aoa(arange(10.,20.,2.0),'ke-realizable')
+        result.Mach = self.landing.Mach
+        result.Re = self.landing.Re
+        result._calc_clmax()
+        return result
 
 def read_xls_doe():
-    path = 'afInitDoELHC2.xls'
+    path = 'KLA_LHC_samples.xls'
     db = Af.dbTools.loadDB(path)
     sh = db.selectByName('Sheet1')
     sh = Af.dbTools.readDB(sh)
-    x = sh.readRange(0,0,5)
-    return x[:,:7],x[:,7]
+    x = sh.readRange(0,0,50)
+    return x[:,:-1],x[:,-1]
 
 def run_doe_cfd():
-    x, tmp = read_xls_doe()
+    x,f = read_xls_doe()
 
     aa = AirfoilAnalysis()
     clmax = zeros(len(x))
-    clmaxPath = 'DOE_clmax_GA37A135_.txt'
+    clmaxPath = 'KLA100//clmax_DOE2.txt'
     fid = open(clmaxPath,'wt')
-    fid.write('Iter\tclmax\n')
+    fid.write('Iter\tclmax\talphaClmax\tthickness\n')
     fid.close()
-    #x0 = array([0.15698354,0.33401813,0.26014472,0.19706849,-0.07133321,-0.19505543,-0.04984327])
-    x0 = array([0.119087477, 0.160950359,0.203634413,0.192468212, -0.200580639, -0.126010045, 0.107256400e-18])
-    dx = 0.075
-    aa.ub = x0+dx
-    aa.lb = x0-dx
+    x0 = array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, 0.02874038])
+    dxu = zeros(len(x0))+0.05
+    dxl = zeros(len(x0))-0.05
+    dxu[9] = 0.005
+    dxl[4] = -0.005
+    aa.ub = x0+dxu
+    aa.lb = x0+dxl
+
     for i,xx in enumerate(x):
-        clmax[i] = aa._run_cfd(xx,False)
-        print '%d\t%.8f'%(i,clmax[i])
-        aa.af.write_polar_txt('_DOE_polar_%d.txt'%i)
+        rslt = aa._run_fluent(xx)
+        clmax[i] = rslt.clmax
+        print '%d\t%.8f\t%.4f\t%.4f\n'%(i,clmax[i],rslt.alphaClmax,aa.thickness)
         fid = open(clmaxPath,'a')
-        fid.write('%d\t%.8f\n'%(i+1,clmax[i]))
+        fid.write('%d\t%.8f\t%.4f\t%.4f\n'%(i+1,clmax[i],rslt.alphaClmax,aa.thickness))
         fid.close()
 
 def vcm_airfoil_optimization():
     aa = AirfoilAnalysis()
     xdoe,f = read_xls_doe()
+
     eta1 = 0.25
     eta2 = 0.75
     eta3 = 1.25
@@ -149,16 +178,21 @@ def vcm_airfoil_optimization():
     iterMax = 20
     nIter = 0
     delta = 0.4
-    x0 = array([0.15698354,0.33401813,0.26014472,0.19706849,-0.07133321,-0.19505543,-0.04984327])
-    dx = 0.075
-    aa.ub = x0+dx
-    aa.lb = x0-dx
+    # baseline
+    x0 = array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, 0.02874038])
+    dxu = zeros(len(x0))+0.05
+    dxl = zeros(len(x0))-0.05
+    dxu[9] = 0.005
+    dxl[4] = -0.005
+    aa.ub = x0+dxu
+    aa.lb = x0+dxl
+    
     x0 = normalize(x0,aa.lb,aa.ub)
     aa._upd_cst(x0)
-    gscaled = ScaledFunction(aa.gLow, aa._run_cfd,scalingType='mult')
+    gscaled = ScaledFunction(aa.gLow, aa.gHigh,scalingType='add')
     gscaled._initialize_by_doe_points(xdoe,f-aa._clmax)
     
-    histFile = 'airfoil_design1_history2.txt'
+    histFile = 'KLA100//airfoil_root_history_20140227.txt'
     fid = open(histFile,'wt')
     fid.write('Iter\tfval\tgHi\tgLow\tgScaled\trho\tdelta\terror\tx\n')
     fid.close()
@@ -176,7 +210,7 @@ def vcm_airfoil_optimization():
         xnew = rslt.x
         fnew = rslt.fun
         gHinew = gscaled.funcHi(xnew)
-        rho = gscaled.get_thrust_region_ratio(xnew,gHinew)
+        rho = gscaled.get_trust_region_ratio(xnew,gHinew)
         if gHinew>=0.0:
             err = 0.0
         else:
@@ -192,13 +226,13 @@ def vcm_airfoil_optimization():
                 delta = delta
         #print nIter,'\t','%.6f\t'%err,fnew,rho,delta
         fid = open(histFile,'a')
-        out = '%d\t%.6f\t%.4f\t%.4f\t%.4f\t%.4f\t%.2e\t%.2e\t'%(nIter,fnew,gHinew+aa._clmax,gscaled.funcLo(xnew)+aa._clmax,gscaled(xnew)+aa._clmax,rho,delta,err)
-        for xx in denormalize(xnew,aa.lb,aa.ub):
-            out += '%.4f\t'%xx
-        fid.write(out)
-        fid.write('\n')
+#        out = '%d\t%.6f\t%.4f\t%.4f\t%.4f\t%.4f\t%.2e\t%.2e\t'%(nIter,fnew,gHinew+aa._clmax,gscaled.funcLo(xnew)+aa._clmax,gscaled(xnew)+aa._clmax,rho,delta,err)
+#        for xx in denormalize(xnew,aa.lb,aa.ub):
+#            out += '%.4f\t'%xx
+        #fid.write(out)
+        #fid.write('\n')
         fid.close()
-        print out
+        #print out
         x0 = xnew
     
     aa._upd_cst(xnew)
@@ -241,7 +275,6 @@ def plot_result_af():
     plt.show()
     
 if __name__=="__main__":
-    #vcm_airfoil_optimization()
-    #vcm_airfoil_optimization()
+    vcm_airfoil_optimization()
     #run_doe_cfd()
-    plot_result_af()
+    #plot_result_af()

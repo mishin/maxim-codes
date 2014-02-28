@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d, RectBivariateSpline
 from subprocess import Popen, PIPE
 import os
 from scipy.optimize import fminbound,bisect
-from matplotlib.pyplot import figure, plot, axis, hold, grid, legend, title, show,xlim
+from matplotlib.pyplot import figure, plot, axis, hold, grid, legend, title, show,xlim,ylim
 from math import factorial, pi, radians
 import shlex
 import matplotlib.pyplot as plt
@@ -48,9 +48,9 @@ def load(airfoilName,dbPath=''):
     af.read_xls(airfoilName,dbPath)
     return af
 
-def cst(Au,Al):
+def cst(Au,Al,nPts=30,dist='sin'):
     af = Airfoil()
-    af.create_CST(Au,Al)
+    af.create_CST(Au,Al,nPts,dist)
     af.radius_LE = Au[0]**2*50.
     af.camber_slope_LE = 0.0
     return af
@@ -129,7 +129,7 @@ class AirfoilPolar:
             self.create_splines()
         def obj(x):
             return self.clAlpha(x)-cl
-        alpha = bisect(obj,a=self.alpha[2],b=self.alpha[-2],xtol=1e-3,maxiter=30)
+        alpha = bisect(obj,a=self.alpha[0],b=self.alpha[-1],xtol=1e-3,maxiter=30)
         return self.cdAlpha(alpha)
     def display(self):
         """
@@ -603,20 +603,21 @@ class Airfoil:
             sheet.writeCol(self.polar.alpha)
             sheet.writeRange(transpose(self.polar.cm),i,1)
         afDB.save_db()
-    def create_CST(self,Au,Al):
+    def create_CST(self,Au,Al,nPts=30,dist='cos'):
         self.name = 'CST airfoil'
         self.upCurve = geom.CstCurve(Au)
         self.loCurve = geom.CstCurve(Al)
-        x = linspace(0,pi/2.0,25)
-        x = array([-cos(xx) + 1.0 for xx in x])
+        if dist=='cos':
+            x = linspace(0,pi/2.0,nPts)
+            x = array([-cos(xx) + 1.0 for xx in x])
+        else:
+            x = linspace(-pi/2.0,pi/2.0,nPts)
+            x = array([0.5*(sin(xx)+1) for xx in x])
         self.upPts = self.upCurve.get_coordinates(x)
         self.loPts = self.loCurve.get_coordinates(x)
         self.join_coordinates()
         self.analyze_geometry()
-    
-    def set_trailing_edge(self,zTE=None):
-        pass
-    
+
     def naca4(self,thickness=12.0,camber=0.0,camberLoc=0.0,nPts=120,
               closedTE=True):
         """
@@ -933,8 +934,8 @@ class Airfoil:
         if alphaSeq[2] == 0 or alphaSeq[0]==alphaSeq[1]:
             xfoil.cmd('ALFA\n%.2f'%alphaSeq[0])
         elif alphaSeq[0]*alphaSeq[1]<0:
-            xfoil.cmd('ASEQ\n%.2f\n%.2f\n%.2f'%(0, alphaSeq[1], alphaSeq[2]))
-            xfoil.cmd('ASEQ\n%.2f\n%.2f\n%.2f'%(-alphaSeq[2], alphaSeq[0], -alphaSeq[2]))
+            xfoil.cmd('ASEQ\n%.2f\n%.2f\n%.2f'%(alphaSeq[2], alphaSeq[1], alphaSeq[2]))
+            xfoil.cmd('ASEQ\n%.2f\n%.2f\n%.2f'%(0, alphaSeq[0], -alphaSeq[2]))
         elif alphaSeq[0]*alphaSeq[1]>=0 and alphaSeq[0]>=0:
             xfoil.cmd('ASEQ\n%.2f\n%.2f\n%.2f'%(alphaSeq[0], alphaSeq[1], alphaSeq[2]))
         else:
@@ -1150,6 +1151,16 @@ class Airfoil:
     def report(self):
         #TODO: print out information about airfoil: name, number of points etc.
         pass
+    
+    def set_trailing_edge(self,zTE=0.0):
+        zTEcurrent = self.upPts[-1,1] - self.loPts[-1,1]
+        zTEnew = zTE - zTEcurrent
+        ptsUpNew = self.upPts[:,1] + self.upPts[:,0]*zTEnew/2.
+        ptsLoNew = self.loPts[:,1] - self.loPts[:,0]*zTEnew/2.
+        self.upPts[:,1] = ptsUpNew
+        self.loPts[:,1] = ptsLoNew
+        self.join_coordinates()
+        self.analyze_geometry()
 
 def batch_txt_xls():
     dir1 = os.getcwd() + '\\database\\prop_airfoils'
@@ -1255,11 +1266,16 @@ def test_04():
 def test_05():
     af = Airfoil()
     af.naca4()
+    af.set_trailing_edge(0.02)
     pol = af.get_X_polar(0.15,3e6,[-10,20,1.0])
     pol.create_splines()
     print pol.get_cd_at_cl(0.5)
     pol.calc_clmax()
     print pol.clmax
+    plt.figure(1)
+    plt.plot(pol.alpha,pol.cd,'ro-')
+    plt.show()
+    af.plot()
 
 def test_06():
     af = load('NACA0012')
@@ -1273,10 +1289,12 @@ def test_06():
 
 def test_cst():
     Au = array([0.2337,0.7288,0.7400,0.0154])
-    Al = array([-0.2337,-0.2271,-0.4580,1.0059])
+    Al = array([-0.2337,-0.2271,-0.4580,-1.0059])
     af = cst(Au,Al)
     af.plot()
-    af.create_af_CAT(batch=False)
+    af.set_trailing_edge(0.02)
+    af.plot()
+    #af.create_af_CAT(batch=False)
 
 if __name__=="__main__":
-    test_cst()
+    test_05()
