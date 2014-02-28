@@ -6,7 +6,7 @@ Created on Thu Jan 09 21:39:53 2014
 """
 import numpy as np
 from scipy.interpolate import RectBivariateSpline, interp1d
-from scipy.optimize import fminbound
+from scipy.optimize import fminbound, bisect
 
 
 class Interp2D:
@@ -70,6 +70,11 @@ class AirfoilPolar1D:
         if self.alphaClmax==None:
             self._calc_clmax()
         return self.alphaClmax
+    
+    def get_cd_at_cl(self,cl):
+        f = lambda alpha: self._alphaCl(alpha)-cl
+        alpha = bisect(f,self.alpha[0],self.alpha[-1],xtol=1e-4)
+        return self._alphaCd(alpha)
 
 class AirfoilPolar:
     def __init__(self):

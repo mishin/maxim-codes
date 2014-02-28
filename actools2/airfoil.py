@@ -141,10 +141,11 @@ class Airfoil:
         self.thickness        = None
         self.camber           = None
         self.camberLocation   = None
+        self.zTrailingEdge    = None
         self._curveUp         = None
         self._curveLo         = None
-        self._curveParametric = None
-        self.polar = AirfoilPolar()
+        self.polar            = None
+        self._distribution    = 'cos'
 
     def read_db(self,name,xlsPath=None):
         """
@@ -343,7 +344,7 @@ class Airfoil:
         self.ptsLo = coordRaw[nPtsUp:nPtsUp+nPtsLo]
         self._join_coordinates()
 
-    def display(self,linetype='k-'):
+    def display(self,linetype='ko-'):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.grid(True)
@@ -360,29 +361,25 @@ class Airfoil:
         # parametric splines x = x(t), y = y(t)
         lenUp = geom.curve_pt_dist_normalized(self.ptsUp)
         lenLo = geom.curve_pt_dist_normalized(self.ptsLo)
-        self.upCurve = CurveXyt(self.ptsUp[:,0],self.ptsUp[:,1],lenUp)
-        self.loCurve = CurveXyt(self.ptsLo[:,0],self.ptsLo[:,1],lenLo)
-        # non parametric splines y = y(x)
-        ptsUpSorted = geom.sort_airfoil_coordinates(self.ptsUp)
-        ptsLoSorted = geom.sort_airfoil_coordinates(self.ptsLo)
-        self.upCurve2 = interp1d(ptsUpSorted[:,0],ptsUpSorted[:,1],'cubic')
-        self.loCurve2 = interp1d(ptsLoSorted[:,0],ptsLoSorted[:,1],'cubic')
-        self._xlb = max(ptsUpSorted[0,0],ptsLoSorted[0,0])
-        self._xub = min(ptsUpSorted[-1,0],ptsLoSorted[-1,0])
+        self._curveUp = CurveXyt(self.ptsUp[:,0],self.ptsUp[:,1],lenUp)
+        self._curveLo = CurveXyt(self.ptsLo[:,0],self.ptsLo[:,1],lenLo)
 
     def _analyze_geometry(self):
         """
         calculates airfoil geometry parameters
         """
         self._create_splines()
-        _tc  = lambda x: -(self.upCurve2(x) - self.loCurve2(x))
-        _cam = lambda x: -(self.upCurve2(x) + self.loCurve2(x))
-        xtc = fminbound(_tc,self._xlb,self._xub)
-        xcam = fminbound(_cam,self._xlb,self._xub)
-        self.thickness = -_tc(xtc)
-        self.camber = -_cam(xcam)
-        self.camberLocation = xcam
-
+        _ymax = lambda t: -self._curveUp(t)[1]
+        _ymin = lambda t:  self._curveLo(t)[1]
+        t1 = fminbound(_ymax,0,1)
+        t2 = fminbound(_ymin,0,1)
+        self.thickness = self._curveUp(t1)[1] - self._curveLo(t2)[1]
+    
+    def _get_point_distribution(self,nPts=30):
+        if self._distribution=='sin':
+            return geom.get_sine_distribution(nPts)
+        elif self._distribution=='cos':
+            return geom.get_cosine_distribution(nPts)
     def redim(self,nPts,overwrite=False):
         """
         Redimension and redistribution of airfoil points using cosine function. 
@@ -401,11 +398,10 @@ class Airfoil:
             in format of self.pts
         """
         nPts *= 0.5
-        tUp = geom.get_sine_distribution(nPts)
-        tLo = geom.get_sine_distribution(nPts)
+        t = self._get_point_distribution(nPts)
         self._create_splines()
-        xUp, yUp = self.upCurve(tUp)
-        xLo, yLo = self.loCurve(tLo)
+        xUp, yUp = self.upCurve(t)
+        xLo, yLo = self.loCurve(t)
         upPts = np.transpose(np.vstack([xUp,yUp]))
         loPts = np.transpose(np.vstack([xLo,yLo]))
         coord = geom.join_coordinates(upPts,loPts)
@@ -546,7 +542,7 @@ class Airfoil:
     def create_cst(self,Au,Al,nPts=25):
         self.upCurve = geom.CstCurve(Au)
         self.loCurve = geom.CstCurve(Al)
-        x = geom.get_cosine_distribution(nPts)
+        x = self._get_point_distribution(nPts)
         self.ptsUp = self.upCurve.get_coordinates(x)
         self.ptsLo = self.loCurve.get_coordinates(x)
         self._join_coordinates()
@@ -557,7 +553,7 @@ class Airfoil:
         t = thickness / 100.0
         m = camber / 100.0
         p = camberLoc / 100.0
-        x = geom.get_cosine_distribution(nPts)
+        x = self._get_point_distribution(nPts)
         y = t/0.2*(0.2969*x**0.5 - 0.1281*x - 0.3516*x*x + 0.2843*x**3.0 - 0.1015*x**4.0)
         self.thickness = t
         self.camber = m
@@ -581,8 +577,8 @@ class Airfoil:
             self.ptsUp = np.transpose(np.vstack([xu,yu]))
             self.ptsLo = np.transpose(np.vstack([xl,yl]))            
         else:
-            self.upPts = np.transpose(np.vstack([x,y]))
-            self.loPts = np.transpose(np.vstack([x,-y]))
+            self.ptsUp = np.transpose(np.vstack([x,y]))
+            self.ptsLo = np.transpose(np.vstack([x,-y]))
         self._join_coordinates()
 
     def set_trailing_edge(self,zTEnew=0.0):
@@ -607,8 +603,8 @@ def run_test_geometry():
 def run_test_aero_analysis():
     timer = Timer()
     af = cst_x(np.array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, -0.08874038]))
-    af.set_trailing_edge(0.0)
-    af.display('ko-')
+    af._analyze_geometry()
+    af.display()
     timer.lap('read db')    
     pol1 = af.get_jfoil_polar(0.2,3e6)
     timer.lap('javafoil')
