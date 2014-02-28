@@ -8,9 +8,25 @@ Created on Thu Jan 09 11:50:25 2014
 from datetime import datetime
 import numpy as np
 
-def normalize(X,lb,ub,normLb=-1.,normUb=1.):
-    delta = normUb - normLb
-    #TODO
+class Normalization:
+    def __init__(self,lb,ub,xMin=-1.,xMax=1.):
+        self.lb = np.array(lb,dtype=float)
+        self.ub = np.array(ub,dtype=float)
+        self.xMin = float(xMin)
+        self.xMax = float(xMax)
+        self._delta1 = self.ub - self.lb
+        self._delta2 = self.xMax - self.xMin
+        self._ratio1 = self._delta2/self._delta1
+
+    def normalize(self,x):
+        x = float(x)
+        return (x-self.lb)*self._ratio1+self.xMin
+
+    def denormalize(self,xnorm):
+        xnorm = float(xnorm)
+        return (xnorm-self.xMin)/self._ratio1 + self.lb
+        
+        
 
 class Timer:
     def __init__(self,header=''):
@@ -81,6 +97,12 @@ def run_test1():
         b = np.sin(aa)
     timer.stop('cosine',True)
 
+def run_test2():
+    lb = -4
+    ub = 15
+    n = Normalization(lb,ub,0,1)
+    xnorm1 = n.normalize(4)
+    xorig = n.denormalize(xnorm1)
 
 if __name__=="__main__":
-    run_test1()
+    run_test2()
