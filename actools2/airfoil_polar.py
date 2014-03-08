@@ -7,7 +7,7 @@ Created on Thu Jan 09 21:39:53 2014
 import numpy as np
 from scipy.interpolate import RectBivariateSpline, interp1d
 from scipy.optimize import fminbound, bisect
-
+import matplotlib.pyplot as plt
 
 class Interp2D:
     """
@@ -36,6 +36,7 @@ class Interp2D:
 
 class AirfoilPolar1D:
     def __init__(self):
+        self.name = None
         self.source = None
         self.cl = list()
         self.cd = list()
@@ -45,13 +46,21 @@ class AirfoilPolar1D:
         self.Mach = None
         self.Re = None
         self.clmax = None
+        self.cdmin = None
         self.alphaClmax = None
+        self.alphaCdmin = None
         self._alphaCl = None
+        self._alphaCd = None
+        self._alphaCm = None
     
     def _create_splines(self):
         self._alphaCl = interp1d(self.alpha,self.cl,'cubic')
         self._alphaCd = interp1d(self.alpha,self.cd,'cubic')
         self._alphaCm = interp1d(self.alpha,self.cm,'cubic')
+    
+    def _calculate_data(self):
+        self._calc_clmax()
+        self._calc_cdmin()
         
     def _calc_clmax(self):
         if self._alphaCl==None:
@@ -60,6 +69,13 @@ class AirfoilPolar1D:
         alphaClmax = fminbound(f, self.alpha[0], self.alpha[-1])
         self.alphaClmax = alphaClmax
         self.clmax = self._alphaCl(alphaClmax)
+    
+    def _calc_cdmin(self):
+        if self._alphaCd==None:
+            self._create_splines()
+        alphaCdmin = fminbound(self._alphaCd,self.alpha[0],self.alpha[-1])
+        self.alphaCdmin = alphaCdmin
+        self.cdmin = self._alphaCd(alphaCdmin)
         
     def get_clmax(self):
         if self.clmax==None:
@@ -71,10 +87,50 @@ class AirfoilPolar1D:
             self._calc_clmax()
         return self.alphaClmax
     
+    def get_cdmin(self):
+        if self.cdmin==None:
+            self._calc_cdmin()
+        return self.cdmin
+    
+    def get_alpha_cdmin(self):
+        if self.alphaCdmin==None:
+            self._calc_cdmin()
+        return self.alphaCdmin
+    
     def get_cd_at_cl(self,cl):
         f = lambda alpha: self._alphaCl(alpha)-cl
         alpha = bisect(f,self.alpha[0],self.alpha[-1],xtol=1e-4)
         return self._alphaCd(alpha)
+    
+    
+    def display(self):
+        plt.figure(1)
+        plt.grid(True)
+        plt.plot(self.alpha, self.cl,'ko-')
+        plt.xlabel('Angle of Attack,deg')
+        plt.ylabel('Lift coefficient')
+        plt.figure(2)
+        plt.grid(True)
+        plt.plot(self.cd, self.cl, 'bo-')
+        plt.xlabel('Drag coefficient')
+        plt.ylabel('Lift coefficient')
+        plt.show()
+    
+    def __repr__(self):
+        out = 'airfoil: %s\n'%self.name
+        out += 'analysis: %s\n'%self.source
+        out += 'Mach = %.4f\n'%self.Mach
+        out += 'Re = %.4e\n'%self.Re
+        out += 'alpha\tcl\tcd\tcm\n'
+        for a,l,d,m in zip(self.alpha,self.cl,self.cd,self.cm):
+            out += '%.2f\t%.4f\t%.8f\t%.4f\n'%(a,l,d,m)
+        return out
+    
+    def save(self,path):
+        fid = open(path,'wt')
+        fid.write(self.__repr__())
+        fid.close()
+    
 
 class AirfoilPolar:
     def __init__(self):

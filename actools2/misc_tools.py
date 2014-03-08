@@ -8,6 +8,43 @@ Created on Thu Jan 09 11:50:25 2014
 from datetime import datetime
 import numpy as np
 
+def read_tabulated_data(path,header=False,firstRow=0):
+    if header:
+        return read_tabulated_data_with_header(path,firstRow)
+    else:
+        return read_tabulated_data_without_header(path,firstRow)
+            
+def read_tabulated_data_with_header(path,firstRow=0):
+    fid = open(path,'rt')
+    data = {}
+    segHeader = fid.readline().split()
+    ncol = len(segHeader)
+    lines = fid.readlines()
+    nrow = len(lines)
+    values = np.zeros([nrow,ncol])
+    for i,line in enumerate(lines):
+        seg = line.split()
+        for j,val in enumerate(seg):
+            values[i,j] = float(val)
+    for i,varname in enumerate(segHeader):
+        data[str(varname)] = values[:,i]
+    return data
+
+def read_tabulated_data_without_header(path,firstRow=0):
+    fid = open(path,'rt')
+    if not firstRow==0:
+        for i in range(firstRow):
+            fid.readline()
+    lines = fid.readlines()
+    nrow = len(lines)
+    ncol = len(lines[0].split())
+    values = np.zeros([nrow,ncol])
+    for i,line in enumerate(lines):
+        seg = line.split()
+        for j,val in enumerate(seg):
+            values[i,j] = float(val)
+    return values
+
 class Normalization:
     def __init__(self,lb,ub,xMin=-1.,xMax=1.):
         self.lb = np.array(lb,dtype=float)
@@ -19,11 +56,11 @@ class Normalization:
         self._ratio1 = self._delta2/self._delta1
 
     def normalize(self,x):
-        x = float(x)
+        x = np.array(x,dtype=float)
         return (x-self.lb)*self._ratio1+self.xMin
 
     def denormalize(self,xnorm):
-        xnorm = float(xnorm)
+        xnorm = np.array(xnorm,dtype=float)
         return (xnorm-self.xMin)/self._ratio1 + self.lb
         
         
@@ -104,5 +141,9 @@ def run_test2():
     xnorm1 = n.normalize(4)
     xorig = n.denormalize(xnorm1)
 
+def run_test3():
+    data = read_tabulated_data('test_file2.txt',header=False)
+    print data['col1']
+
 if __name__=="__main__":
-    run_test2()
+    run_test3()

@@ -13,8 +13,15 @@ from paths import MyPaths
 import numpy as np
 
 pth = MyPaths()
+stallIndex = {'calcfoil':0,'eppler':1}
+transitionIndex = {'epplerStandard':0,'epplerExtended':1,'michel1':2,'michel2':3,
+                   'H12Re':4,'granville':5,'drelaBefore1991':6,
+                   'drelaAfter1991':7,'arnal':8}
+surfaceTypeIndex = {'smooth':0,'paintedFabric':1,'NACAstandard':2,'bugsDirt':3}
 
-def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq):
+
+def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq,
+                          stall='eppler',transition='drelaAfter1991',surface='NACAstandard'):
     pth.set_file_prefix_random()
     tmpJournal = pth.get_tmp_file('jfscript')
     tmpAfFile = pth.get_tmp_file('dat')
@@ -24,15 +31,15 @@ def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq):
     jouFile.write('Options.Country(0)\nGeometry.Clear()\n')
     jouFile.write('Geometry.Open(/%s/)\n' %tmpAfFile)
     jouFile.write('Options.MachNumber(%.4f)\n'%Mach)
-    jouFile.write('Options.StallModel(0)\n')
-    jouFile.write('Options.TransitionModel(1)\n')
+    jouFile.write('Options.StallModel(%d)\n'%stallIndex[stall])
+    jouFile.write('Options.TransitionModel(%d)\n'%transitionIndex[transition])
     jouFile.write('Options.GroundEffect(0)\n')
     jouFile.write('Options.HeightOverSpan(0.5)\n')
     jouFile.write('Options.AspectRatio(0)\n')
     if os.name=='nt':
-        jouFile.write('Polar.Analyze(%.0f;%.0f;%.0f;%.0f;%.0f;%.2f;100;100;0;0)\n'%(Re,Re,0,alphaSeq[0], alphaSeq[1], alphaSeq[2]))    
+        jouFile.write('Polar.Analyze(%.0f;%.0f;%.0f;%.0f;%.0f;%.2f;100;100;%d;0)\n'%(Re,Re,0,alphaSeq[0], alphaSeq[1], alphaSeq[2], surfaceTypeIndex[surface]))    
     else:
-        jouFile.write('Polar.Analyze(%.0f:%.0f:%.0f:%.0f:%.0f:%.2f:100:100:0:0)\n'%(Re,Re,0,alphaSeq[0], alphaSeq[1], alphaSeq[2]))
+        jouFile.write('Polar.Analyze(%.0f:%.0f:%.0f:%.0f:%.0f:%.2f:100:100:%d:0)\n'%(Re,Re,0,alphaSeq[0], alphaSeq[1], alphaSeq[2], surfaceTypeIndex[surface]))
     jouFile.write('Polar.Save(/%s/)\n'%tmpPolar)
     jouFile.write('Exit()')
     jouFile.close()
@@ -44,7 +51,7 @@ def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq):
     polar = _read_javafoil_polar(tmpPolar)
     polar.Mach  = Mach
     polar.Re = Re
-    polar._calc_clmax()
+    polar._calculate_data()
     os.remove(tmpJournal)
     os.remove(tmpAfFile)
     os.remove(tmpPolar)

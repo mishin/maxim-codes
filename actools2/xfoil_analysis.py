@@ -8,7 +8,7 @@ Created on Fri Jan 10 11:59:44 2014
 from subprocess import Popen, PIPE
 import shlex
 import os
-from airfoil_polar import AirfoilPolar, AirfoilPolar1D
+from airfoil_polar import AirfoilPolar1D
 from paths import MyPaths
 import numpy as np
 
@@ -61,7 +61,9 @@ def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq=[-10,20,1.0],
     polar = _read_xfoil_polar(tmpPolar)
     polar.Mach = Mach
     polar.Re   = Re
-    polar._calc_clmax()
+    polar.name = airfoil.name
+    polar.source = 'Xfoil'
+    polar._calculate_data()
     os.remove(tmpAfFile)
     os.remove(tmpPolar)
     return polar

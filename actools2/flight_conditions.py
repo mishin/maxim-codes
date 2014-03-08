@@ -6,7 +6,6 @@ Created on Fri Jan 10 15:08:33 2014
 """
 from math import exp
 import constants as const
-from scipy.optimize import broyden1
 
 class FlightConditions:
     """
@@ -56,10 +55,22 @@ class FlightConditions:
         sets new reference length
         """
         self.__init__(self.velocity,self.atm.altitude,self.atm.dT,float(refLength))
+    
+    def get_wall_spacing(self,yplus=1.0):
+        """
+        calculates minimum wall spacing based on yplus value.
+        """
+        Cf = 0.026 / (self.Re**(1/7))
+        rho = self.atm.density
+        tauWall = Cf*rho * self.velocity**2/2
+        Ufric = (tauWall/rho)**0.5
+        ds = yplus*self.atm.viscosity / (Ufric*rho)
+        return ds
 
 
 class ISAtmosphere:
     def __init__(self,altitude,dT,gas='air'):
+        altitude = float(altitude)
         P0 = 101325.0
         T0 = 288.15
         G0 = 9.80665

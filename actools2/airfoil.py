@@ -52,7 +52,7 @@ def cst(Au,Al):
     af.create_cst(Au,Al)
     return af
 
-def cst_x(A):
+def cst_x(A,nPts=25):
     af = Airfoil()
     n = len(A)
     if n%2==0:
@@ -61,7 +61,7 @@ def cst_x(A):
     else:
         Au = np.array(A[:int(n/2)+1])
         Al = np.hstack([-A[0],A[int(n/2)+1:]])
-    af.create_cst(Au,Al)
+    af.create_cst(Au,Al,nPts)
     return af
 
 def naca4(thickness,camber,camberLocation):
@@ -375,12 +375,14 @@ class Airfoil:
         t2 = fminbound(_ymin,0,1)
         self.thickness = self._curveUp(t1)[1] - self._curveLo(t2)[1]
     
-    def _get_point_distribution(self,nPts=30):
-        if self._distribution=='sin':
+    def _get_point_distribution(self,nPts=30,distribution=None):
+        if distribution==None:
+            distribution = self._distribution
+        if distribution=='sin':
             return geom.get_sine_distribution(nPts)
-        elif self._distribution=='cos':
+        elif distribution=='cos':
             return geom.get_cosine_distribution(nPts)
-    def redim(self,nPts,overwrite=False):
+    def redim(self,nPts,overwrite=True,distribution='sin'):
         """
         Redimension and redistribution of airfoil points using cosine function. 
         More points are located at leading and trailing edge.
@@ -398,10 +400,10 @@ class Airfoil:
             in format of self.pts
         """
         nPts *= 0.5
-        t = self._get_point_distribution(nPts)
+        t = self._get_point_distribution(nPts,distribution)
         self._create_splines()
-        xUp, yUp = self.upCurve(t)
-        xLo, yLo = self.loCurve(t)
+        xUp, yUp = self._curveUp(t)
+        xLo, yLo = self._curveLo(t)
         upPts = np.transpose(np.vstack([xUp,yUp]))
         loPts = np.transpose(np.vstack([xLo,yLo]))
         coord = geom.join_coordinates(upPts,loPts)
@@ -508,7 +510,8 @@ class Airfoil:
         """
         return xf.get_xfoil_analysis(self,Mach,Re,alphaSeq,nIter,graphic,smooth)
 
-    def get_jfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1]):
+    def get_jfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1], 
+                        stall='eppler',transition='drelaAfter1991',surface='NACAstandard'):
         """
         Calculates aerodynamic coefficients at given flight conditions using Xfoil.
         
@@ -522,6 +525,15 @@ class Airfoil:
         alphaSeq : array float
             array of angle of attack sequence to be analyzed in format 
             [start, end, step]
+        stall : string
+            stall model. Available options: calcfoil, eppler
+        transition : string
+            transition model. Availabel options: epplerStandard, epplerExtended, 
+            michel1, michel2, H12Re, granville, drelaBefore1991, drelaAfter1991, 
+            arnal
+        surface : string
+            surface type. Available options: smooth, paintedFabrid, 
+            NACAstandard, bugsDirt
         
         Returns
         -------
