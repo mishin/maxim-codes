@@ -39,7 +39,7 @@ def vcm_test_1d():
     def forrester_low(x):
         A, B, C = 0.5, 10., -5.
         return A*forrester(x)+B*(x-0.5)-C
-    output = OutputData('1D_example_results.py','a')
+#    output = OutputData('1D_example_results.py','a')
     #output.write_string('from numpy import array')
     _fhi = forrester
     _flow = forrester_low
@@ -51,7 +51,7 @@ def vcm_test_1d():
     tol = 1.0e-3
     err = tol + 1
     niter = 0
-    fscaled = HybridScaledFunction(_flow,_fhi,3,weight=1.0)
+    fscaled = HybridScaledFunction(_flow,_fhi,0,weight=1.0)
     #fscaled = ScaledFunction(_flow,_fhi,3,'mult')
     lb = 0.0
     ub = 1.0
@@ -64,10 +64,10 @@ def vcm_test_1d():
     #output.write_array('Ylow',forrester_low(x))
     xdoe = [x0-delta,x0+delta]
     xdoe = [lb,ub]
-    #fscaled._initialize_by_doe_points(xdoe)
+    fscaled._initialize_by_doe_points(xdoe)
     fhiNew = fscaled.funcHi(x0)
-    fid = open('1d_convergence.txt','at')
-    fid.write('->\n')
+#    fid = open('1d_convergence.txt','at')
+#    fid.write('->\n')
     while err>tol:
         fscaled.construct_scaling_model(x0,fhiNew)
         x0plt = x0
@@ -85,7 +85,8 @@ def vcm_test_1d():
 #        plt.axis([lb-0.1*dSpace,ub+0.1*dSpace,-10,20])
 #        plt.show()
 #        plt.cla()
-        
+        print fscaled.fAdd.beta.rbf.epsilon
+        raw_input()
         bnds = [(max([lb,x0-delta]), min([x0+delta,ub]))]
         rslt = minimize(fscaled,x0,method='SLSQP',bounds=bnds,tol=1e-6)
         xnew = rslt.x[0]
@@ -103,11 +104,11 @@ def vcm_test_1d():
         
         x0 = xnew
         print 'rho:%.4f\tx:%.4f\tf:%.4f\tdelta:%.4e'%(rho, xnew, fnew, delta)
-        fid.write('%.6f\t%.6f\t%.6f\n'%(fnew,fhiNew,fscaled.funcLo(xnew,False)))
+#        fid.write('%.6f\t%.6f\t%.6f\n'%(fnew,fhiNew,fscaled.funcLo(xnew,False)))
         niter += 1
     y = array([fscaled(_x) for _x in x])
-    output.write_array('YgvfmHybr',y)
-    output.close()
+#    output.write_array('YgvfmHybr',y)
+#    output.close()
 
 
 #    fscaled.funcHi.display()
@@ -115,7 +116,7 @@ def vcm_test_1d():
     fscaled.fAdd.funcHi.display()
     fscaled.fAdd.funcLo.display()
     print niter
-    fid.close()
+#    fid.close()
 
 if __name__=="__main__":
     vcm_test_1d()

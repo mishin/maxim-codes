@@ -143,11 +143,11 @@ def run_doe_cfd():
 
     aa = AirfoilAnalysis()
     clmax = zeros(len(x))
-    clmaxPath = 'KLA100//clmax_DOE2.txt'
+    clmaxPath = 'KLA100//clmax_DOE3.txt'
     fid = open(clmaxPath,'wt')
     fid.write('Iter\tclmax\talphaClmax\tthickness\n')
     fid.close()
-    x0 = array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, 0.02874038])
+    x0 = array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, -0.09874038])
     dxu = zeros(len(x0))+0.05
     dxl = zeros(len(x0))-0.05
     dxu[9] = 0.005
@@ -179,7 +179,7 @@ def vcm_airfoil_optimization():
     nIter = 0
     delta = 0.4
     # baseline
-    x0 = array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, 0.02874038])
+    x0 = array([0.18723832, 0.2479892, 0.26252777, 0.31606257, 0.0819584, -0.11217863, -0.14363534, -0.06480575, -0.27817776, -0.09874038])
     dxu = zeros(len(x0))+0.05
     dxl = zeros(len(x0))-0.05
     dxu[9] = 0.005

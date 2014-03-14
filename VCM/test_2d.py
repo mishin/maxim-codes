@@ -212,13 +212,13 @@ def numerical_example_2():
     #xDoe = ff2n(2)
     xDoe = read_samples('2DLHC.txt')
     #xDoe = read_samples()
-    xDoe = denormalize(xDoe,lb,ub,1)
+    xDoe = denormalize(xDoe,lb,ub)
     #print xDoe
     fscaled = ScaledFunction(fLow, fHigh,4,'add')
     gscaled = ScaledFunction(g1Low, g1High,4,'add')
-
-    #fscaled._initialize_by_doe_points(xDoe)
-    #gscaled._initialize_by_doe_points(xDoe)
+    fscaled._initialize_by_doe_points(xDoe)
+    gscaled._initialize_by_doe_points(xDoe)
+    
     def print_header():
         print 'x1\tx2\tf\trho\tdelta\terr\tgScaled\tgHigh'
     while xConverged==False or gConverged==False:

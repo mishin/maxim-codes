@@ -7,7 +7,7 @@ Created on Fri Oct 25 20:15:08 2013
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
+from matplotlib import cm, rc
 import numpy as np
 from scipy.optimize import minimize
 
@@ -161,7 +161,12 @@ def test_function_selection5():
         return forrester(np.linalg.norm(x))
     def f(x):
         return forrester(np.linalg.norm(0.08*np.array(x))) + 0.1*np.linalg.norm(x) + 0.5*(x[0]+x[1])
-
+        
+    font = {'family' : 'normal',
+    'weight' : 'normal',
+    'size'   : 14}
+    
+    rc('font', **font)
     #f2 = lambda x: np.exp(x[0]/3)+np.exp(x[1]/5)-x[0]
     lb = [0, 0.0]
     ub = [10., 10.]
@@ -187,6 +192,9 @@ def test_function_selection5():
     ax2.plot_wireframe(X,Y,Z1,color='r')
     ax2.plot_wireframe(X,Y,Z2,color='b')
     ax2.legend(['High fidelity function','Low fidelity function'])
+    ax2.set_xlabel('x1')
+    ax2.set_ylabel('x2')
+    ax2.set_zlabel('f (x1,x2)')
     plt.show()
 
 if __name__=="__main__":

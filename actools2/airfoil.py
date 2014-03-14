@@ -47,9 +47,9 @@ def load(airfoilName,dbPath=None):
     af.read_db(airfoilName,dbPath)
     return af
 
-def cst(Au,Al):
+def cst(Au,Al,nPts=30,zTE=0.0):
     af = Airfoil()
-    af.create_cst(Au,Al)
+    af.create_cst(Au,Al,nPts,zTE)
     return af
 
 def cst_x(A,nPts=25):
@@ -481,7 +481,8 @@ class Airfoil:
         self.polar.alpha  = tmpPolar.alpha
         self.polar._create_splines()
 
-    def get_xfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1],nIter=10,graphic=False,smooth=False):
+    def get_xfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1],nIter=10,graphic=False,smooth=False,
+                        flapChordRatio=0.3,flapDefl=None):
         """
         Calculates aerodynamic coefficients at given flight conditions using Xfoil.
         
@@ -508,10 +509,11 @@ class Airfoil:
             airfoil polar with all aerodynamic data at specified flight 
             conditions
         """
-        return xf.get_xfoil_analysis(self,Mach,Re,alphaSeq,nIter,graphic,smooth)
+        return xf.get_xfoil_analysis(self,Mach,Re,alphaSeq,nIter,graphic,smooth,flapChordRatio,flapDefl)
 
     def get_jfoil_polar(self,Mach,Re,alphaSeq=[-15,15,1], 
-                        stall='eppler',transition='drelaAfter1991',surface='NACAstandard'):
+                        stall='eppler',transition='drelaAfter1991',surface='NACAstandard',
+                        flapDefl=None,flapChordRatio=30.0):
         """
         Calculates aerodynamic coefficients at given flight conditions using Xfoil.
         
@@ -549,15 +551,18 @@ class Airfoil:
         :file:`javapath.txt`. For linux OS file should contain *java* 
         keyword only
         """
-        return jf.get_javafoil_analysis(self,Mach,Re,alphaSeq)
+        return jf.get_javafoil_analysis(self,Mach,Re,alphaSeq,stall,transition,
+                                        surface,flapDefl,flapChordRatio)
     
-    def create_cst(self,Au,Al,nPts=25):
+    def create_cst(self,Au,Al,nPts=25,zTE=None):
         self.upCurve = geom.CstCurve(Au)
         self.loCurve = geom.CstCurve(Al)
         x = self._get_point_distribution(nPts)
         self.ptsUp = self.upCurve.get_coordinates(x)
         self.ptsLo = self.loCurve.get_coordinates(x)
         self._join_coordinates()
+        if not zTE==None:
+            self.set_trailing_edge(zTE)
         self._analyze_geometry()
         self.name = 'CST airfoil'
 

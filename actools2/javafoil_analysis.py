@@ -21,7 +21,8 @@ surfaceTypeIndex = {'smooth':0,'paintedFabric':1,'NACAstandard':2,'bugsDirt':3}
 
 
 def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq,
-                          stall='eppler',transition='drelaAfter1991',surface='NACAstandard'):
+                          stall='eppler',transition='drelaAfter1991',surface='NACAstandard',
+                          flapDefl=None,flapChordRatio=30.0):
     pth.set_file_prefix_random()
     tmpJournal = pth.get_tmp_file('jfscript')
     tmpAfFile = pth.get_tmp_file('dat')
@@ -30,6 +31,9 @@ def get_javafoil_analysis(airfoil,Mach,Re,alphaSeq,
     jouFile = open(tmpJournal,'wt')
     jouFile.write('Options.Country(0)\nGeometry.Clear()\n')
     jouFile.write('Geometry.Open(/%s/)\n' %tmpAfFile)
+    if not flapDefl==None:
+        jouFile.write('Modify.Select(1)\n')
+        jouFile.write('Modify.Flap(%.4f;%.4f)\n'%(flapChordRatio,flapDefl))
     jouFile.write('Options.MachNumber(%.4f)\n'%Mach)
     jouFile.write('Options.StallModel(%d)\n'%stallIndex[stall])
     jouFile.write('Options.TransitionModel(%d)\n'%transitionIndex[transition])

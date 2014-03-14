@@ -30,7 +30,8 @@ class Xfoil:
 
 
 def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq=[-10,20,1.0],
-                       nIter=10,graphic=False,smooth=False):
+                       nIter=10,graphic=False,smooth=False,
+                       flapChordRatio=0.3,flapDefl=None):
 
     pth.set_file_prefix_random()
     tmpAfFile = pth.get_tmp_file('txt','_crd')
@@ -40,6 +41,8 @@ def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq=[-10,20,1.0],
     xfoil.cmd('LOAD\n%s'%tmpAfFile)
     if smooth:
         xfoil.cmd('GDES\nCADD\n\n\n\n\nPANEL')
+    if not flapDefl==None:
+        xfoil.cmd('GDES\nflap\n%.4f\n0\n%.4f\n\n'%((1-flapChordRatio),flapDefl))
     xfoil.cmd('OPER\nVISC\n%.0f\nMACH\n%.4f'%(Re,Mach))
     if nIter>10:
         xfoil.cmd('ITER\n%d' % nIter)

@@ -32,13 +32,13 @@ class AirfoilObjective:
 #        for x1,x2 in zip(xnorm,x):
 #            print '%.4f\t%.4f'%(x1,x2)
 #        raw_input()
-        self.af = cst_x(x,20)
+        self.af = cst_x(x,35)
         self.tc = self.af.thickness
     
     def f(self,x):
         sys.stdout.write('.')
         self.set_cst(x)
-        pol = self.af.get_xfoil_polar(self.cruise.Mach, self.cruise.Re, [-10,10,0.5])
+        pol = self.af.get_jfoil_polar(self.cruise.Mach, self.cruise.Re, [-10,10,0.5])
         try:
             cd = np.array([pol.get_cd_at_cl(cl) for cl in self.clCruise])
             return cd.mean()
@@ -94,7 +94,7 @@ class AirfoilObjective:
     def g1low(self,x):
         sys.stdout.write('.')
         self.set_cst(x)
-        pol = self.af.get_xfoil_polar(self.landing.Mach, self.landing.Re, [0,20,1])
+        pol = self.af.get_jfoil_polar(self.landing.Mach, self.landing.Re, [0,20,1])
         return pol.clmax-self.clmaxMin
 
     def g2(self,x):
@@ -107,11 +107,11 @@ class AirfoilObjective:
     
     def g4(self,x):
         self.set_cst(x)
-        pol = self.af.get_xfoil_polar(self.cruise.Mach, self.cruise.Re, [-10,10,0.5])
+        pol = self.af.get_jfoil_polar(self.cruise.Mach, self.cruise.Re, [-10,10,0.5])
         return pol.get_alpha_cdmin() - self.cdminAlpha[0]
     def g5(self,x):
         self.set_cst(x)
-        pol = self.af.get_xfoil_polar(self.cruise.Mach, self.cruise.Re, [-10,10,0.5])
+        pol = self.af.get_jfoil_polar(self.cruise.Mach, self.cruise.Re, [-10,10,0.5])
         return self.cdminAlpha[1] - pol.get_alpha_cdmin()
 
 

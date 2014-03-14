@@ -22,8 +22,8 @@ class AirfoilAnalysis:
         V = fc.atmosphere.soundSpeed * self.MachCruise
         self.fc = FlightConditions(V,9e3)
         self.CmMax = 0.15
-        self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_20131125.txt'
-        self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_20131125.txt'
+        self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_20131123.txt'
+        self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_20131123.txt'
     
     def _read_cfd_history_file(self,path):
         fid = open(path,'rt')
@@ -210,15 +210,19 @@ def transonic_airfoil_design():
     fscaled = ScaledFunction(aa.fLow, aa.fHigh, 0, 'add')
     gscaled = ScaledFunction(aa.g1Low, aa.g1High, 0, 'add')
     
-    #fscaled._initialize_by_doe_points(xDoe, -LDHigh, -LDLow)
-    #gscaled._initialize_by_doe_points(xDoe, aa.CmMax-cmHigh, aa.CmMax-cmLow)
-    fscaled._initialize_by_doe_points(xDoe)
-    gscaled._initialize_by_doe_points(xDoe)
+    fscaled._initialize_by_doe_points(xDoe, -LDHigh, -LDLow)
+    gscaled._initialize_by_doe_points(xDoe, aa.CmMax-cmHigh, aa.CmMax-cmLow)
+    fscaled.construct_scaling_model(x0)
+    print fscaled.beta.rbf.epsilon
+    raw_input()
+#    fscaled._initialize_by_doe_points(xDoe)
+#    gscaled._initialize_by_doe_points(xDoe)
     fscaled.dx = 1e-4
     gscaled.dx = 1e-4
     while xConverged==False or gConverged==False:
         fscaled.construct_scaling_model(x0)
         gscaled.construct_scaling_model(x0)
+        
         bnds = get_bounds(x0,delta,lb,ub)
         cnstr = ({'type':'ineq','fun':gscaled,'jac':gscaled.derivative},
                  {'type':'ineq','fun':aa.g2},{'type':'ineq','fun':aa.g3})

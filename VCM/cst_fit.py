@@ -15,7 +15,10 @@ def cst_fit():
     af = airfoil.Airfoil()
     #af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
     #af.read_txt(r'D:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
-    af.read_txt('pb092_geometry.txt')
+    af.read_txt('pb092_closed.txt')
+    af.coord[:,1] = af.coord[:,1] - af.coord[:,0]*0.001868
+    af.separate_coordinates()
+    af.plot()
     up, lo = af.upPts, af.loPts
     args1 = up,lo
 
@@ -55,6 +58,10 @@ def cst_fit():
     #xnew += 0.05
     afnew = airfoil.cst(xnew[0:5],xnew[5:10])
     print afnew.thickness
+    fid = open('GA37A315cst.txt','wt')
+    for xx in xnew:
+        fid.write('%.8f\t'%xx)
+    fid.close()
     fig = plt.figure(1)
     ax1 = fig.add_subplot(211)
     ax2 = fig.add_subplot(212)
