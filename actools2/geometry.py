@@ -20,6 +20,24 @@ import math
 from math import radians, pi,sin,cos
 from numpy import flipud, vstack, arange, array, zeros,linspace,hstack,transpose
 
+class xyCurve:
+    def __init__(self,pts):
+        self.curve = interpolate.interp1d(pts[:,0],pts[:,1],'cubic')
+        self.pts = pts
+        self.xU = ny.min(pts[:,0])
+        self.xL = ny.max(pts[:,0])
+    def tanAngle(self,x,dx=1e-3):
+        dx,dy = self.tanDirection(x,dx)
+        return math.atan(dy/dx)
+    def tanDirection(self,x,dx=1e-3):
+        dy = self.curve(x+dx) - self.curve(x-dx)
+        return [2*dx, dy]
+    def tan(self,x,dx=1e-4):
+        dx,dy = self.tanDirection(x,dx)
+        return dy/dx
+    def __call__(self,x):
+        return self.curve(x)
+
 def sort_airfoil_coordinates(coordinates,start=0.1,end=0.95):
     crdNew = ny.zeros(coordinates.shape)
     i = 0
@@ -280,6 +298,7 @@ class BezierCurve():
         self.dimm = nodes.dimm
         self.K = BPOcoef(self.order)
         self.pts = nodes.coord
+        
     def _curve(self,t):
         pt = ny.zeros(self.dimm+1)
         pt[-1] = t
@@ -354,4 +373,4 @@ def sine_dist_test():
     plt.show()
 
 if __name__=="__main__":
-    sine_dist_test()
+    runTest()

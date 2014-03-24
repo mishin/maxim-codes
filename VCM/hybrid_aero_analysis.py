@@ -13,6 +13,7 @@ from scipy.interpolate import interp1d
 import os
 from miscTools import denormalize
 from scipy.optimize import fminbound
+from misc_tools import read_tabulated_data_without_header
 
 def write_polar(path,polar,polarType):
     fid = open(path,'wt')
@@ -22,7 +23,7 @@ def write_polar(path,polar,polarType):
         fid.write('%.2f\t%.6f\t%.6f\t%.6f\n'%(alpha,cl,cd,cm))
     fid.close()
 
-def aero_analysis(af, fc, filename):
+def aero_analysis(af, fc, filename=None):
     result1 = af.get_J_polar(fc.Mach, fc.Re, [0,16,2.0])
     solver = cfd.CFDsolver(af,fc,1.0,mesh='O')
     solver.fluent.residuals['energy']=1e-6
@@ -37,7 +38,8 @@ def aero_analysis(af, fc, filename):
     result2 = solver.run_for_multiple_aoa(alpha,turbulenceModel='ke-realizable')
     result3 = combine_results(result1, result2)
     result3.thickness = af.thickness
-    write_polar(filename, result3,'combined')
+    if not filename==None:
+        write_polar(filename, result3,'combined')
     return result3
 
 
@@ -55,13 +57,18 @@ def combine_results(resultXfoil, resultCfd):
     resultNew.cm = cmAlpha(alphaNew)
     f1 = lambda x: -clAlpha(x)
     f2 = lambda x: -clAlpha(x)/cdAlpha(x)
+    f3 = lambda x: -clAlpha(x)**1.5/cdAlpha(x)
     a1 = fminbound(f1,alphaMin, alphaMax, full_output=1)
     a2 = fminbound(f2,alphaMin, alphaMax, full_output=1)
+    a3 = fminbound(f3,alphaMin, alphaMax, full_output=1)
     resultNew.alphaClmax = a1[0]
     resultNew.alphaLDmax = a2[0]
+    resultNew.alphaLD32max = a3[0]
     resultNew.Clmax = -a1[1]
     resultNew.LDmax = -a2[1]
+    resultNew.LD32max = -a3[1]
     resultNew.cdAtLDmax = cdAlpha(a2[0])
+    resultNew.cdAtLD32max = cdAlpha(a3[0])
     return resultNew
 
 def run_test1():
@@ -99,7 +106,7 @@ def read_doe(path):
             for j,val in enumerate(seg):
                 output[i,j] = float(val)
             i += 1
-    return output
+    return output[:i]
 
 def write_output(x,result, path):
     fid = open(path,'a')
@@ -110,23 +117,31 @@ def write_output(x,result, path):
     fid.write('%.6f\t'%result.Clmax)
     fid.write('%.6f\t'%result.alphaClmax)
     fid.write('%.6f\t'%result.cdAtLDmax)
+    fid.write('%.6f\t'%result.LD32max)
     fid.write('%.6f\n'%result.thickness)
     fid.close()
 
-def run_full_table_analysis():
+def get_initial_data():
     X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
     lb = X - np.array([0.01, 0.05, 0.05, 0.05, 0.00, 0.05, 0.05, 0.05, 0.05, 0.05])
     ub = X + np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.01, 0.05, 0.05, 0.05, 0.00])
-    
     fc = cfd.FlightConditions(22.0,0.0,0,0.24)
-    wdir = os.getcwd() + '\\RENNaero\\'
-    pathDOE = wdir + '1. inputDOE2.txt'
-    pathOutput = wdir + '2. outputAero2.txt'
+    return X,lb,ub,fc
+
+def run_full_table_analysis(wdir):
+    X,lb,ub,fc = get_initial_data()
+    
+    #wdir = os.getcwd() + '\\RENNaero\\'
+    pathDOE = os.getcwd() + '\\' + wdir + '\\1. input.txt'
+    pathOutput = os.getcwd() + '\\' + wdir + '\\1. outputAero.txt'
+    #pathDOE = 'RENNaero\\1. input.txt'
+    #pathOutput = 'RENNaero\\2. output.txt'
     
     fid = open(pathOutput,'wt')
-    fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tthickness\n')
+    fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tLD32max\tthickness\n')
     fid.close()
-    designs = read_doe(pathDOE)
+    #designs = read_doe(pathDOE)
+    designs = read_tabulated_data_without_header(pathDOE)
     for i,design in enumerate(designs):
         design = denormalize(design,lb,ub)
         af = airfoil.cst(design[0:5],design[5:10])
@@ -147,5 +162,10 @@ def run_baseline():
     result = aero_analysis(af, fc, 'tmp1z.txt')
     write_output(X,result,'RENNbaseline.txt')
 
+def run_multiple_tables():
+    wdir = ['RENNaero\\75samples','RENNaero\\100samples']
+    for directory in wdir:
+        run_full_table_analysis(directory)
+
 if __name__=="__main__":
-    run_baseline()
+    run_multiple_tables()

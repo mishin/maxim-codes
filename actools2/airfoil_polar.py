@@ -41,6 +41,7 @@ class AirfoilPolar1D:
         self.cl = list()
         self.cd = list()
         self.cm = list()
+        self.LD = list()
         self.alpha = list()
         self.cdp = list()
         self.Mach = None

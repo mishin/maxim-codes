@@ -55,6 +55,19 @@ def cst(Au,Al,nPts=30,dist='sin'):
     af.camber_slope_LE = 0.0
     return af
 
+
+def cst_x(A,nPts=25):
+    af = Airfoil()
+    n = len(A)
+    if n%2==0:
+        Au = A[:n/2]
+        Al = A[n/2:]
+    else:
+        Au = array(A[:int(n/2)+1])
+        Al = hstack([-A[0],A[int(n/2)+1:]])
+    af.create_CST(Au,Al,nPts)
+    return af
+
 class AirfoilPolar:
     """
     Stores aerodynamic data of airfoil.

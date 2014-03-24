@@ -45,6 +45,14 @@ def read_tabulated_data_without_header(path,firstRow=0):
             values[i,j] = float(val)
     return values
 
+def write_tabulated_data_without_header(path,data):
+    fid = open(path,'wt')
+    for line in data:
+        for val in line:
+            fid.write('%.6f\t'%val)
+        fid.write('\n')
+    fid.close()
+
 class Normalization:
     def __init__(self,lb,ub,xMin=-1.,xMax=1.):
         self.lb = np.array(lb,dtype=float)

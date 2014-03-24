@@ -363,6 +363,8 @@ class Airfoil:
         lenLo = geom.curve_pt_dist_normalized(self.ptsLo)
         self._curveUp = CurveXyt(self.ptsUp[:,0],self.ptsUp[:,1],lenUp)
         self._curveLo = CurveXyt(self.ptsLo[:,0],self.ptsLo[:,1],lenLo)
+        self._curveUp2 = interp1d(self.ptsUp[:,0],self.ptsUp[:,1],'cubic')
+        self._curveLo2 = interp1d(self.ptsLo[:,0],self.ptsLo[:,1],'cubic')
 
     def _analyze_geometry(self):
         """
