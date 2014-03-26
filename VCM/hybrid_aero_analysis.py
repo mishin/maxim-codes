@@ -123,8 +123,8 @@ def write_output(x,result, path):
 
 def get_initial_data():
     X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
-    lb = X - np.array([0.01, 0.05, 0.05, 0.05, 0.00, 0.05, 0.05, 0.05, 0.05, 0.05])
-    ub = X + np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.01, 0.05, 0.05, 0.05, 0.00])
+    lb = X - np.array([0.01, 0.02, 0.02, 0.02, 0.00, 0.02, 0.02, 0.02, 0.02, 0.02])
+    ub = X + np.array([0.02, 0.02, 0.02, 0.02, 0.02, 0.01, 0.02, 0.02, 0.02, 0.00])
     fc = cfd.FlightConditions(22.0,0.0,0,0.24)
     return X,lb,ub,fc
 
@@ -163,7 +163,7 @@ def run_baseline():
     write_output(X,result,'RENNbaseline.txt')
 
 def run_multiple_tables():
-    wdir = ['RENNaero\\75samples','RENNaero\\100samples']
+    wdir = ['RENNaero\\100samples']
     for directory in wdir:
         run_full_table_analysis(directory)
 

@@ -155,7 +155,7 @@ def simple_cfd_analysis(af,fc,alpha=arange(0,20,2),turbulence='ke-realizable',
     solver.fluent.residuals['xvelocity']        = residXvelocity
     solver.mesh._airfoilPts                     = ptsAirfoil
     solver.mesh._interiorPts                    = ptsInterior
-    solver.mesh._dsTE                           = solver.mesh._dsWall
+    solver.mesh._dsTE                           = 5e-5#solver.mesh._dsWall
     solver.mesh._dsLE                           = 2e-3
     solver.mesh._growthRate                     = growthRate
     solver.create_mesh()
