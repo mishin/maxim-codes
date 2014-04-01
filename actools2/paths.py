@@ -19,6 +19,7 @@ class dbPaths:
     def __init__(self):
         self.wdir     = os.path.abspath(os.getcwd() + '/database')
         self.aircraft = os.path.abspath(self.wdir + '/aircraft.xls')
+        self.aircraftFW = os.path.abspath(self.wdir + '/aircraftFW.xls')
         self.airfoil  = os.path.abspath(self.wdir + '/airfoil.xls')
         self.engine   = os.path.abspath(self.wdir + '/piston_engine.xls')
         self.engineExp= os.path.abspath(self.wdir + '/piston_engine_experimental.xls')
@@ -29,6 +30,9 @@ class dbPaths:
 
 
 class MyPaths:
+    """
+    Class contains tools for working with paths.
+    """
     def __init__(self):
         self._init_javapath()
         self.db   = dbPaths()
@@ -159,6 +163,7 @@ class CFD_paths:
         os.remove(self.file_cm_hist)
 
 
+myPaths = MyPaths()
 # --- debug section ---
 def run_test1():
     pth = MyPaths()
