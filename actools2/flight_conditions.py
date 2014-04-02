@@ -37,6 +37,7 @@ class FlightConditions:
             self.velocity = float(speed)
             self.Mach = self.velocity / self.atm.soundSpeed
         self.Re = self.atm.density*self.velocity*self.refLength/self.atm.viscosity
+        self.dynamicPressure = self.atm.density*self.velocity*self.velocity/2.0
     
     def set_speed(self,speed):
         """

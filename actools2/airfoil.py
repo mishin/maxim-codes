@@ -144,7 +144,7 @@ class Airfoil:
         self.zTrailingEdge    = None
         self._curveUp         = None
         self._curveLo         = None
-        self.polar            = None
+        self.polar            = AirfoilPolar()
         self._distribution    = 'cos'
 
     def read_db(self,name,xlsPath=None):
@@ -376,6 +376,12 @@ class Airfoil:
         t1 = fminbound(_ymax,0,1)
         t2 = fminbound(_ymin,0,1)
         self.thickness = self._curveUp(t1)[1] - self._curveLo(t2)[1]
+        n = len(self.pts)-1
+        L = np.zeros(n)
+        for i in range(n):
+            L[i] = ((self.pts[i,0]-self.pts[i+1,0])**2.0 + (self.pts[i,1]-self.pts[i+1,1])**2.0)**0.5
+        self.length = L.sum()
+            
     
     def _get_point_distribution(self,nPts=30,distribution=None):
         if distribution==None:
@@ -613,10 +619,12 @@ class Airfoil:
 # --- debug section ---
 def run_test_geometry():
     af = Airfoil()
-    af = naca4(12,2,30)
+    #af = naca4(12,2,30)
+    af = load('NACA0012')
     af.display('ko-')
     af.redim(40,True)
     print af.thickness
+    print af.length
     af.display('ko-')
 
 def run_test_aero_analysis():
@@ -637,4 +645,4 @@ def run_test_aero_analysis():
     plt.show()
 
 if __name__=="__main__":
-    run_test_aero_analysis()
+    run_test_geometry()
