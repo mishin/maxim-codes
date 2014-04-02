@@ -146,5 +146,20 @@ def run_lowRe():
     for a,cl,cd,cm in zip(result.alpha,result.cl,result.cd,result.cm):
         print a,'\t',cl,'\t',cd,'\t',cm
 
+def simple_cfd_analysis(af,fc,alpha=arange(0,20,2),turbulence='ke-realizable',
+                        ptsAirfoil=75, ptsInterior=75,growthRate=1.2,
+                        residEnergy=1e-6, residXvelocity=1e-3):
+    solver = CFDsolver(af,fc,1.0,mesh='O')
+    solver.fluent.residuals['energy']           = residEnergy
+    solver.fluent.residuals['xvelocity']        = residXvelocity
+    solver.mesh._airfoilPts                     = ptsAirfoil
+    solver.mesh._interiorPts                    = ptsInterior
+    solver.mesh._dsTE                           = 5e-5#solver.mesh._dsWall
+    solver.mesh._dsLE                           = 2e-3
+    solver.mesh._growthRate                     = growthRate
+    solver.create_mesh()
+    result = solver.run_for_multiple_aoa(alpha,turbulenceModel=turbulence)
+    return result
+    
 if __name__=="__main__":
     run_lowRe()

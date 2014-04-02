@@ -104,7 +104,7 @@ class DesignGoals(object):
         self.loadFactorLanding = 0.0
         self.numberOfOccupants = 0
     def set_flight_conditions(self, refLength=1.0):
-        self.fc = FlightConditions(self.cruiseSpeed, self.cruiseAltitude,refLength)
+        self.fc = FlightConditions(self.cruiseSpeed, self.cruiseAltitude, refLength)
 
 class Wing(object):
     def __init__(self):
@@ -123,26 +123,25 @@ class Wing(object):
         self.material          = None
         self.MAC               = 0.0
         self.MAClocation       = np.array([0,0,0])
-    
-    def _process_data(self):
-        self.load_airfoils()
-        self.get_geometry_data()
 
-    def load_airfoils(self,xlsPath=None):
+    def _process_data(self):
+        self._load_airfoils()
+        self._calc_geometry_data()
+
+    def _load_airfoils(self,xlsPath=None):
         if xlsPath==None:
             xlsPath = path.db.airfoil
         for name in self.airfoilNames:
             self.airfoils.append(airfoil.load(name))
 
-    def get_geometry_data(self):
+    def _calc_geometry_data(self):
         self._calc_mac()
         self._calc_projected_area()
         self._calc_wetted_area()
-    
+
     def _calc_mac(self):
         for i,segSpan in enumerate(self.segments[1:]):
             pass
-            
 
     def _calc_wetted_area(self):
         n = len(self.segments)-1
@@ -155,7 +154,7 @@ class Wing(object):
     def _calc_projected_area(self):
         segArea = self.segments[1:]*(self.chords[:-1]+self.chords[1:])
         self.area = segArea.sum()
-        
+
 class VLMparameters(object):
     def __init__(self):
         self.panelsChordwise = 0

@@ -37,6 +37,12 @@ class FluentOutput():
         out += '%.2e\t%.2e\t%.2e\n'%(self.cl,self.cd, self.cm)
         return out
     
+    def get_cd_at_cl(self,clReq):
+        curve1 = interp1d(self.alpha,self.cl-clReq,'cubic')
+        curve2 = interp1d(self.alpha,self.cd,'cubic')
+        alphaReq = fminbound(curve1,self.alpha[0],self.alpha[-1],xtol=1e-4)
+        return curve2(alphaReq)
+    
     def _calc_clmax(self):
         clCurve = interp1d(self.alpha,-self.cl,'cubic')
         self.alphaClmax = fminbound(clCurve,self.alpha[0],self.alpha[-1],xtol=1e-3)

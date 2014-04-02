@@ -78,28 +78,66 @@ class AirfoilAnalysis:
         self.galphaStall = 18.0
         self.Mach = 0.0
         self.Re = 2.4e6
+        self.cruise = FlightConditions(self.Mach,0)
+        self.cruise.Re = self.Re
+        self.alphaSeq = [-10,20,0.5]
+        self.clCruise = [0.2,0.3]
         self.af0 = read_txt('pb092_geometry.txt')
         self.af = None
-    
+        self.dx = 1e-4
+
     def set_airfoil(self,x):
         self.af = get_new_airfoil(x,*(self.af0,))
-        
+
+    def get_J_polar(self):
+        return self.af.get_J_polar(self.Mach,self.Re,self.alphaSeq)
+
+    def get_cfd_polar(self):
+        pol = simple_cfd_analysis(self.af,self.cruise)
+        pol._calc_clmax()
+        pol._calc_cdmin()
+        return pol
+
     def f(self,x):
         self.set_airfoil(x)
+        pol = self.get_J_polar()
+        cd = array([pol.get_cd_at_cl(cl) for cl in self.clCruise])
+        return cd.mean()
     
     def g1high(self,x):
         self.set_airfoil(x)
+        pol = self.get_cfd_polar()
+        return pol.clmax - self.gclmax
+        
     def g1low(self,x):
         self.set_airfoil(x)
+        pol = self.get_J_polar()
+        return pol.clmax - self.gclmax
+
     def g2high(self,x):
         self.set_airfoil(x)
+        pol = self.get_cfd_polar()
+        return pol.alphaClmax - self.galphaStall
+        
     def g2low(self,x):
         self.set_airfoil(x)
+        pol = self.get_J_polar()
+        return pol.alphaClmax - self.galphaStall
     
-    def jac(self,x,dx=1e-4):
-        pass
-    def df(self,x,dx=1e-4):
-        pass
-    
-    def run_cfd(self,x):
-        pass
+    def jac(self,x,fun,dx=None):
+        if dx==None:
+            dx = self.dx
+        grad = np.zeros(len(x))
+        fval = self.f(x)
+        for i,xx in enumerate(x):
+            X = np.copy(x)
+            X[i] = X[i]+dx
+            grad[i] = (func(X)-fval)/dx
+        return grad
+
+    def df(self,x):
+        return self.jac(x,self.f)
+
+
+def vfm_tip_airfoil_design():
+    aa = AirfoilAnalysis()

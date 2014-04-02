@@ -108,7 +108,7 @@ def read_doe(path):
             i += 1
     return output[:i]
 
-def write_output(x,result, path):
+def write_output(x,result, path,clCruise):
     fid = open(path,'a')
     for val in x:
         fid.write('%.6f\t'%val)
@@ -118,27 +118,26 @@ def write_output(x,result, path):
     fid.write('%.6f\t'%result.alphaClmax)
     fid.write('%.6f\t'%result.cdAtLDmax)
     fid.write('%.6f\t'%result.LD32max)
-    fid.write('%.6f\n'%result.thickness)
+    fid.write('%.6f\t'%result.thickness)
+    fid.write('%.6f\n'%result.get_cd_at_cl(clCruise))
     fid.close()
 
 def get_initial_data():
     X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
-    lb = X - np.array([0.01, 0.02, 0.02, 0.02, 0.00, 0.02, 0.02, 0.02, 0.02, 0.02])
-    ub = X + np.array([0.02, 0.02, 0.02, 0.02, 0.02, 0.01, 0.02, 0.02, 0.02, 0.00])
+    lb = X - np.array([0.02, 0.02, 0.02, 0.02, 0.00, 0.02, 0.02, 0.02, 0.02, 0.02])
+    ub = X + np.array([0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.02, 0.00])
     fc = cfd.FlightConditions(22.0,0.0,0,0.24)
     return X,lb,ub,fc
 
 def run_full_table_analysis(wdir):
     X,lb,ub,fc = get_initial_data()
     
-    #wdir = os.getcwd() + '\\RENNaero\\'
     pathDOE = os.getcwd() + '\\' + wdir + '\\1. input.txt'
-    pathOutput = os.getcwd() + '\\' + wdir + '\\1. outputAero.txt'
-    #pathDOE = 'RENNaero\\1. input.txt'
-    #pathOutput = 'RENNaero\\2. output.txt'
+    pathOutput = os.getcwd() + '\\' + wdir + '\\2. outputAero.txt'
+    clcruise = 0.4
     
     fid = open(pathOutput,'wt')
-    fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tLD32max\tthickness\n')
+    fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tLD32max\tthickness\tcdcruise\n')
     fid.close()
     #designs = read_doe(pathDOE)
     designs = read_tabulated_data_without_header(pathDOE)
@@ -147,7 +146,7 @@ def run_full_table_analysis(wdir):
         af = airfoil.cst(design[0:5],design[5:10])
         filename = wdir + 'polar_%d.txt'%(i+1)
         result = aero_analysis(af, fc, filename)
-        write_output(design,result,pathOutput)
+        write_output(design,result,pathOutput,clcruise)
         af.write_txt(wdir + 'coordinates_%d.txt'%(i+1))
 
 def run_baseline():
@@ -163,7 +162,7 @@ def run_baseline():
     write_output(X,result,'RENNbaseline.txt')
 
 def run_multiple_tables():
-    wdir = ['RENNaero\\100samples']
+    wdir = ['RENNaero\\75samples']
     for directory in wdir:
         run_full_table_analysis(directory)
 

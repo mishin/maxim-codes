@@ -248,11 +248,11 @@ class CstCurve():
 
 class BezierCurve():
     def __init__(self,nodes):
-        self.order = nodes.nPts - 1
-        self.nPts = nodes.nPts
-        self.dimm = nodes.dimm
+        self.order = nodes.shape[0] - 1
+        self.nPts = nodes.shape[0]
+        self.dimm = nodes.shape[1]
         self.K = BPOcoef(self.order)
-        self.pts = nodes.coord
+        self.pts = nodes
     def _curve(self,t):
         pt = ny.zeros(self.dimm+1)
         pt[-1] = t
