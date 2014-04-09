@@ -122,7 +122,7 @@ class Wing(object):
         self.csFlapType        = None
         self.material          = None
         self.MAC               = 0.0
-        self.MAClocation       = np.array([0,0,0])
+        self.MAClocation       = np.zeros(2) # x,y
 
     def _process_data(self):
         self._load_airfoils()
@@ -136,24 +136,43 @@ class Wing(object):
 
     def _calc_geometry_data(self):
         self._calc_mac()
-        self._calc_projected_area()
         self._calc_wetted_area()
+        self.nSeg = len(self.segments)-1
 
     def _calc_mac(self):
-        for i,segSpan in enumerate(self.segments[1:]):
-            pass
+        """ calculates mean aerodynamic chord and it's location"""
+        def mac_of_one_segment(c1, c2, x1, x2, y1, y2):
+            span = y2 - y1
+            area = 0.5*(c1+c2)*span
+            taper = c2/c1
+            taper1 = taper + 1.0
+            frac = (taper+taper1)/(3.0*taper1)
+            mac = c1*(taper*taper + taper + 1.0) / (1.5*taper1)
+            ymac = y1 + frac*span
+            xlemac = x1 + frac*(x2-x1)
+            return area, mac, ymac, xlemac
+        area, mac, ymac, xlemac = 0.0, 0.0, 0.0, 0.0
+        for i in range(len(self.segments)-1):
+            c1,c2 = self.chords[i], self.chords[i+1]
+            x1,x2 = self.secOffset[i],self.secOffset[i+1]
+            y1,y2 = self.segments[i],self.segments[i+1]
+            aseg, macseg, yseg, xseg = mac_of_one_segment(c1,c2,x1,x2,y1,y2)
+            area   += aseg
+            mac    += macseg*aseg
+            ymac   += yseg*aseg
+            xlemac += xseg*aseg
+        self.MAC = mac/area
+        self.MAClocation = np.array([xlemac/area, ymac/area])
+        self.area = area
 
     def _calc_wetted_area(self):
-        n = len(self.segments)-1
-        area = np.zeros(n)
-        for i in range(n):
+        wettedArea = 0.0
+        for i in range(len(self.segments)-1):
             root = self.airfoils[i].length*self.chords[i]
             tip = self.airfoils[i+1].length*self.chords[i+1]
-            area[i] = (root+tip)*self.segments[i+1]
-        self.wettedArea = area.sum()
-    def _calc_projected_area(self):
-        segArea = self.segments[1:]*(self.chords[:-1]+self.chords[1:])
-        self.area = segArea.sum()
+            wettedArea += (root+tip)*self.segments[i+1]
+        self.wettedArea = wettedArea
+
 
 class VLMparameters(object):
     def __init__(self):
@@ -165,6 +184,8 @@ def run_test1():
     ac = FlyingWing()
     ac.load_xls('sample1')
     print ac.wing.wettedArea
+    print ac.wing.MAC
+    print ac.wing.MAClocation
 
 if __name__=="__main__":
     run_test1()
