@@ -11,6 +11,7 @@ import airfoil
 from engine_turbofan import TurbofanEngine
 from weight import AircraftMass
 from flight_conditions import FlightConditions
+from display_aircraft import flying_wing_display
 
 path = MyPaths()
 
@@ -85,6 +86,9 @@ class FlyingWing(object):
     def save_xls(self):
         pass
 
+    def display(self,showAxes=False):
+        flying_wing_display(self,showAxes)
+
 
 class LandingGear(object):
     def __init__(self):
@@ -108,6 +112,7 @@ class DesignGoals(object):
 
 class Wing(object):
     def __init__(self):
+        self.locationLE        = np.zeros(3)
         self.segments          = None
         self.chords            = None
         self.airfoilNames      = None
@@ -116,6 +121,7 @@ class Wing(object):
         self.segDihedral       = None
         self.secTwist          = None
         self.incidence         = 0.0
+        self.secAngles         = None
         self.leadingEdge       = np.zeros(3)
         self.csAileronLocation = None
         self.csFlapLocation    = None
@@ -123,6 +129,7 @@ class Wing(object):
         self.material          = None
         self.MAC               = 0.0
         self.MAClocation       = np.zeros(2) # x,y
+        self.nSeg              = 0
 
     def _process_data(self):
         self._load_airfoils()
@@ -135,9 +142,28 @@ class Wing(object):
             self.airfoils.append(airfoil.load(name))
 
     def _calc_geometry_data(self):
+        self.nSeg = len(self.segments)
+        self.nSec = self.nSeg+1
+        self._calc_apex()
         self._calc_mac()
         self._calc_wetted_area()
-        self.nSeg = len(self.segments)-1
+        self._calc_angles()
+    
+    def _calc_apex(self):
+        # calculate leading edge point of each section - section incidence is 
+        # not considered
+        secApex = np.zeros([3,self.nSec])
+        secApex[0,1:] = self.secOffset.cumsum()
+        secApex[1,1:] = self.segments.cumsum()
+        secApex[2,1:] = secApex[0,1:]*np.tan(np.radians(self.segDihedral))
+        self.secApex = np.transpose(secApex)
+    
+    def _calc_angles(self):
+        # calculates angle of each section
+        self.secAngles = np.zeros(self.nSec)
+        self.secAngles[0] = self.incidence
+        for i,twist in enumerate(self.secTwist):
+            self.secAngles[i+1] = self.secAngles[i]+twist
 
     def _calc_mac(self):
         """ calculates mean aerodynamic chord and it's location"""
@@ -152,10 +178,10 @@ class Wing(object):
             xlemac = x1 + frac*(x2-x1)
             return area, mac, ymac, xlemac
         area, mac, ymac, xlemac = 0.0, 0.0, 0.0, 0.0
-        for i in range(len(self.segments)-1):
+        for i in range(self.nSeg):
             c1,c2 = self.chords[i], self.chords[i+1]
-            x1,x2 = self.secOffset[i],self.secOffset[i+1]
-            y1,y2 = self.segments[i],self.segments[i+1]
+            x1,x2 = self.secApex[i,0], self.secApex[i+1,0]
+            y1,y2 = self.secApex[i,1], self.secApex[i+1,1]
             aseg, macseg, yseg, xseg = mac_of_one_segment(c1,c2,x1,x2,y1,y2)
             area   += aseg
             mac    += macseg*aseg
@@ -183,9 +209,9 @@ class VLMparameters(object):
 def run_test1():
     ac = FlyingWing()
     ac.load_xls('sample1')
-    print ac.wing.wettedArea
     print ac.wing.MAC
     print ac.wing.MAClocation
+    ac.display()
 
 if __name__=="__main__":
     run_test1()

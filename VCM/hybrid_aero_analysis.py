@@ -23,7 +23,9 @@ def write_polar(path,polar,polarType):
         fid.write('%.2f\t%.6f\t%.6f\t%.6f\n'%(alpha,cl,cd,cm))
     fid.close()
 
-def aero_analysis(af, fc, filename=None):
+def aero_analysis(af, fc, filename=None,alpha=None):
+    if alpha==None:
+        alpha = np.arange(0,17,2.0)
     result1 = af.get_J_polar(fc.Mach, fc.Re, [0,16,2.0])
     solver = cfd.CFDsolver(af,fc,1.0,mesh='O')
     solver.fluent.residuals['energy']=1e-6
@@ -34,7 +36,7 @@ def aero_analysis(af, fc, filename=None):
     solver.mesh._dsLE = 2e-3
     solver.mesh._growthRate = 1.2
     solver.create_mesh()
-    alpha = np.arange(0,17,2.0)
+    
     result2 = solver.run_for_multiple_aoa(alpha,turbulenceModel='ke-realizable')
     result3 = combine_results(result1, result2)
     result3.thickness = af.thickness
@@ -46,7 +48,7 @@ def aero_analysis(af, fc, filename=None):
 def combine_results(resultXfoil, resultCfd):
     alphaMax = min([max(resultXfoil.alpha), max(resultCfd.alpha)])
     alphaMin = max([min(resultXfoil.alpha), min(resultCfd.alpha)])
-    alphaNew = np.arange(alphaMin,alphaMax+1.,2.)
+    alphaNew = np.arange(alphaMin,alphaMax+1.,1.)
     clAlpha = interp1d(resultCfd.alpha,resultCfd.cl,'cubic')
     cdAlpha = interp1d(resultXfoil.alpha, resultXfoil.cd,'cubic')
     cmAlpha = interp1d(resultXfoil.alpha, resultXfoil.cm,'cubic')

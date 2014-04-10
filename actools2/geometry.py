@@ -18,7 +18,12 @@ import numpy as ny
 import scipy.interpolate as interpolate
 import math
 from math import radians, pi,sin,cos
-from numpy import flipud, vstack, arange, array, zeros,linspace,hstack,transpose
+from numpy import flipud, vstack, arange, array, zeros,linspace,hstack,transpose, dot
+
+def rotate_2d(curve,axis,angle):
+    angle = radians(angle)
+    rotMatrix = array([[cos(angle), -sin(angle)],[sin(angle), cos(angle)]])
+    return dot( (curve-axis), rotMatrix) + axis
 
 class xyCurve:
     def __init__(self,pts):

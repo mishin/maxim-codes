@@ -407,11 +407,18 @@ class Airfoil:
             overwritten, otherwise will return array of redimensioned points 
             in format of self.pts
         """
-        nPts *= 0.5
-        t = self._get_point_distribution(nPts,distribution)
+        if nPts%2==0:
+            nPts1 = nPts/2
+            nPts2 = nPts/2+1
+        else:
+            nPts1 = (nPts+1)/2
+            nPts2 = nPts1
+        #nPts *= 0.5
+        t1 = self._get_point_distribution(nPts1,distribution)
+        t2 = self._get_point_distribution(nPts2,distribution)
         self._create_splines()
-        xUp, yUp = self._curveUp(t)
-        xLo, yLo = self._curveLo(t)
+        xUp, yUp = self._curveUp(t1)
+        xLo, yLo = self._curveLo(t2)
         upPts = np.transpose(np.vstack([xUp,yUp]))
         loPts = np.transpose(np.vstack([xLo,yLo]))
         coord = geom.join_coordinates(upPts,loPts)
@@ -622,10 +629,10 @@ def run_test_geometry():
     #af = naca4(12,2,30)
     af = load('NACA0012')
     af.display('ko-')
-    af.redim(40,True)
-    print af.thickness
-    print af.length
+    af.redim(10,True)
     af.display('ko-')
+    af.redim(15,True)
+    af.display()
 
 def run_test_aero_analysis():
     timer = Timer()
