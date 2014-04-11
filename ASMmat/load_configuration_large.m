@@ -2,7 +2,7 @@ function config = load_configuration_large()
 
 config.type = 1; % 1- large, 2- small
 config.mass = 93; %kg
-config.Vmax = 100; %m/sec
+config.Vmax = 640/3.6; %m/sec
 
 config.CD0 = 0.03; % assumed value
 
