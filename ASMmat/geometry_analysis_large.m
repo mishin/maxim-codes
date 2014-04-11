@@ -1,8 +1,8 @@
-function missile = geometry_analysis(missile)
+function missile = geometry_analysis_large(missile)
 
 if nargin<1
     missile = load_configuration(1);
-    missile = geometry_analysis(missile);
+    missile = geometry_analysis_large(missile);
     return
 end
 
