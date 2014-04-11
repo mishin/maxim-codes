@@ -5,7 +5,7 @@ if nargin==0
     alt = 5000;
     vel = 100;
     fc = get_flight_conditions(alt,vel);
-    missile = geometry_analysis();
+    missile = load_configuration_large();
     control = control_deflections();
     setup.alpha = 0;
     setup.beta = 0;
@@ -29,9 +29,9 @@ dosCommand=sprintf('%s %s < %s ',avlPath,files.input,files.case);
 results = collect_stability_results(files.output,missile);
 %fprintf('.')
 
-%delete(files.input);
-%delete(files.body);
-%delete(files.case);
-%delete(files.output);
+delete(files.input);
+delete(files.body);
+delete(files.case);
+delete(files.output);
 
 end

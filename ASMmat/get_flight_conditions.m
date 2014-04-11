@@ -42,4 +42,6 @@ else
     fc.Mach = velocity/fc.soundSpeed;
 end
 
+fc.dynamicPressure = fc.density*fc.velocity^2/2;
+
 end
