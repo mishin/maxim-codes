@@ -4,7 +4,7 @@ Created on Tue Apr 01 21:43:04 2014
 
 @author: Maxim
 """
-from db_tools import ReadDatabase, WriteDatabase
+from db_tools import ReadDatabase
 from paths import MyPaths
 import numpy as np
 import airfoil
@@ -12,6 +12,7 @@ from engine_turbofan import TurbofanEngine
 from weight import AircraftMass
 from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
+from drag import get_friction_drag_FW
 
 path = MyPaths()
 
@@ -42,7 +43,7 @@ class FlyingWing(object):
         self.weight.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
         self.weight.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
         idx = db.find_header(keyword+'MAIN WING')
-        self.wing.segments           = db.read_row(idx+1,1,True)
+        self.wing.segSpans           = db.read_row(idx+1,1,True)
         self.wing.chords             = db.read_row(-1,1,True)
         self.wing.airfoilNames       = db.read_row(-1,1,True)
         self.wing.secOffset          = db.read_row(-1,1,True)
@@ -88,6 +89,27 @@ class FlyingWing(object):
 
     def display(self,showAxes=False):
         flying_wing_display(self,showAxes)
+    
+    def _update_parasite_drag(self,velocity,altitude):
+        if velocity==None:
+            velocity = self.designGoals.cruiseSpeed
+        if altitude==None:
+            altitude = self.designGoals.cruiseAltitude
+        self.drag = get_friction_drag_FW(self,velocity,altitude)
+
+    def _update_weight(self):
+        pass
+    
+    def get_parasite_drag(self,velocity=None,altitude=None):
+        self._update_parasite_drag(velocity,altitude)
+        return self.drag.get_total_drag()
+
+    def get_cg(self):
+        pass
+    def get_mass_total(self):
+        pass
+    def get_mass_empty(self):
+        pass
 
 
 class LandingGear(object):
@@ -113,7 +135,7 @@ class DesignGoals(object):
 class Wing(object):
     def __init__(self):
         self.locationLE        = np.zeros(3)
-        self.segments          = None
+        self.segSpans          = None
         self.chords            = None
         self.airfoilNames      = None
         self.airfoils          = list()
@@ -130,20 +152,23 @@ class Wing(object):
         self.MAC               = 0.0
         self.MAClocation       = np.zeros(2) # x,y
         self.nSeg              = 0
+        self.secThickness      = None
 
     def _process_data(self):
+        self.nSeg = len(self.segSpans)
+        self.nSec = self.nSeg+1
         self._load_airfoils()
         self._calc_geometry_data()
 
     def _load_airfoils(self,xlsPath=None):
         if xlsPath==None:
             xlsPath = path.db.airfoil
-        for name in self.airfoilNames:
+        self.secThickness = np.zeros(self.nSec)
+        for i,name in enumerate(self.airfoilNames):
             self.airfoils.append(airfoil.load(name))
+            self.secThickness[i] = self.airfoils[i].thickness
 
     def _calc_geometry_data(self):
-        self.nSeg = len(self.segments)
-        self.nSec = self.nSeg+1
         self._calc_apex()
         self._calc_mac()
         self._calc_wetted_area()
@@ -154,7 +179,7 @@ class Wing(object):
         # not considered
         secApex = np.zeros([3,self.nSec])
         secApex[0,1:] = self.secOffset.cumsum()
-        secApex[1,1:] = self.segments.cumsum()
+        secApex[1,1:] = self.segSpans.cumsum()
         secApex[2,1:] = secApex[0,1:]*np.tan(np.radians(self.segDihedral))
         self.secApex = np.transpose(secApex)
     
@@ -167,6 +192,7 @@ class Wing(object):
 
     def _calc_mac(self):
         """ calculates mean aerodynamic chord and it's location"""
+        self.segMAC = np.zeros(self.nSeg)
         def mac_of_one_segment(c1, c2, x1, x2, y1, y2):
             span = y2 - y1
             area = 0.5*(c1+c2)*span
@@ -183,6 +209,7 @@ class Wing(object):
             x1,x2 = self.secApex[i,0], self.secApex[i+1,0]
             y1,y2 = self.secApex[i,1], self.secApex[i+1,1]
             aseg, macseg, yseg, xseg = mac_of_one_segment(c1,c2,x1,x2,y1,y2)
+            self.segMAC[i] = macseg
             area   += aseg
             mac    += macseg*aseg
             ymac   += yseg*aseg
@@ -193,10 +220,10 @@ class Wing(object):
 
     def _calc_wetted_area(self):
         wettedArea = 0.0
-        for i in range(len(self.segments)-1):
+        for i in range(len(self.segSpans)-1):
             root = self.airfoils[i].length*self.chords[i]
             tip = self.airfoils[i+1].length*self.chords[i+1]
-            wettedArea += (root+tip)*self.segments[i+1]
+            wettedArea += (root+tip)*self.segSpans[i+1]
         self.wettedArea = wettedArea
 
 
@@ -211,6 +238,9 @@ def run_test1():
     ac.load_xls('sample1')
     print ac.wing.MAC
     print ac.wing.MAClocation
+    print ac.wing.secThickness
+    print ac.get_parasite_drag()
+    ac.drag.display()
     ac.display()
 
 if __name__=="__main__":
