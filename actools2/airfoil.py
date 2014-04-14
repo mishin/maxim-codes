@@ -423,9 +423,9 @@ class Airfoil:
         loPts = np.transpose(np.vstack([xLo,yLo]))
         coord = geom.join_coordinates(upPts,loPts)
         if overwrite:
-            self.pts = coord
-            self.upPts = upPts
-            self.loPts = loPts
+            self.pts   = coord
+            self.ptsUp = upPts
+            self.ptsLo = loPts
         else:
             return coord
 
