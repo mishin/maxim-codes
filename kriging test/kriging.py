@@ -85,7 +85,7 @@ def func(x):
 def run_test():
     #x = np.array([0.0,.1,.2,.4,.75,.9,1.])
     #x = np.array([0.0,0.1,0.2,0.3,0.4,0.5,0.7,0.8,0.9,0.95,1.0,0.6])
-    x = np.linspace(0,1,4)
+    x = np.linspace(0,1,10)
     y = np.array([func(_x) for _x in x])
     xp = np.linspace(0,1,100)
     yp = func(xp)

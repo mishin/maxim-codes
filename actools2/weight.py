@@ -529,6 +529,15 @@ class AircraftMass:
         self.update_total()
 
 
+
+class BlendedWingBodyMass(object):
+    def __init__(self,aircraft):
+        self.ac = aircraft
+    def analyze(self):
+        pass
+
+
+
 class GeneralAviationMass:
     def __init__(self,aircraft,overrideColumn=0):
         self.aircraft = aircraft

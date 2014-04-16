@@ -127,7 +127,7 @@ class ISAtmosphere_mason(object):
         A0 = 340.294
         
         H = C1*h/(1 + C1*h/6356.766)
-        print H
+        #print H
         if H<11.0:
             T = 288.15 - 6.5*H;
             PP = (288.15/T)**(-K/6.5)

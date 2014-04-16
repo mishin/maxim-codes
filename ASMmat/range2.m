@@ -10,12 +10,12 @@ if nargin==0
     return
 end
 
-CLtrim = 0.3;
+CLtrim = 0.9;
 Sref = gb.wing.area;
 W = gb.weight;
 m = gb.Mtot;
 
-fid = fopen('simulation6.txt','wt');
+fid = fopen('simulation7.txt','wt');
 fprintf(fid,'time\taltitude\trange\tax\tay\ta\tVx\tVy\tV\tphi\talpha\t');
 fprintf(fid,'CL\tCD\telev\tLDmax\n');
 

@@ -101,6 +101,17 @@ class FlyingWing(object):
         pass
     
     def get_parasite_drag(self,velocity=None,altitude=None):
+        """
+        Returns friction and form drag coefficient at given velocity and altitude. 
+        If velocity and altitude are not specified then values from design targets
+        are used
+        
+        Parameters
+        ----------
+        
+        velocity : float, m/sec
+        altitude : float, m
+        """
         self._update_parasite_drag(velocity,altitude)
         return self.drag.get_total_drag()
 
@@ -234,12 +245,30 @@ class VLMparameters(object):
         self.distribution = None
 
 def run_test1():
+    import matplotlib.pyplot as plt
     ac = FlyingWing()
     ac.load_xls('sample1')
-    print ac.wing.MAC
-    print ac.wing.MAClocation
-    print ac.wing.secThickness
-    print ac.get_parasite_drag()
+#    print ac.wing.MAC
+#    print ac.wing.MAClocation
+#    print ac.wing.secThickness
+    
+    h = ac.designGoals.cruiseAltitude
+    Vcrs = ac.designGoals.cruiseSpeed
+    V = np.linspace(0.1*Vcrs,Vcrs,20)
+    a = ac.designGoals.fc.atm.soundSpeed
+    rho = ac.designGoals.fc.atm.density
+    cd = np.zeros(len(V))
+    D = np.zeros(len(V))
+    plt.figure(1)
+    for i,v in enumerate(V):
+        cd[i] = ac.get_parasite_drag(v,h)
+        qS = rho*v*v/2.*ac.wing.area
+        D[i] = qS*cd[i]
+    plt.plot(V/a,cd,'bo-')
+    plt.xlabel('Mach number')
+    plt.ylabel('Friction+Profile drag coefficient')
+    plt.grid(True)
+    plt.show()
     ac.drag.display()
     ac.display()
 
