@@ -9,7 +9,7 @@ from paths import MyPaths
 import numpy as np
 import airfoil
 from engine_turbofan import TurbofanEngine
-from weight import AircraftMass
+from weight import AircraftMass, get_flying_wing_mass
 from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
 from drag import get_friction_drag_FW
@@ -98,7 +98,7 @@ class FlyingWing(object):
         self.drag = get_friction_drag_FW(self,velocity,altitude)
 
     def _update_weight(self):
-        pass
+        self.weight = get_flying_wing_mass(self)
     
     def get_parasite_drag(self,velocity=None,altitude=None):
         """
@@ -182,9 +182,14 @@ class Wing(object):
     def _calc_geometry_data(self):
         self._calc_apex()
         self._calc_mac()
+        self._calc_span()
         self._calc_wetted_area()
         self._calc_angles()
-    
+        self._calc_elastic_axis_sweep()
+
+    def _calc_span(self):
+        self.span = 2.0*np.sum(self.segSpans)
+
     def _calc_apex(self):
         # calculate leading edge point of each section - section incidence is 
         # not considered
@@ -200,6 +205,22 @@ class Wing(object):
         self.secAngles[0] = self.incidence
         for i,twist in enumerate(self.secTwist):
             self.secAngles[i+1] = self.secAngles[i]+twist
+    
+    def _calc_elastic_axis_sweep(self,FSfrontSpar=0.3,FSaftSpar=0.7):
+        """
+        Assumed values are location of front and aft spars. Typically the elastic 
+        axis is located between two spars. 
+        NOTE: This calculation is very approximate.
+        """
+        eaLoc = (FSaftSpar-FSfrontSpar)/2.0
+        xr = self.secApex[0,0] + self.chords[0]*eaLoc
+        xt = self.secApex[-1,0] + self.chords[-1]*eaLoc
+        yr = self.secApex[0,1]
+        yt = self.secApex[-1,1]
+        self.sweepElacticRad = np.arctan((yt-yr)/(xt-xr))
+        self.sweepElasticDeg = np.degrees(self.sweepElacticRad)
+        dx, dy = xt-xr, yt-yr
+        self.structuralSpan = (dx*dx+dy*dy)**0.5
 
     def _calc_mac(self):
         """ calculates mean aerodynamic chord and it's location"""
@@ -244,6 +265,12 @@ class VLMparameters(object):
         self.panelsSpanwise = 0
         self.distribution = None
 
+def run_test2():
+    ac = FlyingWing()
+    ac.load_xls('sample1')
+    ac._update_weight()
+    ac.display()
+
 def run_test1():
     import matplotlib.pyplot as plt
     ac = FlyingWing()
@@ -273,4 +300,4 @@ def run_test1():
     ac.display()
 
 if __name__=="__main__":
-    run_test1()
+    run_test2()

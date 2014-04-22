@@ -1,133 +1,66 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Apr 11 12:02:17 2014
+Created on Sat Feb 23 16:30:06 2013
 
-@author: Maxim
+Module structure is very similar to mass. Module provides drag components and 
+drag lists. Part of the parasite drag is calculated using textbook methods 
+another part of the drag is obtained throung table-look-up from drag_components.xls
 """
-import numpy as np
+import numpy as ny
+import FlightConditions as fc
+import aircraft
 from math import asin, log, log10
+import matplotlib.pyplot as plt
+import dbTools
+import paths
 
-from flight_conditions import FlightConditions
-from paths import MyPaths
-from db_tools import ReadDatabase
-
-path = MyPaths()
-
-# --- wrapper functions ---
-def get_friction_drag_FW(aircraft,velocity,altitude):
-    refArea = aircraft.wing.area
-    frictionDrag = Friction(refArea)
-    frictionDrag.set_flight_conditions(velocity,altitude)
-    items = DragList()
-    items.name = 'Airframe'
-    items.add_item( frictionDrag.analyze_wing(aircraft.wing,'main wing') )
-    return items
-    
-# --- drag data structures ---
-
-class AnalysisFW:
+def get_total_drag(aircraft,velocity,altitude,updComponents=False):
     """
-    Wrapper class for drag analysis containing friction drag and components 
-    drag using table lookup. Aircraft main wing area is used as reference 
-    area. 
-
+    Main function to communicate with aircraft analysis. Calculates total 
+    parasite drag of an aircraft at given altitude and speed. Returns 
+    DragList - list of the drag components.
+    
     Parameters
     ----------
-    
-    aircraft : aircraft
-        aircraft object
+    aircraft : aircraft object
+        aircraft configuration
     velocity : float, m/sec
-        velocity at which parasite drag will be calculated
-    altitude : float, meter
-        altitude at which parasite drag will be calculated
-    updComponents : bool
-        Should be true if components list was updated or at first call. 
-        Calculation of components drag takes some time due to xls db 
-        interface, so False option should be selected in most of the cases.
-
-
-    Notes
-    -----
-    
-    Only conventional configuration provided by aircraft class can be analyzed. 
-    For unconventional configurations use **Friction** and **PartsDrag** 
-    separately.
-
+        true airspeed of aircraft in m/sec
+    altitude : float, meters
+        altitude at which drag will be analyzed in meters
+    updComponennts : bool
+        friction and additional components (langing gear) drag are updated. 
+        True - is required when components are updated or new aircraft is 
+        loaded from db.
+        If False, then friction drag is updated, components drag stays same.
 
     Examples
     --------
-    
-    >>> import aircraft
-    >>> ac = aircraft.load('sampleInput2')
-    >>> V = 50.0 #m/sec
-    >>> h = 2000. #m
-    >>> drag = Analysis(ac,V,h,False)
-    >>> aircraftDrag = drag.get_aircraft_drag()
-    >>> aircraftDrag.display()
-    ========================================
-    Total drag components breakdown
-    ========================================
-    Name                      | Drag coef. |
-    ----------------------------------------
-    main wing                   1.0188e-02
-    horizontal stab.            1.8388e-03
-    ...
-    antenna                     1.0526e-03
-    ----------------------------------------
-    TOTAL                       2.4408e-02
-    ----------------------------------------
-    """
-    def __init__(self,aircraft,velocity,altitude,updComponents):
-        self.ac = aircraft
-        self.refArea = self.ac.wing.area
-        self.aircraftDrag = AircraftDrag()
-        self.get_friction_drag(velocity,altitude)
-        if updComponents:
-            self.get_components_drag()
-        else:
-            self.aircraftDrag.components = aircraft.drag.components
-        self.aircraftDrag.update_total()
-    def get_friction_drag(self,velocity,altitude):
-        """
-        Calculates friction drag of an aircraft using Friction class 
-        at given velocity and altitude.
-        
-        Returns
-        -------
-        
-        items : DragList
-            list of the drag components with drag coefficients used for 
-            friction drag calculation (Body, wing, empennage)
-        """
-        frictionDrag = Friction(self.refArea)
-        frictionDrag.set_flight_conditions(velocity,altitude)
-        items = DragList()
-        items.add_item( frictionDrag.analyze_wing(self.ac.wing,'main wing') )
-        self.aircraftDrag.friction = items
-        return items
-    def get_components_drag(self):
-        """
-        Calculates components drag using PartsDrag class methods using table 
-        lookup methods.
-        
-        Returns
-        -------
-        
-        items : DragList
-            list of the drag components with drag coefficients obtained by 
-            PartsDrag (langing gear, antenna etc.)
-        """
-        drag = PartsDrag(self.refArea)
-        items = drag.get_items_drag(self.ac.drag.components)
-        self.aircraftDrag.components = items
-        return items
-    def get_aircraft_drag(self):
-        """
-        Returns list of full drag components.
-        """
-        self.aircraftDrag.update_total()
-        return self.aircraftDrag
 
+    >>> import aircraft
+    >>> ac = aircraft.load('sampleInput1')
+    >>> v = 50.0
+    >>> h = 2000.0
+    >>> dragList = drag.get_total_drag(ac,v,h)
+    >>> print dragList.totalDrag
+    0.024921497357682447
+
+    update aircraft drag
+
+    >>> import aircraft
+    >>> ac = aircraft.load('sampleInput1')
+    >>> v = 50.0
+    >>> h = 2000.0
+    # update drag component of aircraft
+    >>> ac.update_drag(v,h)
+    # return Cd0 of an aircraft
+    >>> Cd0 = ac.get_total_drag(v,h)
+    >>> print Cd0
+    0.024921497357682447
+    """
+    dragAnalysis = Analysis(aircraft,velocity,altitude,updComponents)
+    newDragList = dragAnalysis.get_aircraft_drag()
+    return newDragList
 
 class DragItem:
     """
@@ -299,6 +232,111 @@ class DragList:
                 self.add_item(item)
         fid.close()
 
+class Analysis:
+    """
+    Wrapper class for drag analysis containing friction drag and components 
+    drag using table lookup. Aircraft main wing area is used as reference 
+    area. 
+
+    Parameters
+    ----------
+    
+    aircraft : aircraft
+        aircraft object
+    velocity : float, m/sec
+        velocity at which parasite drag will be calculated
+    altitude : float, meter
+        altitude at which parasite drag will be calculated
+    updComponents : bool
+        Should be true if components list was updated or at first call. 
+        Calculation of components drag takes some time due to xls db 
+        interface, so False option should be selected in most of the cases.
+
+
+    Notes
+    -----
+    
+    Only conventional configuration provided by aircraft class can be analyzed. 
+    For unconventional configurations use **Friction** and **PartsDrag** 
+    separately.
+
+
+    Examples
+    --------
+    
+    >>> import aircraft
+    >>> ac = aircraft.load('sampleInput2')
+    >>> V = 50.0 #m/sec
+    >>> h = 2000. #m
+    >>> drag = Analysis(ac,V,h,False)
+    >>> aircraftDrag = drag.get_aircraft_drag()
+    >>> aircraftDrag.display()
+    ========================================
+    Total drag components breakdown
+    ========================================
+    Name                      | Drag coef. |
+    ----------------------------------------
+    main wing                   1.0188e-02
+    horizontal stab.            1.8388e-03
+    ...
+    antenna                     1.0526e-03
+    ----------------------------------------
+    TOTAL                       2.4408e-02
+    ----------------------------------------
+    """
+    def __init__(self,aircraft,velocity,altitude,updComponents):
+        self.ac = aircraft
+        self.refArea = self.ac.wing.area
+        self.aircraftDrag = AircraftDrag()
+        self.get_friction_drag(velocity,altitude)
+        if updComponents:
+            self.get_components_drag()
+        else:
+            self.aircraftDrag.components = aircraft.drag.components
+        self.aircraftDrag.update_total()
+    def get_friction_drag(self,velocity,altitude):
+        """
+        Calculates friction drag of an aircraft using Friction class 
+        at given velocity and altitude.
+        
+        Returns
+        -------
+        
+        items : DragList
+            list of the drag components with drag coefficients used for 
+            friction drag calculation (Body, wing, empennage)
+        """
+        frictionDrag = Friction(self.refArea)
+        frictionDrag.set_flight_conditions(velocity,altitude)
+        items = DragList()
+        items.add_item( frictionDrag.analyze_wing(self.ac.wing,'main wing') )
+        items.add_item( frictionDrag.analyze_wing(self.ac.hStab,'horizontal stab.') )
+        items.add_item( frictionDrag.analyze_wing(self.ac.vStab,'vertical stab.') )
+        items.add_item( frictionDrag.analyze_body(self.ac.fuselage,'fuselage') )
+        self.aircraftDrag.friction = items
+        return items
+    def get_components_drag(self):
+        """
+        Calculates components drag using PartsDrag class methods using table 
+        lookup methods.
+        
+        Returns
+        -------
+        
+        items : DragList
+            list of the drag components with drag coefficients obtained by 
+            PartsDrag (langing gear, antenna etc.)
+        """
+        drag = PartsDrag(self.refArea)
+        items = drag.get_items_drag(self.ac.drag.components)
+        self.aircraftDrag.components = items
+        return items
+    def get_aircraft_drag(self):
+        """
+        Returns list of full drag components.
+        """
+        self.aircraftDrag.update_total()
+        return self.aircraftDrag
 
 class AircraftDrag:
     """ Data structure with parasite drag breakdown and easy access to aircraft 
@@ -306,7 +344,7 @@ class AircraftDrag:
     """
     def __init__(self):
         self.friction   = DragList('Friction')
-#        self.components = DragList('Components')
+        self.components = DragList('Components')
         self.total      = DragList('Total')
         self.totalDrag  = 0.0
     def update_total(self):
@@ -320,22 +358,18 @@ class AircraftDrag:
         self.update_total()
         self.total.display()
 
-
-# --- drag calculation section ---
-
-
-class Friction(object):
+class Friction:
     """
     calculates friction and form drag of the full aircraft
      or separate components. The code is based on Mason's friction fortran code.
     """
     def __init__(self,refArea):
         self.refArea = float(refArea)
-        self.gamma   = 1.4
-        self.Pr      = 0.72
-        self.Te      = 390.0
-        self.K       = 200.0
-        self.TwTaw   = 1.0 # adiabatic wall condition
+        self.gamma = 1.4
+        self.Pr    = 0.72
+        self.Te    = 390.0
+        self.K     = 200.0
+        self.TwTaw = 1.0 # adiabatic wall condition
         self.wetArea      = list()
         self.refLength    = list()
         self.tc           = list()
@@ -355,9 +389,8 @@ class Friction(object):
          using FlightConditions module. Reynolds number is calculated using ref 
         length 1.0 that is stored in self.Re1
         """
-        self.fc = FlightConditions(velocity,altitude)
+        self.fc = fc.FlightConditions(velocity,altitude)
         self.Re1 = self.fc.Re # Re for L=1
-
     def analyze_wing(self,wing,name):
         """
         analyzing friction and form drag of the wing-type bodies. Creates Component 
@@ -373,7 +406,7 @@ class Friction(object):
             name of the wing. Can be arbitrary and will be used for 
             report generation
         """
-        self.set_reference_area()
+        self.__reinit__()
         wingDrag = DragItem()
         wingDrag.name = name
         self.add_wing(wing)
@@ -381,7 +414,6 @@ class Friction(object):
         wingDrag.quantity = 1
         wingDrag.CDtotal = wingDrag.CD
         return wingDrag
-
     def analyze_body(self,body,name):
         """
         analyzing revolution body object (fuselages with non-revolution body 
@@ -402,7 +434,7 @@ class Friction(object):
         bodyDrag : DragItem
             drag of the fuselage with reference area specified while initialization
         """
-        self.set_reference_area()
+        self.__reinit__()
         bodyDrag = DragItem()
         bodyDrag.name = name
         self.add_body(body)
@@ -410,40 +442,40 @@ class Friction(object):
         bodyDrag.quantity = 1
         bodyDrag.CDtotal = bodyDrag.CD
         return bodyDrag
-    def add_wing(self,wing,transitionPoint=0.0):
+    def add_wing(self,wing):
         """
         adds wing type body into stack to be analyzed.
         """
-        self.wetArea = np.hstack([self.wetArea,wing.wettedArea])
-        for i, span in enumerate(wing.segSpans[1:]):
+        self.wetArea = ny.hstack([self.wetArea,wing.wettedArea])
+        for i, span in enumerate(wing.segmentSpans[1:]):
             self.bodyType.append(0)
-            thickness1 = wing.secThickness[i]
-            thickness2 = wing.secThickness[i+1]
-            self.tc.append((thickness1+thickness2)/2.0) #average between two sections
-            self.transitionPt.append(transitionPoint) #TODO update to get transition point from polar
-            self.refLength.append(wing.segMAC[i])
+            thickness1 = wing.airfoil[i].thickness
+            thickness2 = wing.airfoil[i+1].thickness
+            self.tc.append((thickness1+thickness2)/2) #average between two sections
+            self.transitionPt.append(0.0) #TODO update to get transition point from polar
+            refLen = (wing.chords[i] + wing.chords[i+1])/2
+            self.refLength.append(refLen)
     def add_body(self,fuselage):
-        self.wetArea = np.hstack([self.wetArea,fuselage.wettedArea])
+        self.wetArea = ny.hstack([self.wetArea,fuselage.wettedArea])
         self.bodyType.append(1)
         self.tc.append(fuselage.diameter / fuselage.length)
         self.transitionPt.append(0.0)
         self.refLength.append(fuselage.diameter)
     def analyze(self):
         n = len(self.wetArea)
-        cfsw   = np.zeros(n)
-        cfswff = np.zeros(n)
+        cfsw   = ny.zeros(n)
+        cfswff = ny.zeros(n)
         for i,Swet in enumerate(self.wetArea):
             ff = self._get_form_factor(i)
             cf = self._get_transition_cf(i)
             cfsw[i]   = cf * self.wetArea[i]
             cfswff[i] = cfsw[i] * ff
-        sum1 = np.sum(cfsw)
-        sum2 = np.sum(cfswff)
+        sum1 = ny.sum(cfsw)
+        sum2 = ny.sum(cfswff)
         cdFriction = sum1 / self.refArea
         cdForm = (sum2 - sum1) / self.refArea
         cdTotal = cdFriction + cdForm
         return cdTotal
-
     def _get_transition_cf(self,i):
         Rel = self.Re1 * self.refLength[i]
         cfTurbL = self._get_turbulent_cf(Rel)
@@ -507,7 +539,6 @@ class Friction(object):
             ff = 1.0 + 1.5*dl**1.5 + 50*dl**3 #TODO: change 7 to 50 to follow ref
         return ff
 
-
 class PartsDrag:
     """
     drag of specific components of aircraft
@@ -517,20 +548,25 @@ class PartsDrag:
     """
     def __init__(self,refArea):
         self.refArea = float(refArea)   # wing area
-        self.dbPath = path.db.drag
+        self.dbPath = paths.Database().drag
         self.name  = list()
         self.desc  = list()
         self.relCD = list()
         self.mode  = list()
         self._read_db()
     
-    def _read_db(self,sheetName='Sheet1'):
-        db = ReadDatabase(self.dbPath,sheetName)
-        nComp = db.nrows - 1
-        self.name = db.read_column(1,0,nComp,True)
-        self.desc = db.read_column(1,1,nComp,True)
-        self.relCD = db.read_column(1,2,nComp,True)
-        mode = db.read_column(1,3,nComp,True)
+    def _read_db(self,sheetName='Sheet1',dbPath=''):
+        if dbPath=='':
+            dbPath = self.dbPath
+        dbPath = paths.fixPaths(dbPath)
+        dragDb = dbTools.loadDB(dbPath)
+        sheet = dragDb.selectByName(sheetName)
+        db = dbTools.readDB(sheet)
+        nComp = sheet.nrows - 1
+        self.name = db.readCol(1,0,nComp)
+        self.desc = db.readCol(1,1,nComp)
+        self.relCD = db.readCol(1,2,nComp)
+        mode = db.readCol(1,3,nComp)
         for m in mode:
             if m=='*':
                 self.mode.append(True)
@@ -553,46 +589,32 @@ class PartsDrag:
             itemsNew.add_item(item)
         return itemsNew
 
+def run_test1():
+    ac = aircraft.load('V0510-MDO')
+    alt = 2000.0
+    vel = ny.linspace(10,100.0,20)
+    Cd0 = list()
+    for v in vel:
+        Cd0.append(ac.get_drag(v,alt))
+    plt.figure(2)
+    plt.plot(vel,Cd0,'b-')
+    plt.hold(True)
+    plt.grid(True)
+    plt.xlabel('velocity, m/sec')
+    plt.ylabel('CD0')
+    plt.show()
 
-class WaveDrag(object):
-    def __init__(self,refArea):
-        self.refArea = float(refArea)
-#        self.gamma   = 1.4
-#        self.Pr      = 0.72
-#        self.Te      = 390.0
-#        self.K       = 200.0
-#        self.TwTaw   = 1.0 # adiabatic wall condition
-#        self.wetArea      = list()
-#        self.refLength    = list()
-#        self.tc           = list()
-#        self.bodyType     = list()
-#        self.transitionPt = list()
+def run_test2():
+    ac = aircraft.load('sampleInput2')
+    alt = 1500.0
+    vel = 60.0
+    Cd0 = get_total_drag(ac,vel,alt)
+    print Cd0
+
+def run_test3():
+    ac = aircraft.load('V05')
+    alt = 2000.0
+    ac.drag.total.display()
     
-    def analyze_wing(self,wing):
-        # airfoil factors
-        Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
-        Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
-        # thickness factor
-        Kt = 1.0+4.(0.5-xt/c*(1+0.5*(r0/t)**0.5))**2 - 0.25*(r0/t)**0.5*(1-xt/c)**2.0
-        Kc = 1.0+2.5*(h/t)**2. # airfoil camber factor
-        betaBar = beta/(tc**(1/3))
-        # main equation
-        var1 = Kt*Kw*Kc*Kb
-        var2 = betaBar*Kb*Kw
-        Fbm = Fb**m
-        var3 = 1.0/ARe/(1.+(1.+lmbda)*Fbeta*betaBar**(1.+Kw))
-        var4 = (ARe**3)/(1.+ARe**3/3*betaBar**4.)
-        var5 = 2./ARe**3/(1.+(2./3+lmbda)*Fb*betaBar**(1+Kw**3.8))
-        var6 = 1./(1.+3.*ARe*betaBar**4)
-        CDbar = 2.0*var1/(var2*Fbm + (var3+var4)) + 3.33*var1/(var2**3.8*Fbm+(var3+var4))
-        CDwave = CDbar*tc**5./3
-        
-    
-    def set_flight_conditions(self,velocity,altitude):
-        """
-        setting flight conditions to be analyzed. Flight conditions are calculated
-         using FlightConditions module. Reynolds number is calculated using ref 
-        length 1.0 that is stored in self.Re1
-        """
-        self.fc = FlightConditions(velocity,altitude)
-        self.Re1 = self.fc.Re # Re for L=1
+if __name__=="__main__":
+    run_test1()
