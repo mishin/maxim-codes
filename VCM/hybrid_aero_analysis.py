@@ -152,7 +152,9 @@ def run_full_table_analysis(wdir):
         af.write_txt(wdir + 'coordinates_%d.txt'%(i+1))
 
 def run_baseline():
-    X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
+    #X = np.array([0.14391813, 0.18778261, 0.14634264, 0.15348147, 0.15107265, -0.09014438, -0.05862712, -0.03488944, -0.01428362, 0.03831908])
+    #X = np.array([0.1639, 0.2078, 0.1663, 0.1629, 0.1511, -0.1049, -0.0548, -0.0149, -0.0009, 0.0383])
+    X = np.array([0.1439, 0.1878,0.1463,0.1535,0.1511,-0.0901,-0.0586,-0.0349,-0.0143,0.0383])
     fc = cfd.FlightConditions(22.0,0.0,0,0.24)
     fid = open('RENNbaseline.txt','wt')
     fid.write('Au0\tAu1\tAu2\tAu3\tAu4\tAl0\tAl1\tAl2\tAl3\tAl4\tLDmax\talphaLDmax\tClmax\talphaClmax\tCdAtLDmax\tthickness\n')
@@ -169,4 +171,4 @@ def run_multiple_tables():
         run_full_table_analysis(directory)
 
 if __name__=="__main__":
-    run_multiple_tables()
+    run_baseline()

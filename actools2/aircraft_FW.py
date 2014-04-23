@@ -9,7 +9,7 @@ from paths import MyPaths
 import numpy as np
 import airfoil
 from engine_turbofan import TurbofanEngine
-from weight import AircraftMass, get_flying_wing_mass
+from weight_fw import get_flying_wing_mass, AircraftMass
 from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
 from drag import get_friction_drag_FW
@@ -27,6 +27,7 @@ class FlyingWing(object):
         self.propulsion = TurbofanEngine() #table lookup database
         
     def load_xls(self, name, xlsPath=None):
+        self.name = str(name)
         if xlsPath==None:
             xlsPath = path.db.aircraftFW
         keyword = 'SECTION: '
@@ -42,6 +43,8 @@ class FlyingWing(object):
         self.designGoals.numberOfOccupants = db.read_row(-1,1)
         self.weight.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
         self.weight.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
+        idx = db.find_header(keyword+'FUSELAGE')
+        self.fusWidth = db.read_row(idx+1,1,False)
         idx = db.find_header(keyword+'MAIN WING')
         self.wing.segSpans           = db.read_row(idx+1,1,True)
         self.wing.chords             = db.read_row(-1,1,True)
@@ -67,6 +70,7 @@ class FlyingWing(object):
         self.landingGear.groundContactZ = db.read_row(-1,1,True)
         self.landingGear.tireWidth      = db.read_row(-1,1,True)
         self.landingGear.tireDiameter   = db.read_row(-1,1,True)
+        self.landingGear.strutLength    = db.read_row(-1,1,True)
         idx = db.find_header(keyword+'VLM PARAM')
         self.vlm.panelsChordwise = db.read_row(idx+1,1,False)
         self.vlm.panelsSpanwise  = db.read_row(-1,1,False)
@@ -130,6 +134,7 @@ class LandingGear(object):
         self.groundContactX = None
         self.groundContactY = None
         self.groundContactZ = None
+        self.strutLength    = None
 
 class DesignGoals(object):
     def __init__(self):
@@ -189,6 +194,7 @@ class Wing(object):
 
     def _calc_span(self):
         self.span = 2.0*np.sum(self.segSpans)
+        self.aspectRatio = self.span**2.0/self.area
 
     def _calc_apex(self):
         # calculate leading edge point of each section - section incidence is 
@@ -217,8 +223,8 @@ class Wing(object):
         xt = self.secApex[-1,0] + self.chords[-1]*eaLoc
         yr = self.secApex[0,1]
         yt = self.secApex[-1,1]
-        self.sweepElacticRad = np.arctan((yt-yr)/(xt-xr))
-        self.sweepElasticDeg = np.degrees(self.sweepElacticRad)
+        self.sweepElasticRad = np.arctan((yt-yr)/(xt-xr))
+        self.sweepElasticDeg = np.degrees(self.sweepElasticRad)
         dx, dy = xt-xr, yt-yr
         self.structuralSpan = (dx*dx+dy*dy)**0.5
 
@@ -248,7 +254,7 @@ class Wing(object):
             xlemac += xseg*aseg
         self.MAC = mac/area
         self.MAClocation = np.array([xlemac/area, ymac/area])
-        self.area = area
+        self.area = 2.0*area
 
     def _calc_wetted_area(self):
         wettedArea = 0.0
@@ -267,7 +273,7 @@ class VLMparameters(object):
 
 def run_test2():
     ac = FlyingWing()
-    ac.load_xls('sample1')
+    ac.load_xls('sample_B45c')
     ac._update_weight()
     ac.display()
 
