@@ -84,7 +84,11 @@ class FlyingWing(object):
             self.weight.payload.add_item(name,mass,CG,MOI)
         self.weight.update_total()
         self._process_data()
-    
+        
+        #TODO: tmp assumptions ---
+        self.propulsion.totalThrust = 13000.
+        self.propulsion.engineMass = 1000.
+
     def _process_data(self):
         self.wing._process_data()
         self.designGoals.set_flight_conditions(self.wing.MAC)
@@ -275,7 +279,7 @@ def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
     ac._update_weight()
-    ac.display()
+    #ac.display()
 
 def run_test1():
     import matplotlib.pyplot as plt
