@@ -23,6 +23,7 @@ class dbPaths:
         self.airfoil  = os.path.abspath(self.wdir + '/airfoil.xls')
         self.engine   = os.path.abspath(self.wdir + '/piston_engine.xls')
         self.engineExp= os.path.abspath(self.wdir + '/piston_engine_experimental.xls')
+        self.engineTurbofan = os.path.abspath(self.wdir + '/engine_turbofan.xls')
         self.prop     = os.path.abspath(self.wdir + '/prop.xls')
         self.propAirfoil = os.path.abspath(self.wdir + '/prop_airfoil.xls')
         self.drag     = os.path.abspath(self.wdir + '/drag_components.xls')

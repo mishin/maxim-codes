@@ -8,7 +8,7 @@ from db_tools import ReadDatabase
 from paths import MyPaths
 import numpy as np
 import airfoil
-from engine_turbofan import TurbofanEngine
+from engine_turbofan import Propulsion
 from weight_fw import get_flying_wing_mass, AircraftMass
 from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
@@ -24,7 +24,7 @@ class FlyingWing(object):
         self.vlm = VLMparameters()
         self.weight = AircraftMass() #total mass list
         self.drag = None #total drag list
-        self.propulsion = TurbofanEngine() #table lookup database
+        self.propulsion = Propulsion() #table lookup database
         
     def load_xls(self, name, xlsPath=None):
         self.name = str(name)
@@ -58,12 +58,12 @@ class FlyingWing(object):
         self.wing.csFlapType         = db.read_row(-1,1,False)
         self.wing.material           = db.read_row(-1,1,False)
         idx = db.find_header(keyword+'PROPULSION')
-        self.propulsion.numberOfEngines = db.read_row(idx+1,1,True)
+        engineName                      = db.read_row(idx+1,1,False)
+        self.propulsion.engine.load(engineName)
+        self.propulsion.numberOfEngines = db.read_row(-1,1,True)
         self.propulsion.CGx             = db.read_row(-1,1,True)
         self.propulsion.CGy             = db.read_row(-1,1,True)
         self.propulsion.CGz             = db.read_row(-1,1,True)
-        self.propulsion.mass            = db.read_row(-1,1)
-        self.propulsion.tableName       = db.read_row(-1,1)
         idx = db.find_header(keyword+'LANDING GEAR')
         self.landingGear.groundContactX = db.read_row(idx+1,1,True)
         self.landingGear.groundContactY = db.read_row(-1,1,True)
@@ -88,10 +88,13 @@ class FlyingWing(object):
         #TODO: tmp assumptions ---
         self.propulsion.totalThrust = 13000.
         self.propulsion.engineMass = 1000.
+        self.designGoals._process_data()
 
     def _process_data(self):
         self.wing._process_data()
         self.designGoals.set_flight_conditions(self.wing.MAC)
+        self.designGoals._process_data()
+        self.propulsion._process_data()
     def save_xls(self):
         pass
 
@@ -151,6 +154,8 @@ class DesignGoals(object):
         self.numberOfOccupants = 0
     def set_flight_conditions(self, refLength=1.0):
         self.fc = FlightConditions(self.cruiseSpeed, self.cruiseAltitude, refLength)
+    def _process_data(self):
+        self.cruiseMach = self.cruiseSpeed/self.fc.atm.soundSpeed
 
 class Wing(object):
     def __init__(self):
@@ -161,6 +166,7 @@ class Wing(object):
         self.airfoils          = list()
         self.secOffset         = None
         self.segDihedral       = None
+        self.segAreas          = None
         self.secTwist          = None
         self.incidence         = 0.0
         self.secAngles         = None
@@ -195,6 +201,22 @@ class Wing(object):
         self._calc_wetted_area()
         self._calc_angles()
         self._calc_elastic_axis_sweep()
+        self._calc_controls()
+    
+    def _calc_controls(self):
+        self.aileronArea = self._get_cs_area(self.csAileronLocation)
+        self.flapArea = self._get_cs_area(self.csFlapLocation)
+        self.csArea = self.aileronArea + self.flapArea
+    
+    def _get_cs_area(self,location):
+        startSec = np.argmax(location<1)
+        endSec = len(location) - np.argmax(location[::-1]<1)-1
+        area = 0.0
+        for i in range(startSec,endSec):
+            c1 = self.chords[i]*(1-location[i])
+            c2 = self.chords[i+1]*(1-location[i+1])
+            area += (c1 + c2)*self.segSpans[i]
+        return area
 
     def _calc_span(self):
         self.span = 2.0*np.sum(self.segSpans)
@@ -235,6 +257,7 @@ class Wing(object):
     def _calc_mac(self):
         """ calculates mean aerodynamic chord and it's location"""
         self.segMAC = np.zeros(self.nSeg)
+        self.segAreas = np.zeros(self.nSeg)
         def mac_of_one_segment(c1, c2, x1, x2, y1, y2):
             span = y2 - y1
             area = 0.5*(c1+c2)*span
@@ -252,6 +275,7 @@ class Wing(object):
             y1,y2 = self.secApex[i,1], self.secApex[i+1,1]
             aseg, macseg, yseg, xseg = mac_of_one_segment(c1,c2,x1,x2,y1,y2)
             self.segMAC[i] = macseg
+            self.segAreas[i] = aseg
             area   += aseg
             mac    += macseg*aseg
             ymac   += yseg*aseg

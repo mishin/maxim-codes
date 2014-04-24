@@ -95,7 +95,7 @@ class LoadDatabase(object):
             sheetNum=self.nameList.index(sheetName)
             sheet=self.sheetList[sheetNum]
         except:
-            print "Error: specified sheet doesn't exist"
+            print "Error: \"%s\" sheet doesn't exist"%sheetName
             sheet=None
         return sheet
     

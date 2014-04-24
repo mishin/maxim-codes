@@ -23,7 +23,22 @@ def kg_to_lb(mass):
 def lb_to_kg(mass):
     return float(mass)/2.20462262
 
+def kgf_to_lbf(force):
+    return float(force)*2.20462262
 
+def lbf_to_kgf(force):
+    return float(force)/2.20462262
+
+def cubm_to_gal(volume):
+    return float(volume)*264.172052
+
+def gal_to_cubm(volume):
+    return float(volume)/264.172052
+
+#def sfcImp_to_sfcSI(sfc):
+#    """Convert specific fuel consumption from imperial units lb/(h*lbf) to 
+#    SI units kg/(h*kgf)"""
+#    return 
 def run_test1():
     print m_to_ft(1)
     print sqm_to_sqft(15)

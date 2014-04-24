@@ -19,6 +19,7 @@ class BlendedWingBodyMass(object):
     def __init__(self,aircraft):
         self.ac = aircraft
         self.total = AircraftMass(self.ac.name)
+        self.fuelProp = constants.load('fuel_density')
     def analyze(self):
         self._get_data()
         mWing, cgWing = self._mass_wing(self.ac.wing)
@@ -37,6 +38,14 @@ class BlendedWingBodyMass(object):
         self.total.airframe.add_item('Engine mount',mEnM,cgEnM)
         self.total.airframe.add_item('Engine section',mEnS,cgEnS)
         self.total.airframe.add_item('Engine cooling',mEnC,cgEnC)
+        self.total.airframe.add_item('Oil cooling',mOil,cgOil)
+        self._mass_engine_controls()
+        self._mass_starter_pneumatic()
+        self._mass_fuel_system()
+        self._mass_flight_controls()
+        self._mass_hydraulics()
+        self._mass_electrical()
+        self._mass_avionics()
         self.total.display()
     
     def _get_coefficients(self):
@@ -54,7 +63,9 @@ class BlendedWingBodyMass(object):
         self.Wt = self.Wdg
         self.Wl = self.Wdg
         self.Ne = self.ac.propulsion.numberOfEngines
-        self.T  = self.ac.propulsion.totalThrust
+        self.T  = convert.kgf_to_lbf(self.ac.propulsion.totalThrust)
+        Vi = self.ac.designGoals.fuelMass/self.fuelProp['kerosene']
+        self.Vi = convert.cubm_to_gal(Vi)
         
     def _mass_wing(self,wing):
         # by Raymer - fighter weights
@@ -89,7 +100,7 @@ class BlendedWingBodyMass(object):
         return convert.kg_to_lb(mEngineMount), np.zeros(3)
         
     def _mass_engine_section(self):
-        We = convert.kg_to_lb(self.ac.propulsion.engineMass)
+        We = convert.kg_to_lb(self.ac.propulsion.engine.mass)
         mEngineSection = 0.01*We**0.717*self.Ne*self.Nz
         return convert.lb_to_kg(mEngineSection), np.zeros(3)
         
@@ -98,7 +109,70 @@ class BlendedWingBodyMass(object):
         return 0.0, np.zeros(3)
         
     def _mass_engine_cooling(self):
-        return 0.0, np.zeros(3)
+        #FIXME: engine shroud length is assumed 0.15*total length
+        Lsh = convert.m_to_ft(self.ac.propulsion.engine.length)*0.15
+        De = convert.m_to_ft(self.ac.propulsion.engine.diameter)
+        mEc = 4.55*De*Lsh*self.Ne
+        return convert.lb_to_kg(mEc), np.zeros(3)
+        
     def _mass_oil_cooling(self):
-        return 0.0, np.zeros(3)
+        mOil = 37.82*self.Ne**1.023
+        return convert.lb_to_kg(mOil), np.zeros(3)
+    
+    def _mass_engine_controls(self):
+        #FIXME: assumed that engine controls are close to engine since it is UAV
+        Lec = 0.25*convert.m_to_ft(self.ac.propulsion.engine.length)
+        m = 10.5*self.Ne**1.008*Lec**0.222
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Engine controls',m,np.zeros(3))
+    
+    def _mass_starter_pneumatic(self):
+        Te = convert.kgf_to_lbf(self.ac.propulsion.engine.thrustMC)
+        m = 0.025*Te**0.760*self.Ne**0.72
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Engine starter',m,np.zeros(3))
+    
+    def _mass_fuel_system(self):
+        #FIXME: assumption that all tanks are protected and pressurized
+        Vi = 0.5*self.Vi
+        Vt = self.Vi
+        Vp = 0*self.Vi
+        sfc = self.ac.propulsion.engine.sfcMC
+        Nt = self.ac.propulsion.numberOfTanks
+        m = 7.45*Vt**0.47*(1.+Vi/Vt)**(-0.095)*(1.+Vp/Vt)*Nt**0.066*self.Ne**0.052*(self.T*sfc/1e3)**0.249
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Fuel system',m,np.zeros(3))
+    
+    def _mass_flight_controls(self):
+        M = self.ac.designGoals.cruiseMach
+        Scs = self.ac.wing.csArea
+        Nc = 1.0 #FIXME: number of crew is set to 1 for UAV
+        Ns = 2.0
+        m = 36.28*M**0.003*Scs**0.489*Ns**0.484*Nc**0.127
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Flight controls',m,np.zeros(3))
+    
+    def _mass_hydraulics(self):
+        Kvsh = 1.0 #1.425 for variable sweep wing, otherwise 1.0
+        Nu = 10.0 # number of hydraulic utility functions (typically 5-15)
+        m = 37.23*Kvsh*Nu**0.664
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Hydraulics',m,np.zeros(3))
+    
+    def _mass_electrical(self):
+        Rkva = 120.0 # system electrical rating
+        Kmc = 1.45
+        Nc = 1.0
+        La = convert.m_to_ft(self.ac.wing.chords[0])
+        Ngen = self.Ne
+        m = 172.2*Kmc*Rkva**0.152*Nc**0.1*La**0.1*Ngen**0.0091
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Electronics',m,np.zeros(3))
+    
+    def _mass_avionics(self):
+        mUav = 600.#FIXME: uninstalled avionics weight is assumed 1000lb
+        m = 2.117*mUav**0.933
+        m = convert.lb_to_kg(m)
+        self.total.airframe.add_item('Avionics',m,np.zeros(3))
+
     
