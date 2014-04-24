@@ -22,7 +22,7 @@ class FlyingWing(object):
         self.designGoals = DesignGoals()
         self.landingGear = LandingGear()
         self.vlm = VLMparameters()
-        self.weight = AircraftMass() #total mass list
+        self.mass = AircraftMass() #total mass list
         self.drag = None #total drag list
         self.propulsion = Propulsion() #table lookup database
         
@@ -41,8 +41,8 @@ class FlyingWing(object):
         self.designGoals.loadFactor        = db.read_row(-1,1)
         self.designGoals.loadFactorLanding = db.read_row(-1,1)
         self.designGoals.numberOfOccupants = db.read_row(-1,1)
-        self.weight.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
-        self.weight.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
+        self.mass.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
+        self.mass.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
         idx = db.find_header(keyword+'FUSELAGE')
         self.fusWidth = db.read_row(idx+1,1,False)
         idx = db.find_header(keyword+'MAIN WING')
@@ -81,14 +81,15 @@ class FlyingWing(object):
             mass = float(line[1])
             CG   = np.array([float(val) for val in line[2:5]])
             MOI  = np.array([float(val) for val in line[5:8]])
-            self.weight.payload.add_item(name,mass,CG,MOI)
-        self.weight.update_total()
+            self.mass.payload.add_item(name,mass,CG,MOI)
+        self.mass.update_total()
         self._process_data()
         
         #TODO: tmp assumptions ---
         self.propulsion.totalThrust = 13000.
         self.propulsion.engineMass = 1000.
         self.designGoals._process_data()
+        self._update_mass()
 
     def _process_data(self):
         self.wing._process_data()
@@ -108,8 +109,8 @@ class FlyingWing(object):
             altitude = self.designGoals.cruiseAltitude
         self.drag = get_friction_drag_FW(self,velocity,altitude)
 
-    def _update_weight(self):
-        self.weight = get_flying_wing_mass(self)
+    def _update_mass(self):
+        self.mass = get_flying_wing_mass(self)
     
     def get_parasite_drag(self,velocity=None,altitude=None):
         """
@@ -302,8 +303,9 @@ class VLMparameters(object):
 def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
-    ac._update_weight()
-    #ac.display()
+    ac.mass.fuel.display()
+    ac.mass.airframe.display()
+    ac.mass.payload.display()
 
 def run_test1():
     import matplotlib.pyplot as plt
