@@ -303,9 +303,10 @@ class VLMparameters(object):
 def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
-    ac.mass.fuel.display()
-    ac.mass.airframe.display()
-    ac.mass.payload.display()
+    ac.mass.display()
+    print ac.wing.area
+    print ac.wing.MAC
+    print ac.wing.span
 
 def run_test1():
     import matplotlib.pyplot as plt
