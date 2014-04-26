@@ -34,12 +34,15 @@ class MassComponent:
     baggage               70.00     2.8500     0.0000    -0.1250
     """
     numberOfItems = 0
-    def __init__(self,name='',mass=0.0,CG=np.zeros(3),inertia=np.zeros(3)):
+    def __init__(self,name='',mass=0.0,CG=None,inertia=np.zeros(3)):
         MassComponent.numberOfItems += 1
         if name=='':
             self.name = 'component %d'%MassComponent.numberOfItems
         else:
             self.name = str(name)
+        self.cgIsKnown = True
+        if CG==None:
+            self.cgIsKnown = False
         self.mass = mass
         self.coords  = np.array(CG)
         self.inertia = np.array(inertia)
@@ -57,8 +60,13 @@ class MassComponent:
         if header:
             line = '{0:18}|{1:10}|{2:10}|{3:10}|{4:10}|'
             report += line.format('Name','Mass,kg','X,m','Y,m','Z,m')+'\n'
-        line = '{0:18} {1:8.2f} {2:10.4f} {3:10.4f} {4:10.4f}'
-        x, y, z = self.coords[0], self.coords[1], self.coords[2]
+        
+        if self.cgIsKnown:
+            line = '{0:18} {1:8.2f} {2:10.4f} {3:10.4f} {4:10.4f}'
+            x, y, z = self.coords[0], self.coords[1], self.coords[2]
+        else:
+            line = '{0:18} {1:>8.2f} {2:>10} {3:>10} {4:>10}'
+            x, y, z = 'N/A', 'N/A', 'N/A'
         report += line.format(self.name,self.mass,x,y,z)+'\n'
         if disp:
             print report
@@ -130,12 +138,8 @@ class MassList:
         >>> payload = MassList('payload')
         >>> payload.add_item('passenger',86,[1.86,0.25,-0.075],[0,0,0])
         """
-        newItem = MassComponent()
-        newItem.name = name
+        newItem = MassComponent(name,mass,CG,inertia)
         self.names.append(name)
-        newItem.mass = mass
-        newItem.coords = CG
-        newItem.inertia = inertia
         self.items.append(newItem)
         self.update_totals()
 
@@ -257,13 +261,16 @@ class MassList:
         return len(self.items)
     def update_totals(self):
         totalMass = 0.0
+        tmpMass = 0.0
         CG = np.zeros(3)
         for item in self.items:
             totalMass += item.mass
-            CG += item.mass*item.coords
+            if item.cgIsKnown:
+                tmpMass += item.mass
+                CG += item.mass*item.coords
         self.totalMass = totalMass
         if totalMass>0.0:
-            self.CG = CG / totalMass
+            self.CG = CG / tmpMass
         else:
             self.CG = np.zeros(3)
     def get_total_mass(self):

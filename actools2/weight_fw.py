@@ -63,7 +63,7 @@ class BlendedWingBodyMass(object):
         Vi = self.ac.designGoals.fuelMass/self.fuelProp['kerosene']
         self.Vi = convert.cubm_to_gal(Vi)
     
-    def _add_mass1(self,name,mass,cg=np.zeros(3)):
+    def _add_mass1(self,name,mass,cg=None):
         m = convert.lb_to_kg(mass)
         self.total.airframe.add_item(name, m, cg)
 
@@ -75,7 +75,7 @@ class BlendedWingBodyMass(object):
         lmbda = wing.sweepElasticRad
         Scsw  = 0.1*Sw #FIXME: calculate control surface area
         m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+lmbda)**0.5*np.cos(lmbda)**(-1.0)* Scsw**0.04
-        self._add_mass1('wing',m)
+        self._add_mass1('wing',m,np.zeros(3))
     
     def _mass_fuselage(self):
         L = convert.m_to_ft(self.ac.wing.chords[0])
