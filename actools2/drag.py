@@ -366,45 +366,43 @@ class PartsDrag:
         return itemsNew
 
 
-class WaveDrag(object):
-    def __init__(self,refArea):
-        self.refArea = float(refArea)
-#        self.gamma   = 1.4
-#        self.Pr      = 0.72
-#        self.Te      = 390.0
-#        self.K       = 200.0
-#        self.TwTaw   = 1.0 # adiabatic wall condition
-#        self.wetArea      = list()
-#        self.refLength    = list()
-#        self.tc           = list()
-#        self.bodyType     = list()
-#        self.transitionPt = list()
-    
-    def analyze_wing(self,wing):
-        # airfoil factors
-        Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
-        Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
-        # thickness factor
-        Kt = 1.0+4.(0.5-xt/c*(1+0.5*(r0/t)**0.5))**2 - 0.25*(r0/t)**0.5*(1-xt/c)**2.0
-        Kc = 1.0+2.5*(h/t)**2. # airfoil camber factor
-        betaBar = beta/(tc**(1/3))
-        # main equation
-        var1 = Kt*Kw*Kc*Kb
-        var2 = betaBar*Kb*Kw
-        Fbm = Fb**m
-        var3 = 1.0/ARe/(1.+(1.+lmbda)*Fbeta*betaBar**(1.+Kw))
-        var4 = (ARe**3)/(1.+ARe**3/3*betaBar**4.)
-        var5 = 2./ARe**3/(1.+(2./3+lmbda)*Fb*betaBar**(1+Kw**3.8))
-        var6 = 1./(1.+3.*ARe*betaBar**4)
-        CDbar = 2.0*var1/(var2*Fbm + (var3+var4)) + 3.33*var1/(var2**3.8*Fbm+(var3+var4))
-        CDwave = CDbar*tc**5./3
-        
-    
-    def set_flight_conditions(self,velocity,altitude):
-        """
-        setting flight conditions to be analyzed. Flight conditions are calculated
-         using FlightConditions module. Reynolds number is calculated using ref 
-        length 1.0 that is stored in self.Re1
-        """
-        self.fc = FlightConditions(velocity,altitude)
-        self.Re1 = self.fc.Re # Re for L=1
+#class WaveDrag(object):
+#    def __init__(self,refArea):
+#        self.refArea = float(refArea)
+##        self.gamma   = 1.4
+##        self.Pr      = 0.72
+##        self.Te      = 390.0
+##        self.K       = 200.0
+##        self.TwTaw   = 1.0 # adiabatic wall condition
+##        self.wetArea      = list()
+##        self.refLength    = list()
+##        self.tc           = list()
+##        self.bodyType     = list()
+##        self.transitionPt = list()
+#    
+#    def analyze_wing(self,wing):
+#        # airfoil factors
+#        Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
+#        Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
+#        # thickness factor
+#        Kt = 1.0+4.(0.5-xt/c*(1+0.5*(r0/t)**0.5))**2 - 0.25*(r0/t)**0.5*(1-xt/c)**2.0
+#        Kc = 1.0+2.5*(h/t)**2. # airfoil camber factor
+#        betaBar = beta/(tc**(1/3))
+#        # main equation
+#        var1 = Kt*Kw*Kc*Kb
+#        var2 = betaBar*Kb*Kw
+#        Fbm = Fb**m
+#        var3 = 1.0/ARe/(1.+(1.+lmbda)*Fbeta*betaBar**(1.+Kw))
+#        var4 = (ARe**3)/(1.+ARe**3/3*betaBar**4.)
+#        var5 = 2./ARe**3/(1.+(2./3+lmbda)*Fb*betaBar**(1+Kw**3.8))
+#        var6 = 1./(1.+3.*ARe*betaBar**4)
+#        CDbar = 2.0*var1/(var2*Fbm + (var3+var4)) + 3.33*var1/(var2**3.8*Fbm+(var3+var4))
+#        CDwave = CDbar*tc**5./3
+#    def set_flight_conditions(self,velocity,altitude):
+#        """
+#        setting flight conditions to be analyzed. Flight conditions are calculated
+#         using FlightConditions module. Reynolds number is calculated using ref 
+#        length 1.0 that is stored in self.Re1
+#        """
+#        self.fc = FlightConditions(velocity,altitude)
+#        self.Re1 = self.fc.Re # Re for L=1
