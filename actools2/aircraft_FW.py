@@ -163,6 +163,29 @@ class DesignGoals(object):
     def _process_data(self):
         self.cruiseMach = self.cruiseSpeed/self.fc.atm.soundSpeed
 
+        
+class ControlSurface:
+    def __init__(self,location,wingChords,wingSpans,inverted=True,symmetric=True,nameIndex='a'):
+        self.nameIndex = str(nameIndex)
+        self.location = np.asarray(location)
+        self.inverted = bool(inverted)
+        self.symmetric = bool(symmetric)
+        self._wingChords = np.asarray(wingChords)
+        self._wingSpans = np.asarray(wingSpans)
+        self._process_data()
+    def _process_data(self):
+        self.chords = self._wingChords * (1-self.location)
+        secStart = np.argmax(self.location<1)
+        secEnd = len(self.location) - np.argmax(self.location[::-1]<1)-1
+        area = 0.0
+        for i in range(secStart,secEnd):
+            area += (self.chords[i]+self.chords[i+1])*self._wingSpans[i]
+        if self.symmetric:
+            self.area = 2.0*area
+        else:
+            self.area = area
+
+
 class Wing(object):
     def __init__(self):
         self.locationLE        = np.zeros(3)
