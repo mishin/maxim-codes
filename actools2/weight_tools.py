@@ -289,7 +289,7 @@ class MassList:
         for item in self.items:
             outList.append(item.name)
         return outList
-    def _report(self):
+    def _report(self,MAC=None,xMAC=None):
         """
         Displays mass components breakdown report: name, mass, CG
         """
@@ -307,12 +307,15 @@ class MassList:
         lineFormat = '{0:18} {1:8.2f} {2:10.4f} {3:10.4f} {4:10.4f}\n'
         report += lineFormat.format('TOTAL',self.totalMass,
                                 self.CG[0],self.CG[1],self.CG[2])
+        if MAC!=None and xMAC!=None:
+            cgMAC = (self.CG[0]-xMAC)/MAC*100.
+            report += '{0:29} {1:+8.2f} % of MAC\n'.format('',cgMAC)
         report += limiter1 +'\n'
         return report
-    def display(self):
+    def display(self,MAC=None,xMAC=None):
         """ prints out tabulated information about mass list
         """
-        print self._report()
+        print self._report(MAC,xMAC)
     def save_txt(self,filePath='',acname=''):
         """
         saves mass list in tabulated form to text file
@@ -433,7 +436,9 @@ class AircraftMass:
     name : string
         aircraft name. Name is used in text reports only.
     """
-    def __init__(self,name='noname aircraft'):
+    def __init__(self,name='noname aircraft',MAC=None,xMAC=None):
+        self.MAC = MAC
+        self.xMAC = xMAC
         self.aircraftName = name
         self.airframe = MassList('Airframe')
         self.payload = MassList('Payload')
@@ -458,7 +463,7 @@ class AircraftMass:
         """ prints out tabulated information about all mass components
         """
         self.update_total()
-        self.total.display()
+        self.total.display(self.MAC,self.xMAC)
 
     def save_txt(self,filePath=''):
         """ saves total mass list in tabulated form to text file

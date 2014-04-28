@@ -22,8 +22,9 @@ def get_flying_wing_mass(aircraft):
 class BlendedWingBodyMass(object):
     def __init__(self,aircraft):
         self.ac = aircraft
-        self.total = AircraftMass(self.ac.name)
+        self.total = AircraftMass(self.ac.name,self.ac.wing.MAC,self.ac.wing.MAClocation[0])
         self.fuelProp = constants.load('fuel_density')
+        self.constMass = constants.load('mass')
     def analyze(self):
         self._get_data()
         self._mass_wing(self.ac.wing)
@@ -64,6 +65,7 @@ class BlendedWingBodyMass(object):
         self.Vi = convert.cubm_to_gal(Vi)
     
     def _add_mass1(self,name,mass,cg=None):
+        """ NOTE: CG is in meters"""
         m = convert.lb_to_kg(mass)
         self.total.airframe.add_item(name, m, cg)
 
@@ -75,14 +77,19 @@ class BlendedWingBodyMass(object):
         lmbda = wing.sweepElasticRad
         Scsw  = 0.1*Sw #FIXME: calculate control surface area
         m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+lmbda)**0.5*np.cos(lmbda)**(-1.0)* Scsw**0.04
-        self._add_mass1('wing',m,np.zeros(3))
+        wingCGratio = self.constMass['wingCGratio']
+        xCG = self.ac.wing.MAClocation[0] + self.ac.wing.MAC*wingCGratio
+        zCG = self.ac.wing.secApex[0,2]
+        self._add_mass1('wing',m,np.array([xCG,0.0,zCG]))
     
     def _mass_fuselage(self):
         L = convert.m_to_ft(self.ac.wing.chords[0])
         D = convert.m_to_ft(self.ac.wing.airfoils[0].thickness)
         W = convert.m_to_ft(self.ac.fusWidth)
         m = 0.499*self.Kdwf*self.Wdg**0.35 *self.Nz**0.25 *L**0.5 *D**0.849 *W**0.685
-        self._add_mass1('fuselage',m)
+        xCG = convert.ft_to_m(L) * self.constMass['fuseCGratio'][1]
+        zCG = self.ac.wing.secApex[0,2]
+        self._add_mass1('fuselage',m,np.array([xCG,0.0,zCG]))
     
     def _mass_mlg(self):
         Lm = convert.m_to_ft(self.ac.landingGear.strutLength[1])

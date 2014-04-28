@@ -7,6 +7,7 @@ Created on Tue Apr 01 21:43:04 2014
 from db_tools import ReadDatabase
 from paths import MyPaths
 import numpy as np
+from scipy.interpolate import interp1d
 import airfoil
 from engine_turbofan import Propulsion
 from weight_fw import get_flying_wing_mass, AircraftMass
@@ -41,8 +42,8 @@ class FlyingWing(object):
         self.designGoals.loadFactor        = db.read_row(-1,1)
         self.designGoals.loadFactorLanding = db.read_row(-1,1)
         self.designGoals.numberOfOccupants = db.read_row(-1,1)
-        self.mass.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
-        self.mass.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
+#        self.mass.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
+#        self.mass.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
         idx = db.find_header(keyword+'FUSELAGE')
         self.fusWidth = db.read_row(idx+1,1,False)
         idx = db.find_header(keyword+'MAIN WING')
@@ -57,6 +58,7 @@ class FlyingWing(object):
         self.wing.csFlapLocation     = db.read_row(-1,1,True)
         self.wing.csFlapType         = db.read_row(-1,1,False)
         self.wing.material           = db.read_row(-1,1,False)
+        self.wing.fuelTankCGratio    = db.read_row(-1,1,True)
         idx = db.find_header(keyword+'PROPULSION')
         engineName                      = db.read_row(idx+1,1,False)
         self.propulsion.engine.load(engineName)
@@ -84,7 +86,10 @@ class FlyingWing(object):
             self.mass.payload.add_item(name,mass,CG,MOI)
         self.mass.update_total()
         self._process_data()
-        
+        fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
+        fuelCG2 = np.array([fuelCG[0],-fuelCG[1],fuelCG[2]])
+        self.mass.fuel.add_item('Fuel tank right',self.designGoals.fuelMass/2.,fuelCG)
+        self.mass.fuel.add_item('Fuel tank left',self.designGoals.fuelMass/2.,fuelCG2)
         #TODO: tmp assumptions ---
         self.propulsion.totalThrust = 13000.
         self.propulsion.engineMass = 1000.
@@ -180,10 +185,22 @@ class Wing(object):
         self.MAClocation       = np.zeros(2) # x,y
         self.nSeg              = 0
         self.secThickness      = None
-
+    
+    def locate_on_wing(self,chordRatio,spanRatio):
+        """ returns coordinate of the point that is located on the wing with 
+        given span and chord ratio"""
+        y = self.span/2.0 * spanRatio
+        chords = interp1d(self.secApex[:,1],self.chords,'linear')
+        xLE = interp1d(self.secApex[:,1],self.secApex[:,0],'linear')
+        zLE = interp1d(self.secApex[:,1],self.secApex[:,2],'linear')
+        x = xLE(y) + chords(y)*chordRatio
+        z = zLE(y)
+        return np.array([x,y,z])
+        
     def _process_data(self):
         self.nSeg = len(self.segSpans)
         self.nSec = self.nSeg+1
+        self.segDihedralRad = np.radians(self.segDihedral)
         self._load_airfoils()
         self._calc_geometry_data()
 
@@ -304,6 +321,7 @@ def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
     ac.mass.display()
+    ac.display()
     print ac.wing.area
     print ac.wing.MAC
     print ac.wing.span
