@@ -26,7 +26,7 @@ def write_polar(path,polar,polarType):
 def aero_analysis(af, fc, filename=None,alpha=None):
     if alpha==None:
         alpha = np.arange(0,17,2.0)
-    result1 = af.get_J_polar(fc.Mach, fc.Re, [0,16,2.0])
+    result1 = af.get_J_polar(fc.Mach, fc.Re, [alpha[0],alpha[-1],0.5])
     solver = cfd.CFDsolver(af,fc,1.0,mesh='O')
     solver.fluent.residuals['energy']=1e-6
     solver.fluent.relaxationFactor['xvelocity'] = 1e-3

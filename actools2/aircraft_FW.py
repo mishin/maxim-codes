@@ -180,6 +180,7 @@ def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
     ac.mass.display()
+    ac.mass.airframe.display()
     #ac.display()
     print ac.wing.area
     print ac.wing.MAC
