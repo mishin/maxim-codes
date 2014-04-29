@@ -17,6 +17,12 @@ from wing import Wing
 
 path = MyPaths()
 
+def load(name):
+    ac = FlyingWing()
+    ac.load_xls(name)
+    return ac
+
+
 class FlyingWing(object):
     def __init__(self):
         self.wing = Wing() #main geometry
@@ -179,8 +185,8 @@ class VLMparameters(object):
 def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
-    ac.mass.display()
-    ac.mass.airframe.display()
+    #ac.mass.display()
+    #ac.mass.airframe.display()
     #ac.display()
     print ac.wing.area
     print ac.wing.MAC

@@ -41,6 +41,8 @@ class MyPaths:
         self.javafoil  = os.path.abspath(self.wdir + '/Jfoil/javafoil.jar')
         self.mhclasses = os.path.abspath(self.wdir + '/Jfoil/mhclasses.jar')
         self.tmpDir    = os.path.abspath(self.wdir + '/temp')
+        self.aeroCD0   = os.path.abspath(self.wdir + '/aeroCD0/aero_CD0.exe')
+        self.aeroCD0in = os.path.abspath(self.wdir + '')
         self.platform  = determine_platform()
         self._init_xfoilpath()
     

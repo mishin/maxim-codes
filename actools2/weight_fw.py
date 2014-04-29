@@ -6,7 +6,7 @@ Created on Tue Apr 22 21:39:57 2014
 """
 import numpy as np
 import constants
-from weight_tools import AircraftMass
+from weight_tools import AircraftMass, AircraftMass2
 import convert
 
 
@@ -16,15 +16,18 @@ def get_flying_wing_mass(aircraft):
     mass.total.fuel = aircraft.mass.fuel
     mass.total.payload = aircraft.mass.payload
     mass.total.update_total()
+    mass.output.display()
     return mass.total
 
 
 class BlendedWingBodyMass(object):
     def __init__(self,aircraft):
         self.ac = aircraft
+        self.output = AircraftMass2(self.ac.name,self.ac.wing.MAC,self.ac.wing.MAClocation[0])
         self.total = AircraftMass(self.ac.name,self.ac.wing.MAC,self.ac.wing.MAClocation[0])
-        self.fuelProp = constants.load('fuel_density')
+        self.fuelProp  = constants.load('fuel_density')
         self.constMass = constants.load('mass')
+        
     def analyze(self):
         self._get_data()
         self._mass_wing(self.ac.wing)
@@ -46,10 +49,10 @@ class BlendedWingBodyMass(object):
         #self.total.display()
     
     def _get_coefficients(self):
-        self.Kdw = 1.0 # 0.786 for delta wing, otherwise Kdw=1.0
-        self.Kvs = 1.0 # 1.19 for variable sweep, otherwise 1.0
+        self.Kdw  = 1.0 # 0.786 for delta wing, otherwise Kdw=1.0
+        self.Kvs  = 1.0 # 1.19 for variable sweep, otherwise 1.0
         self.Kdwf = 1.0 # 0.774 for delta wing, otherwise 1.0
-        self.Kcb = 1.0
+        self.Kcb  = 1.0
         self.Ktpg = 1.0
 
     def _get_data(self):
@@ -68,13 +71,14 @@ class BlendedWingBodyMass(object):
         """ NOTE: CG is in meters"""
         m = convert.lb_to_kg(mass)
         self.total.airframe.add_item(name, m, cg)
+        self.output.empty.add_item(name,m,cg)
 
     def _mass_wing(self,wing):
         # by Raymer - fighter weights
         Sw = convert.sqm_to_sqft(wing.area)
         A  = wing.aspectRatio
         tcRoot = wing.airfoils[0].thickness
-        lmbda = wing.sweepElasticRad
+        lmbda = wing.sweepElasticRad #FIXME: check rad/deg
         Scsw  = 0.1*Sw #FIXME: calculate control surface area
         m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+lmbda)**0.5*np.cos(lmbda)**(-1.0)* Scsw**0.04
         wingCGratio = self.constMass['wingCGratio']
@@ -87,20 +91,22 @@ class BlendedWingBodyMass(object):
         D = convert.m_to_ft(self.ac.wing.airfoils[0].thickness)
         W = convert.m_to_ft(self.ac.fusWidth)
         m = 0.499*self.Kdwf*self.Wdg**0.35 *self.Nz**0.25 *L**0.5 *D**0.849 *W**0.685
-        xCG = convert.ft_to_m(L) * self.constMass['fuseCGratio'][1]
+        xCG = self.ac.wing.chords[0] * self.constMass['fuseCGratio'][1]
         zCG = self.ac.wing.secApex[0,2]
         self._add_mass1('fuselage',m,np.array([xCG,0.0,zCG]))
     
     def _mass_mlg(self):
-        Lm = convert.m_to_ft(self.ac.landingGear.strutLength[1])
+        Lm = convert.m_to_ft(self.ac.landingGear.strutLength[1]) #TODO: check value
         m = self.Kcb*self.Ktpg*(self.Wt*self.Nl)**0.25 * Lm**0.973
-        self._add_mass1('main landing gear',m)
+        xCG = self.ac.landingGear.groundContactX[1]
+        self._add_mass1('main landing gear',m,np.array([xCG,0,0]))
 
     def _mass_nlg(self):
         Ln = convert.m_to_ft(self.ac.landingGear.strutLength[0])
         Nnw = 1.0 # number of nose wheels
         m = (self.Wl*self.Nl)**0.29 *Ln**0.5 *Nnw**0.525
-        self._add_mass1('nose landing gear',m)
+        xCG = self.ac.landingGear.groundContactX[0]
+        self._add_mass1('nose landing gear',m,np.array([xCG,0,0]))
 
     def _mass_engine_mount(self):
         m = 0.013*self.Ne**0.795*self.T**0.579 *self.Nz

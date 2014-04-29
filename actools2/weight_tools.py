@@ -8,6 +8,40 @@ import numpy as np
 from time import ctime
 
 
+
+class AircraftMass2:
+    def __init__(self,name='Aircraft',MAC=None,xMAC=None):
+        self.empty      = MassList('empty')
+        self.payload    = MassList('payload')
+        self.total      = MassList('Total')
+        self.totalMass = 0.0
+        self.totalCG   = np.zeros(3)
+        self.totalMOI  = np.zeros(3)
+        self._MAC  = None
+        self._xMAC = None
+        if not MAC==None:
+            self._MAC = float(MAC)
+        if not xMAC==None:
+            self._xMAC = float(MAC)
+    def update_total(self):
+        """
+        Updates total mass list.
+        """
+        self.total = MassList('Total')
+        self.total.add_mass_list(self.empty)
+        self.total.add_mass_list(self.payload)
+        self.total.update_totals()
+        self.totalMass = self.total.totalMass
+        self.totalCG = self.total.CG
+    def display(self):
+        """ prints out tabulated information about all mass components
+        """
+        self.update_total()
+        self.total.display(self._MAC,self._xMAC)
+
+    def set_fuel_mass(self,fuelMass):
+        self.payload.update_item('fuel',fuelMass)
+
 class MassComponent:
     """
     Describing mass component by parameters described below
