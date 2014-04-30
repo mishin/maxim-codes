@@ -363,25 +363,45 @@ class Airfoil:
         lenLo = geom.curve_pt_dist_normalized(self.ptsLo)
         self._curveUp = CurveXyt(self.ptsUp[:,0],self.ptsUp[:,1],lenUp)
         self._curveLo = CurveXyt(self.ptsLo[:,0],self.ptsLo[:,1],lenLo)
-        self._curveUp2 = interp1d(self.ptsUp[:,0],self.ptsUp[:,1],'cubic')
-        self._curveLo2 = interp1d(self.ptsLo[:,0],self.ptsLo[:,1],'cubic')
+        ptsUp,ptsLo = self._sort_pts()
+        self._curveUp2 = interp1d(ptsUp[:,0],ptsUp[:,1],'cubic')
+        self._curveLo2 = interp1d(ptsLo[:,0],ptsLo[:,1],'cubic')
+        self._xmin = max([ptsUp[0,0],ptsLo[0,0]])
+        self._xmax = min([ptsUp[-1,0],ptsLo[-1,0]])
 
     def _analyze_geometry(self):
         """
         calculates airfoil geometry parameters
         """
         self._create_splines()
-        _ymax = lambda t: -self._curveUp(t)[1]
-        _ymin = lambda t:  self._curveLo(t)[1]
-        t1 = fminbound(_ymax,0,1)
-        t2 = fminbound(_ymin,0,1)
-        self.thickness = self._curveUp(t1)[1] - self._curveLo(t2)[1]
+        tc     = lambda x:  self._curveLo2(x) - self._curveUp2(x)
+        camber = lambda x:  -(self._curveLo2(x) + self._curveUp2(x))
+        self.thicknessLocation = fminbound(tc,self._xmin,self._xmax)
+        self.camberLocation = fminbound(camber,self._xmin,self._xmax)
+        self.thickness = -tc(self.thicknessLocation)
+        self.camber = -camber(self.camberLocation)/2.0
         n = len(self.pts)-1
         L = np.zeros(n)
         for i in range(n):
             L[i] = ((self.pts[i,0]-self.pts[i+1,0])**2.0 + (self.pts[i,1]-self.pts[i+1,1])**2.0)**0.5
         self.length = L.sum()
-            
+    
+    def _sort_pts(self):
+        xmin = 0.05
+        xmax = 0.95
+        def sort_pts(pts,xmin,xmax):
+            for i,pt in enumerate(pts):
+                if pt[0]>=xmin:
+                    idxStart = i
+                    break
+            for i,pt in enumerate(pts[idxStart:]):
+                if pt[0]>=xmax:
+                    idxEnd = i+idxStart
+                    break
+            return pts[idxStart:idxEnd]
+        ptsUp = sort_pts(self.ptsUp,xmin,xmax)
+        ptsLo = sort_pts(self.ptsLo,xmin,xmax)
+        return ptsUp,ptsLo
     
     def _get_point_distribution(self,nPts=30,distribution=None):
         if distribution==None:
@@ -627,12 +647,12 @@ class Airfoil:
 def run_test_geometry():
     af = Airfoil()
     #af = naca4(12,2,30)
-    af = load('NACA0012')
-    af.display('ko-')
-    af.redim(10,True)
-    af.display('ko-')
-    af.redim(15,True)
-    af.display()
+    af = naca4(12,5,40)
+    af._analyze_geometry()
+    print af.thickness
+    print af.camber
+    print af.camberLocation
+    print af.thicknessLocation
 
 def run_test_aero_analysis():
     timer = Timer()
