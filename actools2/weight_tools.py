@@ -8,21 +8,25 @@ import numpy as np
 from time import ctime
 
 
+def get_total_cg(mass,CGx,CGy,CGz):
+    mTotal = 0.0
+    M  = np.zeros(3)
+    for m,x,y,z in zip(mass,CGx,CGy,CGz):
+        M = m*np.array([x,y,z])
+        mTotal += m
+    CG = M/mTotal
+    return mTotal, CG
 
-class AircraftMass2:
+class AircraftMass:
     def __init__(self,name='Aircraft',MAC=None,xMAC=None):
-        self.empty      = MassList('empty')
-        self.payload    = MassList('payload')
-        self.total      = MassList('Total')
+        self.empty      = MassList('empty',MAC,xMAC)
+        self.payload    = MassList('payload',MAC,xMAC)
+        self.fuel       = Fuel('fuel',MAC,xMAC)
+        self.total      = MassList('Total',MAC,xMAC)
         self.totalMass = 0.0
         self.totalCG   = np.zeros(3)
         self.totalMOI  = np.zeros(3)
-        self._MAC  = None
-        self._xMAC = None
-        if not MAC==None:
-            self._MAC = float(MAC)
-        if not xMAC==None:
-            self._xMAC = float(MAC)
+
     def update_total(self):
         """
         Updates total mass list.
@@ -33,6 +37,20 @@ class AircraftMass2:
         self.total.update_totals()
         self.totalMass = self.total.totalMass
         self.totalCG = self.total.CG
+    
+    def update_mac(self,MAC,xMAC):
+        MAC = float(MAC)
+        xMAC = float(xMAC)
+        self.total.MAC    = MAC
+        self.total.xMAC   = xMAC
+        self.empty.MAC    = MAC
+        self.empty.xMAC   = xMAC
+        self.payload.MAC  = MAC
+        self.payload.xMAC = xMAC
+        self.fuel.MAC     = MAC
+        self.fuel.xMAC    = xMAC
+
+
     def display(self):
         """ prints out tabulated information about all mass components
         """
@@ -132,7 +150,7 @@ class MassList:
     [ 2.30423077  0.13782051 -0.0974359 ]
     """
     n = 0
-    def __init__(self,name=''):
+    def __init__(self,name='',MAC=None,xMAC=None):
         MassList.n += 1
         if name=='':
             self.name = 'mass list %d'%MassList.n
@@ -142,6 +160,12 @@ class MassList:
         self.totalMass = 0.0
         self.CG = np.zeros(3)
         self.names = list()
+        self.MAC  = None
+        self.xMAC = None
+        if not self.MAC==None:
+            self.MAC = float(MAC)
+        if not self.xMAC==None:
+            self.xMAC = float(xMAC)
 
     def __getitem__(self,k):
         return self.items[k]
@@ -323,7 +347,7 @@ class MassList:
         for item in self.items:
             outList.append(item.name)
         return outList
-    def _report(self,MAC=None,xMAC=None):
+    def _report(self):
         """
         Displays mass components breakdown report: name, mass, CG
         """
@@ -341,15 +365,15 @@ class MassList:
         lineFormat = '{0:18} {1:8.2f} {2:10.4f} {3:10.4f} {4:10.4f}\n'
         report += lineFormat.format('TOTAL',self.totalMass,
                                 self.CG[0],self.CG[1],self.CG[2])
-        if MAC!=None and xMAC!=None:
-            cgMAC = (self.CG[0]-xMAC)/MAC*100.
+        if self.MAC!=None and self.xMAC!=None:
+            cgMAC = (self.CG[0]-self.xMAC)/self.MAC*100.
             report += '{0:29} {1:+8.2f} % of MAC\n'.format('',cgMAC)
         report += limiter1 +'\n'
         return report
-    def display(self,MAC=None,xMAC=None):
+    def display(self):
         """ prints out tabulated information about mass list
         """
-        print self._report(MAC,xMAC)
+        print self._report()
     def save_txt(self,filePath='',acname=''):
         """
         saves mass list in tabulated form to text file
@@ -418,7 +442,7 @@ class Fuel(MassList):
             self.update_item_mass(tankName,m*fuelFraction)
 
 
-class AircraftMass:
+class _AircraftMass:
     """
     Class describing set of aircraft mass components. It is used in aircraft.mass
     Contains several major mass lists: airframe, payload and fuel.

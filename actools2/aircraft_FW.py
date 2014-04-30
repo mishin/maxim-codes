@@ -22,7 +22,6 @@ def load(name):
     ac.load_xls(name)
     return ac
 
-
 class FlyingWing(object):
     def __init__(self):
         self.wing = Wing() #main geometry
@@ -43,13 +42,11 @@ class FlyingWing(object):
         self.type                          = db.read_row(idx+1,1)
         self.designGoals.fuelMass          = db.read_row(-1,1)
         self.designGoals.grossMass         = db.read_row(-1,1)
-        self.designGoals.cruiseSpeed       = db.read_row(-1,1)
+        self.designGoals.cruiseMach        = db.read_row(-1,1)
         self.designGoals.CruiseAltitude    = db.read_row(-1,1)
         self.designGoals.loadFactor        = db.read_row(-1,1)
         self.designGoals.loadFactorLanding = db.read_row(-1,1)
         self.designGoals.numberOfOccupants = db.read_row(-1,1)
-#        self.mass.fuel.add_item('Fuel tank Right', self.designGoals.fuelMass/2.0)
-#        self.mass.fuel.add_item('Fuel tank Left', self.designGoals.fuelMass/2.0)
         idx = db.find_header(keyword+'FUSELAGE')
         self.fusWidth = db.read_row(idx+1,1,False)
         idx = db.find_header(keyword+'MAIN WING')
@@ -60,9 +57,11 @@ class FlyingWing(object):
         self.wing.segDihedral        = db.read_row(-1,1,True)
         self.wing.secTwist           = db.read_row(-1,1,True)
         self.wing.incidence          = db.read_row(-1,1,False)
-        self.wing.csAileronLocation  = db.read_row(-1,1,True)
-        self.wing.csFlapLocation     = db.read_row(-1,1,True)
-        self.wing.csFlapType         = db.read_row(-1,1,False)
+        elevonLocation               = db.read_row(-1,1,True)
+        flapLocation                 = db.read_row(-1,1,True)
+        self.wing.set_elevon(elevonLocation)
+        self.wing.set_flap(flapLocation)
+        self.wing.flap.type         = db.read_row(-1,1,False)
         self.wing.material           = db.read_row(-1,1,False)
         self.wing.fuelTankCGratio    = db.read_row(-1,1,True)
         idx = db.find_header(keyword+'PROPULSION')
@@ -96,9 +95,6 @@ class FlyingWing(object):
         fuelCG2 = np.array([fuelCG[0],-fuelCG[1],fuelCG[2]])
         self.mass.fuel.add_item('Fuel tank right',self.designGoals.fuelMass/2.,fuelCG)
         self.mass.fuel.add_item('Fuel tank left',self.designGoals.fuelMass/2.,fuelCG2)
-        #TODO: tmp assumptions ---
-        self.propulsion.totalThrust = 13000.
-        self.propulsion.engineMass = 1000.
         self.designGoals._process_data()
         self._update_mass()
 
@@ -157,30 +153,26 @@ class LandingGear(object):
 
 class DesignGoals(object):
     def __init__(self):
-        self.fuelMass = 0.0
-        self.grossMass = 0.0
-        self.cruiseSpeed = 0.0
-        self.cruiseAltitude = 0.0
-        self.loadFactor = 0.0
+        self.fuelMass          = 0.0
+        self.grossMass         = 0.0
+        self.cruiseSpeed       = 0.0
+        self.cruiseAltitude    = 0.0
+        self.loadFactor        = 0.0
         self.loadFactorLanding = 0.0
         self.numberOfOccupants = 0
     def set_flight_conditions(self, refLength=1.0):
-        self.fc = FlightConditions(self.cruiseSpeed, self.cruiseAltitude, refLength)
-    def _process_data(self):
-        self.cruiseMach = self.cruiseSpeed/self.fc.atm.soundSpeed
-
-        
-
-
-
-
+        self.fc = FlightConditions(self.cruiseMach, self.cruiseAltitude, refLength)
+    def _process_data(self,MAC=1.0):
+        self.set_flight_conditions(MAC)
+        self.cruiseMach = self.fc.Mach
+        self.cruiseSpeed = self.fc.velocity
 
 
 class VLMparameters(object):
     def __init__(self):
         self.panelsChordwise = 0
-        self.panelsSpanwise = 0
-        self.distribution = None
+        self.panelsSpanwise  = 0
+        self.distribution    = None
 
 def run_test2():
     ac = FlyingWing()
@@ -188,6 +180,7 @@ def run_test2():
     #ac.mass.display()
     #ac.mass.airframe.display()
     #ac.display()
+    ac.mass.empty.display()
     print ac.wing.area
     print ac.wing.MAC
     print ac.wing.span
@@ -196,6 +189,10 @@ def run_test2():
     print ac.wing.equivThickness
     print ac.wing.equivSweepC2deg
     print ac.wing.equivSweepC4deg
+    print ac.wing.csArea
+    print ac.propulsion.CG
+    print ac.designGoals.cruiseMach
+    print ac.designGoals.cruiseSpeed
 
 def run_test1():
     import matplotlib.pyplot as plt
@@ -224,6 +221,7 @@ def run_test1():
     plt.show()
     ac.drag.display()
     ac.display()
+
 
 if __name__=="__main__":
     run_test2()

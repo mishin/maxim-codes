@@ -6,25 +6,22 @@ Created on Tue Apr 22 21:39:57 2014
 """
 import numpy as np
 import constants
-from weight_tools import AircraftMass, AircraftMass2
+from weight_tools import AircraftMass, MassList
 import convert
 
-
 def get_flying_wing_mass(aircraft):
+    out = AircraftMass(aircraft.name,aircraft.wing.MAC,aircraft.wing.MAClocation[0])
     mass = BlendedWingBodyMass(aircraft)
     mass.analyze()
-    mass.total.fuel = aircraft.mass.fuel
-    mass.total.payload = aircraft.mass.payload
-    mass.total.update_total()
-    mass.output.display()
-    return mass.total
+    out.empty = mass.emptyMass
+    out.payload = aircraft.mass.payload
+    return out
 
 
 class BlendedWingBodyMass(object):
     def __init__(self,aircraft):
         self.ac = aircraft
-        self.output = AircraftMass2(self.ac.name,self.ac.wing.MAC,self.ac.wing.MAClocation[0])
-        self.total = AircraftMass(self.ac.name,self.ac.wing.MAC,self.ac.wing.MAClocation[0])
+        self.emptyMass = MassList(self.ac.name)
         self.fuelProp  = constants.load('fuel_density')
         self.constMass = constants.load('mass')
         
@@ -46,7 +43,7 @@ class BlendedWingBodyMass(object):
         self._mass_hydraulics()
         self._mass_electrical()
         self._mass_avionics()
-        #self.total.display()
+        self._mass_engine()
     
     def _get_coefficients(self):
         self.Kdw  = 1.0 # 0.786 for delta wing, otherwise Kdw=1.0
@@ -67,20 +64,31 @@ class BlendedWingBodyMass(object):
         Vi = self.ac.designGoals.fuelMass/self.fuelProp['kerosene']
         self.Vi = convert.cubm_to_gal(Vi)
     
-    def _add_mass1(self,name,mass,cg=None):
+    def _add_mass1(self,name,mass,cg=None,lb=True):
         """ NOTE: CG is in meters"""
-        m = convert.lb_to_kg(mass)
-        self.total.airframe.add_item(name, m, cg)
-        self.output.empty.add_item(name,m,cg)
+        if lb:
+            mass = convert.lb_to_kg(mass)
+        self.emptyMass.add_item(name, mass, cg)
+    
+    def _mass_engine(self):
+        mKg = self.ac.propulsion.totalMass
+        CG = self.ac.propulsion.CG
+        self._add_mass1('engine',mKg,CG,False)
 
     def _mass_wing(self,wing):
         # by Raymer - fighter weights
         Sw = convert.sqm_to_sqft(wing.area)
         A  = wing.aspectRatio
-        tcRoot = wing.airfoils[0].thickness
-        lmbda = wing.sweepElasticRad #FIXME: check rad/deg
-        Scsw  = 0.1*Sw #FIXME: calculate control surface area
-        m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+lmbda)**0.5*np.cos(lmbda)**(-1.0)* Scsw**0.04
+        tcRoot = wing.airfoils[1].thickness #FIXME: assume thickness of 2nd section
+        # --- own corrections ---
+        eqArea = (wing.chords[0]+wing.chords[-1])*wing.span/2.0
+        corr = wing.area/eqArea
+        Kms = 1.1 # correction for multisegment wings
+        TR = wing.taperRatio
+        sweepC4 = wing.equivSweepC4rad
+        Scsw  = wing.csArea
+        m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+TR)**0.5*np.cos(sweepC4)**(-1.0)* Scsw**0.04
+        m = corr*Kms*m
         wingCGratio = self.constMass['wingCGratio']
         xCG = self.ac.wing.MAClocation[0] + self.ac.wing.MAC*wingCGratio
         zCG = self.ac.wing.secApex[0,2]
@@ -118,8 +126,14 @@ class BlendedWingBodyMass(object):
         self._add_mass1('engine section',m)
         
     def _mass_airintake(self):
-        #mAir = 13.29*Kvg * Ld**0.643* Kd**0.182 *Nen**1.498 * (Ls/Ld)**(-.373)*De
-        return 0.0, np.zeros(3)
+        Kvg = 1.0 # 1.62 for variable geometry
+        Kd = 3.43 # duct constant. see fig 15.2 Raymer
+        Ld = self.ac.wing.chords[0]-self.ac.propulsion.engine.length
+        Ld = convert.m_to_ft(Ld)
+        Ls = Ld
+        De = convert.m_to_ft(self.ac.propulsion.engine.diameter)
+        mAir = 13.29*Kvg * Ld**0.643* Kd**0.182 *self.Ne**1.498 * (Ls/Ld)**(-.373)*De
+        self._add_mass1('air intake',mAir)
         
     def _mass_engine_cooling(self):
         #FIXME: engine shroud length is assumed 0.15*total length

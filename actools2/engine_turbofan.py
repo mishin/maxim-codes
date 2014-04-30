@@ -6,7 +6,8 @@ Created on Wed Apr 02 14:07:43 2014
 """
 from db_tools import ReadDatabase
 from paths import MyPaths
-
+from weight_tools import get_total_cg
+from numpy import ones
 
 class Propulsion(object):
     def __init__(self):
@@ -18,7 +19,11 @@ class Propulsion(object):
         self.numberOfTanks = 1
     def _process_data(self):
         self.totalThrust = self.engine.thrustForced*self.numberOfEngines
-        self.totalMass = self.engine.mass*self.numberOfEngines
+        self._calc_cg()
+    def _calc_cg(self):
+        if hasattr(self.CGx,'__iter__'):
+            mass = ones(self.numberOfEngines)*self.engine.mass
+            self.totalMass, self.CG = get_total_cg(mass,self.CGx,self.CGy,self.CGz)
 
 class TurbofanEngine(object):
     def __init__(self):
@@ -44,7 +49,7 @@ class TurbofanEngine(object):
         self.scfForced      = db.read_row(-1,1)
         self.length         = db.read_row(-1,1)
         self.diameter       = db.read_row(-1,1)
-        self.mass           = db.read_row(-1,1)
+        self.mass           = db.read_row(-1,1,False)
     
     def display(self):
         print self.name

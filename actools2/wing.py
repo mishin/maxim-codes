@@ -13,26 +13,28 @@ path = MyPaths()
 
 
 class ControlSurface:
-    def __init__(self,location,wingChords,wingSpans,inverted=True,symmetric=True,nameIndex='a'):
-        self.nameIndex   = str(nameIndex)
+    def __init__(self,location,wingChords,wingSpans,inverted=False,symmetric=True):
         self.location    = np.asarray(location)
         self.inverted    = bool(inverted)
-        self.symmetric   = bool(symmetric)
+        self.symmetric    = bool(symmetric)
         self._wingChords = np.asarray(wingChords)
         self._wingSpans  = np.asarray(wingSpans)
+        self.type = 0 # option for flap only
         self._process_data()
 
     def _process_data(self):
+        """ Note area - cs area per side """
         self.chords = self._wingChords * (1-self.location)
         secStart = np.argmax(self.location<1)
         secEnd = len(self.location) - np.argmax(self.location[::-1]<1)-1
         area = 0.0
         for i in range(secStart,secEnd):
             area += (self.chords[i]+self.chords[i+1])*self._wingSpans[i]
+        self.areaPerSide = area
         if self.symmetric:
-            self.area = 2.0*area
+            self.area = 2.0*self.areaPerSide
         else:
-            self.area = area
+            self.area = self.areaPerSide
 
 
 class Wing(object):
@@ -49,14 +51,12 @@ class Wing(object):
         self.incidence         = 0.0
         self.secAngles         = None
         self.leadingEdge       = np.zeros(3)
-        self.csAileronLocation = None
-        self.csFlapLocation    = None
-        self.csFlapType        = None
         self.material          = None
         self.MAC               = 0.0
         self.MAClocation       = np.zeros(2) # x,y
         self.nSeg              = 0
         self.secThickness      = None
+        self.csArea            = 0
     
     def locate_on_wing(self,chordRatio,spanRatio):
         """ returns coordinate of the point that is located on the wing with 
@@ -75,6 +75,12 @@ class Wing(object):
         self.segDihedralRad = np.radians(self.segDihedral)
         self._load_airfoils()
         self._calc_geometry_data()
+    
+    def set_elevon(self,ailLocation):
+        self.elevon = ControlSurface(ailLocation,self.chords,self.segSpans,False)
+    
+    def set_flap(self,flapLocation):
+        self.flap = ControlSurface(flapLocation,self.chords,self.segSpans,False)
 
     def _load_airfoils(self,xlsPath=None):
         if xlsPath==None:
@@ -94,11 +100,10 @@ class Wing(object):
         self._calc_elastic_axis_sweep()
         self._calc_controls()
         self._calc_equiv_trapz_wing()
+        self.taperRatio = self.chords[-1]/self.chords[0]
     
     def _calc_controls(self):
-        self.aileronArea = self._get_cs_area(self.csAileronLocation)
-        self.flapArea = self._get_cs_area(self.csFlapLocation)
-        self.csArea = self.aileronArea + self.flapArea
+        self.csArea = self.elevon.area + self.flap.area
     
     def _get_cs_area(self,location):
         startSec = np.argmax(location<1)
