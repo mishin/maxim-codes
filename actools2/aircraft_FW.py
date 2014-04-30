@@ -181,18 +181,10 @@ def run_test2():
     #ac.mass.airframe.display()
     #ac.display()
     ac.mass.empty.display()
-    print ac.wing.area
-    print ac.wing.MAC
-    print ac.wing.span
-    print ac.wing.segSweepC2deg
-    print ac.wing.equivSweepLEdeg
+    print ac.wing.equivCamber
     print ac.wing.equivThickness
-    print ac.wing.equivSweepC2deg
-    print ac.wing.equivSweepC4deg
-    print ac.wing.csArea
-    print ac.propulsion.CG
-    print ac.designGoals.cruiseMach
-    print ac.designGoals.cruiseSpeed
+    print ac.wing.equivLEradius
+    print ac.wing.equivThicknessLoc
 
 def run_test1():
     import matplotlib.pyplot as plt

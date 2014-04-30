@@ -190,35 +190,53 @@ class Wing(object):
         self.wettedArea = wettedArea
     
     def _calc_equiv_trapz_wing(self):
+        #FIXME: calculate in same routine with segment sweep angles
         tc = 0.0
+        tcLoc = 0.0
+        camber = 0.0
         tanLambdaLE = 0.0
         cosLambdaC2 = 0.0
         cosLambdaC4 = 0.0
+        tanLambdaTE = 0.0
         for i,segArea in enumerate(self.segAreas):
-            tcAvg = 0.5 *(self.airfoils[i].thickness + self.airfoils[i].thickness)
+            tcAvg = 0.5 *(self.airfoils[i].thickness + self.airfoils[i+1].thickness)
+            camberAvg = 0.5 * (self.airfoils[i].camber + self.airfoils[i+1].camber)
+            tcLocAvg = 0.5 * (self.airfoils[i].thicknessLocation + self.airfoils[i+1].thicknessLocation)
             tc += tcAvg**2.*segArea
+            camber += camberAvg**2. *segArea
+            tcLoc += tcLocAvg**2. *segArea
             tanLambdaLE += np.tan(self.segSweepLErad[i])*segArea
             cosLambdaC2 += np.cos(self.segSweepC2rad[i])*segArea
             cosLambdaC4 += np.cos(self.segSweepC4rad[i])*segArea
+            tanLambdaTE += np.tan(self.segSweepTErad[i])*segArea
         self.equivThickness = (2.*tc/self.area)**0.5
-        self.equivSweepLErad   = np.arctan(2.*tanLambdaLE/self.area)
+        self.equivCamber = (2.*camber/self.area)**0.5
+        self.equivThicknessLoc = (2.*tcLoc/self.area)**0.5
+        self.equivSweepLErad = np.arctan(2.*tanLambdaLE/self.area)
         self.equivSweepLEdeg = np.degrees(self.equivSweepLErad)
         self.equivSweepC2rad = np.arccos(2.*cosLambdaC2/self.area)
         self.equivSweepC2deg = np.degrees(self.equivSweepC2rad)
         self.equivSweepC4rad = np.arccos(2.*cosLambdaC4/self.area)
         self.equivSweepC4deg = np.degrees(self.equivSweepC4rad)
+        self.equivSweepTErad = np.arctan(2.*tanLambdaTE/self.area)
+        self.equivSweepTEdeg = np.degrees(self.equivSweepTErad)
+        self.equivLEradius = 1.1019*self.equivThickness**2.0
     
     def _calc_segment_data(self):
         self.segSweepLErad = np.arctan(self.secOffset/self.segSpans)
         self.segSweepC2rad = np.zeros(self.nSeg)
         self.segSweepC4rad = np.zeros(self.nSeg)
+        self.segSweepTErad = np.zeros(self.nSeg)
         for i in range(self.nSeg):
             dApex = self.secApex[i+1,0] - self.secApex[i,0]
             dc = self.chords[i+1] - self.chords[i]
             dx1 = dApex + dc*0.5
             dx2 = dApex + dc*0.25
+            dx3 = dApex + dc
             self.segSweepC2rad[i] = np.arctan(dx1/self.segSpans[i])
             self.segSweepC4rad[i] = np.arctan(dx2/self.segSpans[i])
+            self.segSweepTErad[i] = np.arctan(dx3/self.segSpans[i])
         self.segSweepLEdeg = np.degrees(self.segSweepLErad)
         self.segSweepC2deg = np.degrees(self.segSweepC2rad)
         self.segSweepC4deg = np.degrees(self.segSweepC4rad)
+        self.segSweepTEdeg = np.degrees(self.segSweepTErad)
