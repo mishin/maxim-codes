@@ -6,6 +6,7 @@ Created on Fri Apr 11 12:02:17 2014
 """
 import numpy as np
 from math import asin, log, log10
+from scipy.optimize import root
 
 from flight_conditions import FlightConditions
 from paths import MyPaths
@@ -366,43 +367,91 @@ class PartsDrag:
         return itemsNew
 
 
-#class WaveDrag(object):
-#    def __init__(self,refArea):
-#        self.refArea = float(refArea)
-##        self.gamma   = 1.4
-##        self.Pr      = 0.72
-##        self.Te      = 390.0
-##        self.K       = 200.0
-##        self.TwTaw   = 1.0 # adiabatic wall condition
-##        self.wetArea      = list()
-##        self.refLength    = list()
-##        self.tc           = list()
-##        self.bodyType     = list()
-##        self.transitionPt = list()
-#    
-#    def analyze_wing(self,wing):
-#        # airfoil factors
-#        Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
-#        Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
-#        # thickness factor
-#        Kt = 1.0+4.(0.5-xt/c*(1+0.5*(r0/t)**0.5))**2 - 0.25*(r0/t)**0.5*(1-xt/c)**2.0
-#        Kc = 1.0+2.5*(h/t)**2. # airfoil camber factor
-#        betaBar = beta/(tc**(1/3))
-#        # main equation
-#        var1 = Kt*Kw*Kc*Kb
-#        var2 = betaBar*Kb*Kw
-#        Fbm = Fb**m
-#        var3 = 1.0/ARe/(1.+(1.+lmbda)*Fbeta*betaBar**(1.+Kw))
-#        var4 = (ARe**3)/(1.+ARe**3/3*betaBar**4.)
-#        var5 = 2./ARe**3/(1.+(2./3+lmbda)*Fb*betaBar**(1+Kw**3.8))
-#        var6 = 1./(1.+3.*ARe*betaBar**4)
-#        CDbar = 2.0*var1/(var2*Fbm + (var3+var4)) + 3.33*var1/(var2**3.8*Fbm+(var3+var4))
-#        CDwave = CDbar*tc**5./3
-#    def set_flight_conditions(self,velocity,altitude):
-#        """
-#        setting flight conditions to be analyzed. Flight conditions are calculated
-#         using FlightConditions module. Reynolds number is calculated using ref 
-#        length 1.0 that is stored in self.Re1
-#        """
-#        self.fc = FlightConditions(velocity,altitude)
-#        self.Re1 = self.fc.Re # Re for L=1
+def _calc_ARe(AR,Kp):
+    v = lambda x: 2.0/(1.0/x+x**3.0) + 3.33/(2.0/(x**3.0)+1.0)
+    f = lambda ARe: v(ARe) - Kp*v(AR)
+    sol = root(f,AR)
+    return sol.x[0]
+
+
+class WaveDrag(object):
+    def __init__(self,refArea):
+        self.refArea = float(refArea)
+    
+    def analyze_wing(self,wing):
+        if self.fc.Mach>1.0:
+            tc  = wing.equivThickness
+            xtc = wing.equivThicknessLoc
+            r0t = wing.equivLEradius/tc
+            ht  = wing.equivCamber/tc
+            TR = wing.taperRatio
+            cosLE = np.cos(wing.equivSweepLErad)
+            cosTE = np.cos(wing.equivSweepTErad)
+            tanLE = np.tan(wing.equivSweepLErad)
+            tanTE = np.tan(wing.equivSweepTErad)
+            # airfoil factors
+            Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
+            Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
+            # thickness factor
+            r0t2 = r0t**0.5
+            Kt = 1.0+4.0*(0.5-xtc*(1.0+0.5*r0t2))**2.0 - 0.25*r0t2*(1.0-xtc)**2.0
+            Kc = 1.0+2.5*(ht)**2. # airfoil camber factor
+            Kp = (cosLE + 0.5/((1.0+TR)**2.0)*(tanLE**2.0 - tanTE**2.0))
+            Kp = Kp/(1.0 + 1.0/((1.0+TR*TR)**2.0)*(tanLE + tanTE)**2.0)
+            Fb = 0.3+0.7*Kp**(1.0+2.0*TR**(1./3.))
+            
+            betaLim = abs(tanLE)
+            beta = (self.fc.Mach**2.0-1.0)**0.5
+            betaBar = beta/(tc**(1.0/3.0))
+            if beta>betaLim:
+                z = cosLE + cosTE
+                m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)*(betaLim/beta)**z
+            else:
+                m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)
+            ARe = _calc_ARe(wing.aspectRatio,Kp)
+            # main equation
+            Fbm = Fb**m
+            var1 = Kt*Kw*Kc*Kb
+            var2 = (1.0/ARe)/(1.0+(1.0+TR)*Fb*betaBar**(1.0+Kw))
+            var3 = ARe**3.0/(1.0+1.0/3.0*ARe**3.0*betaBar**4.0)
+            CDbar = 2.0*var1/(betaBar*Kb*Kw*Fbm + (var2+var3))
+            var4 = betaBar*Kb*Kw**3.8*Fbm
+            var5 = (2.0/ARe**3.0)/(1.0+(2.0/3.0+TR)*Fb*betaBar**(1.0+Kw**3.8))
+            var6 = 1.0/(1.0+3.0*ARe*betaBar**4.0)
+            CDbar += 3.33*var1/(var4+var5+var6)
+            CDwave = CDbar*tc**(5./3)
+            return CDwave
+        else:
+            return 0.0
+    
+    def set_flight_conditions(self,velocity,altitude):
+        """
+        setting flight conditions to be analyzed. Flight conditions are calculated
+         using FlightConditions module. Reynolds number is calculated using ref 
+        length 1.0 that is stored in self.Re1
+        """
+        self.fc = FlightConditions(velocity,altitude)
+        self.Re1 = self.fc.Re # Re for L=1
+
+if __name__=="__main__":
+    import aircraft_FW
+    import matplotlib.pyplot as plt
+    ac = aircraft_FW.load('sample_B45c')
+    wd = WaveDrag(ac.wing.area)
+    fd = Friction(ac.wing.area)
+    M = np.arange(0.1,2.1,0.1)
+    cd = np.zeros(len(M))
+    for i,mach in enumerate(M):
+        wd.set_flight_conditions(mach,10000)
+        fd.set_flight_conditions(mach,10000)
+        item = fd.analyze_wing(ac.wing,'main wing')
+        cdf = item.CDtotal
+        cdw = wd.analyze_wing(ac.wing)
+        cd[i] = cdw + cdf
+        print '%.4f\t%.6f\t%.6f'%(mach,cdw,cdf)
+    plt.figure(1)
+    plt.grid(True)
+    plt.plot(M,cd,'bs-')
+    plt.hold(True)
+#    plt.axis([1,2,0,0.08])
+    plt.show()

@@ -185,6 +185,8 @@ def run_test2():
     print ac.wing.equivThickness
     print ac.wing.equivLEradius
     print ac.wing.equivThicknessLoc
+    for af in ac.wing.airfoils:
+        print af.thickness
 
 def run_test1():
     import matplotlib.pyplot as plt
