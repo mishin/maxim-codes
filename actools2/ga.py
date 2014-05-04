@@ -38,7 +38,7 @@ class GeneticAlgorithm(object):
         self.iterLag       = int(iterLag)
         self._lagRunSelection = 20
         if initialPopulation==None:
-            self.initialPopulation = random.random([self.nPop,self.nVar])
+            self.initialPopulation = np.random.random([self.nPop,self.nVar])
         else:
             self.initialPopulation = initialPopulation
 
@@ -52,7 +52,7 @@ class GeneticAlgorithm(object):
         
         while nIter<self.iterMax and lagIter<self.iterLag:
             fNonElite, gNonElite, costNonElite = self._evaluate_cost(xNonElite)
-            xTotal    = vstack([xElite,xNonElite])
+            xTotal    = np.vstack([xElite,xNonElite])
             fTotal    = vstack([fElite,fNonElite])
             gTotal    = vstack([gElite,gNonElite])
             costTotal = vstack([costElite,costNonElite])
@@ -119,6 +119,7 @@ class GeneticAlgorithm(object):
 
     def _new_generation(self, fitness, xTotal):
         idx = fitness.argsort()
+        xTotal = xTotal[idx]
         idxElite = idx[:self.nElite]
         xElite = xTotal[idxElite]
         xMutate    = zeros([self.nMutation,self.nVar])
@@ -126,7 +127,10 @@ class GeneticAlgorithm(object):
         idxPrevious = None
         cumFitness = np.cumsum(fitness)
         for i in range(self.nMutation):
-            idx = self._select(cumFitness,idxPrevious)
+            idxm = self._select(cumFitness,idxPrevious)
+            xMutate[i] = self._mutate(xTotal[idxm])
+        for i in range(self.n):
+            pass
         return xElite, idxElite
 
 
