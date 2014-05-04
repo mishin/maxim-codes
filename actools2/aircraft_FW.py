@@ -22,6 +22,7 @@ def load(name):
     ac.load_xls(name)
     return ac
 
+
 class FlyingWing(object):
     def __init__(self):
         self.wing = Wing() #main geometry
@@ -177,10 +178,12 @@ class VLMparameters(object):
 def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
+    print ac.wing.wettedArea
     #ac.mass.display()
     #ac.mass.airframe.display()
     #ac.display()
     ac.mass.empty.display()
+    #ac.drag.display()
     print ac.wing.equivCamber
     print ac.wing.equivThickness
     print ac.wing.equivLEradius

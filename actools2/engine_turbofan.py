@@ -55,6 +55,9 @@ class TurbofanEngine(object):
         print self.name
         print self.thrustForced
         print self.mass
+    
+    def get_sfc(self,Mach,altitude,thrustReq):
+        pass
 
 
 def run_test1():
