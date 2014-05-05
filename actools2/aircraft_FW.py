@@ -47,6 +47,7 @@ class FlyingWing(object):
         self.designGoals.CruiseAltitude    = db.read_row(-1,1)
         self.designGoals.loadFactor        = db.read_row(-1,1)
         self.designGoals.loadFactorLanding = db.read_row(-1,1)
+        self.designGoals.staticThrust      = db.read_row(-1,1)
         self.designGoals.numberOfOccupants = db.read_row(-1,1)
         idx = db.find_header(keyword+'FUSELAGE')
         self.fusWidth = db.read_row(idx+1,1,False)
@@ -68,10 +69,13 @@ class FlyingWing(object):
         idx = db.find_header(keyword+'PROPULSION')
         engineName                      = db.read_row(idx+1,1,False)
         self.propulsion.engine.load(engineName)
-        self.propulsion.numberOfEngines = db.read_row(-1,1,True)
+        self.propulsion.numberOfEngines = int(db.read_row(-1,1,False))
         self.propulsion.CGx             = db.read_row(-1,1,True)
         self.propulsion.CGy             = db.read_row(-1,1,True)
         self.propulsion.CGz             = db.read_row(-1,1,True)
+        self.propulsion.engine.deignAltitude = self.designGoals.cruiseAltitude
+        self.propulsion.engine.designMach    = self.designGoals.cruiseMach
+        self.propulsion.engine.designThrust  = self.designGoals.staticThrust / self.propulsion.numberOfEngines
         idx = db.find_header(keyword+'LANDING GEAR')
         self.landingGear.groundContactX = db.read_row(idx+1,1,True)
         self.landingGear.groundContactY = db.read_row(-1,1,True)
@@ -160,6 +164,7 @@ class DesignGoals(object):
         self.cruiseAltitude    = 0.0
         self.loadFactor        = 0.0
         self.loadFactorLanding = 0.0
+        self.staticThrust      = 0.0
         self.numberOfOccupants = 0
     def set_flight_conditions(self, refLength=1.0):
         self.fc = FlightConditions(self.cruiseMach, self.cruiseAltitude, refLength)
@@ -179,17 +184,7 @@ def run_test2():
     ac = FlyingWing()
     ac.load_xls('sample_B45c')
     print ac.wing.wettedArea
-    #ac.mass.display()
-    #ac.mass.airframe.display()
-    #ac.display()
-    ac.mass.empty.display()
-    #ac.drag.display()
-    print ac.wing.equivCamber
-    print ac.wing.equivThickness
-    print ac.wing.equivLEradius
-    print ac.wing.equivThicknessLoc
-    for af in ac.wing.airfoils:
-        print af.thickness
+    print ac.propulsion.get_sfc(0.8,5000,1500)
 
 def run_test1():
     import matplotlib.pyplot as plt

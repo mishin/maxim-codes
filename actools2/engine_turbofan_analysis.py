@@ -7,7 +7,7 @@ Created on Fri May 02 15:37:24 2014
 from numpy import exp,pi,sqrt, zeros, arange
 
 #function [d02, thrustD, sfcD, sfcH]= EngineModeling(threq, Mcrz, AltH, thr, hh, Mf)
-def EngineModeling(threq, Mcrz, AltH, thr, hh, Mf):
+def engine_modeling(threq, Mcrz, AltH, thr, hh, Mf):
 
     """
     threq : SLS Design thrust 
@@ -562,10 +562,10 @@ def airproperty(altitude):
 
 def run_test1():
     import matplotlib.pyplot as plt
-    Treq = 5.0e3
+    Treq = 7.9e3
     McrD = 0.9
-    altD = 1.0e4
-    TreqF = 3.5e3
+    altD = 0.0
+    TreqF = 5.0e3
     Mach = arange(0.1,1.1,0.1)
     alt = arange(0.0,15e3,2e3)
     T = zeros([len(alt),len(Mach)])
@@ -577,8 +577,8 @@ def run_test1():
     legend = list()
     for i, h in enumerate(alt):
         for j, M in enumerate(Mach):
-            d, Td, sfcD, sfcF = EngineModeling(Treq,McrD,altD,TreqF,h,M)
-            T[i,j] = sfcF
+            d, Td, sfcD, sfcF = engine_modeling(Treq,McrD,altD,TreqF,h,M)
+            T[i,j] = Td
         legend.append('h=%.0fm'%h)
         plt.plot(Mach,T[i])
     plt.legend(legend,'upper left')

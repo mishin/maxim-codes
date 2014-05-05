@@ -8,6 +8,7 @@ from db_tools import ReadDatabase
 from paths import MyPaths
 from weight_tools import get_total_cg
 from numpy import ones
+from engine_turbofan_analysis import engine_modeling
 
 class Propulsion(object):
     def __init__(self):
@@ -24,7 +25,13 @@ class Propulsion(object):
         if hasattr(self.CGx,'__iter__'):
             mass = ones(self.numberOfEngines)*self.engine.mass
             self.totalMass, self.CG = get_total_cg(mass,self.CGx,self.CGy,self.CGz)
-
+    def get_sfc(self,Mach,altitude,thrustReq):
+        Mach = float(Mach)
+        altitude = float(altitude)
+        thrustReq = float(thrustReq) / self.numberOfEngines # thrust per engine
+        sfcPerEngine = self.engine.get_sfc(Mach,altitude,thrustReq)
+        return sfcPerEngine*self.numberOfEngines
+        
 class TurbofanEngine(object):
     def __init__(self):
         self.name         = None
@@ -35,6 +42,10 @@ class TurbofanEngine(object):
         self.mass         = 0.0
         self.length       = 0.0
         self.diameter     = 0.0
+        # for thrust analysis
+        self.designMach    = 0.0
+        self.deignAltitude = 0.0
+        self.designThrust  = 0.0
     
     def load(self,name, xlsPath=None):
         """ loads turbofan engine from database file"""
@@ -57,8 +68,11 @@ class TurbofanEngine(object):
         print self.mass
     
     def get_sfc(self,Mach,altitude,thrustReq):
-        pass
-
+        Tstatic = self.designThrust
+        Mcr = self.designMach
+        altD = self.deignAltitude
+        d, Td, sfcD, sfcF = engine_modeling(Tstatic,Mcr,altD,thrustReq,altitude,Mach)
+        return sfcF
 
 def run_test1():
     engine = TurbofanEngine()
