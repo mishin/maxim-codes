@@ -122,12 +122,12 @@ def mutation(x, sigma):
             outOfBounds=False
     return xmut
 
-def new_generation(x,fitness,nMut,nElite,sigma=0.2):
+def new_generation(x,fitness,nMut,nElite,nPop,sigma=0.2):
     idx = np.argsort(fitness)
     idx = np.flipud(idx)
     idxElite = idx[:nElite]
     xElite = x[idxElite]
-    nPop = x.shape[0]
+    #nPop = x.shape[0]
     nVar = x.shape[1]
     nNonElite = nPop - nElite
     
@@ -196,7 +196,7 @@ def ga(costFcn,lb,ub,populationSize,eliteRatio=0.1,mutationRate=0.2,
         
         fitness = get_fitness(costTotal)
         sigma = get_sigma(nIter,iterMax)
-        xElite, idxElite, xNonElite = new_generation(xTotal,fitness,nMut,nElite,sigma)
+        xElite, idxElite, xNonElite = new_generation(xTotal,fitness,nMut,nElite,nPop,sigma)
         
         costElite = costTotal[idxElite]
         fElite    = fTotal[idxElite]
@@ -223,7 +223,8 @@ def rosenbrock(x):
     return f,[0]
     
 def run_test1():
-    print ga(rosenbrock, [-2,-2],[2,2], 500, eliteRatio=0.05, mutationRate=0.3)
+    xInit = np.random.random([100,2])
+    print ga(rosenbrock, [-2,-2],[2,2], 20, eliteRatio=0.05, mutationRate=0.3,initialPopulation=xInit)
 
 if __name__=="__main__":
     run_test1()
