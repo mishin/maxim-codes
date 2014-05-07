@@ -578,7 +578,7 @@ def run_test1():
     for i, h in enumerate(alt):
         for j, M in enumerate(Mach):
             d, Td, sfcD, sfcF = engine_modeling(Treq,McrD,altD,TreqF,h,M)
-            T[i,j] = Td
+            T[i,j] = sfcF
         legend.append('h=%.0fm'%h)
         plt.plot(Mach,T[i])
     plt.legend(legend,'upper left')
