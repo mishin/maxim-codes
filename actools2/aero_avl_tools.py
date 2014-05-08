@@ -7,6 +7,31 @@ Created on Fri Apr 25 12:49:55 2014
 def print_header(header,underline='-'):
     print str(header) + '\n'+underline*len(header)
 
+from paths import MyPaths
+import shlex
+from subprocess import Popen, PIPE
+import os
+
+pth = MyPaths()
+
+
+class AVL:
+    def __init__(self):
+        args = shlex.split(pth.avl,False,os.name=='posix')
+        self.ps=Popen(args,stdin=PIPE,stderr=PIPE,stdout=PIPE)
+
+    def cmd(self,command,echo=False):
+        command = str(command)
+        self.ps.stdin.write(command+'\n')
+        if echo: print command
+    def terminate(self):
+        #self.cmd('\n\n\nQUIT')
+        self.ps.stderr.close()
+        self.ps.kill()
+
+    def get_output(self):
+        return str(self.ps.stdout.read()).replace('\r','')
+
 
 class Results(object):
     def __init__(self):
@@ -35,6 +60,8 @@ class AVLresults:
         self.e=0.0
         self.a=0.0
         self.xNP=0.0
+        self.SM=0.0
+        self.CD0=0.0
         self.coef = Coefficients()
         self.derivs = Derivatives(self.csIndex)
         self.hinges = HingeMoments(self.csIndex)

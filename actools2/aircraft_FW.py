@@ -140,14 +140,20 @@ class FlyingWing(object):
         return self.drag.get_total_drag()
 
     def get_cg(self):
-        x = self.wing.MAClocation[0] + 0.4*self.wing.MAC
+        x = self.wing.MAClocation[0] + 0.3*self.wing.MAC
         return np.array([x,0,0]) #FIXME: for debug only
-    def get_mass_total(self):
-        pass
+    def get_mass(self):
+        """ Returns total mass """
+        return 5000.0 #FIXME: for debug only
+
     def get_mass_empty(self):
-        pass
+        return 3000.0 #FIXME: for debug only
+
     def get_drag(self):
         return 0.03 #FIXME: for debug only
+    
+    def get_inertia(self):
+        return np.zeros(3) #FIXME: for debug only
 
 
 class LandingGear(object):

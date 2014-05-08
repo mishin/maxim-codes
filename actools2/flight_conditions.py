@@ -7,7 +7,7 @@ Created on Fri Jan 10 15:08:33 2014
 from math import exp
 import constants as const
 
-class FlightConditions:
+class FlightConditions(object):
     """
     stores flight conditions of an aircraft. Atmosphere properties are calculated
     using ISAtmosphere and stored in self.atmosphere
@@ -29,6 +29,7 @@ class FlightConditions:
     """
     def __init__(self,speed, altitude, dT=0.0, refLength=1.0):
         #self.atm = ISAtmosphere(altitude,dT)
+        self.g = const.GRAVITY_ACCEL
         self.atm = ISAtmosphere_mason(altitude,dT)
         self.refLength = float(refLength)
         if speed<=3.0:
@@ -152,6 +153,7 @@ class ISAtmosphere_mason(object):
         else:
             raise ValueError('Altitude is too high')
         
+        self.altitude = h
         self.soundSpeed1 = (GAMMA*R*T)**0.5
         self.density = PP/(T/288.15) *RHO0
         TS = T/288.15
