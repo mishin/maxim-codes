@@ -154,6 +154,11 @@ class FlyingWing(object):
     
     def get_inertia(self):
         return np.zeros(3) #FIXME: for debug only
+    
+    def get_sfc(self,velocity,altitude,thrustRequired):
+        fc = FlightConditions(velocity,altitude,0.0,self.wing.MAC)
+        sfc = self.propulsion.get_sfc(fc.Mach,altitude,thrustRequired)
+        return sfc
 
 
 class LandingGear(object):
@@ -194,6 +199,7 @@ def run_test2():
     ac.load_xls('sample_B45c')
     print ac.wing.wettedArea
     print ac.propulsion.get_sfc(0.8,5000,1500)
+    print ac.get_sfc(300,10000,3000)
 
 def run_test1():
     import matplotlib.pyplot as plt
