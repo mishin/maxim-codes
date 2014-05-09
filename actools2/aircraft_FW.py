@@ -196,10 +196,10 @@ class VLMparameters(object):
 
 def run_test2():
     ac = FlyingWing()
-    ac.load_xls('sample_B45c')
-    print ac.wing.wettedArea
-    print ac.propulsion.get_sfc(0.8,5000,1500)
-    print ac.get_sfc(300,10000,3000)
+    ac.load_xls('X47A')
+    print ac.wing.area
+    ac.mass.empty.display()
+    ac.display()
 
 def run_test1():
     import matplotlib.pyplot as plt

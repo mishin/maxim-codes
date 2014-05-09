@@ -55,7 +55,7 @@ class AircraftMass:
         """ prints out tabulated information about all mass components
         """
         self.update_total()
-        self.total.display(self._MAC,self._xMAC)
+        self.total.display()
 
     def set_fuel_mass(self,fuelMass):
         self.payload.update_item('fuel',fuelMass)
