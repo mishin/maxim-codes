@@ -19,7 +19,7 @@ class Propulsion(object):
         self.CGz = None
         self.numberOfTanks = 1
     def _process_data(self):
-        self.totalThrust = self.engine.thrustForced*self.numberOfEngines
+        self.totalThrust = self.engine.thrustMC*self.numberOfEngines
         self._calc_cg()
     def _calc_cg(self):
         if hasattr(self.CGx,'__iter__'):
@@ -36,9 +36,9 @@ class TurbofanEngine(object):
     def __init__(self):
         self.name         = None
         self.thrustMC     = 0.0
-        self.thrustForced = 0.0
+        #self.thrustForced = 0.0
         self.sfcMC        = 0.0
-        self.scfForced    = 0.0
+        #self.scfForced    = 0.0
         self.mass         = 0.0
         self.length       = 0.0
         self.diameter     = 0.0
@@ -55,16 +55,16 @@ class TurbofanEngine(object):
         self.name = str(name)
         db = ReadDatabase(xlsPath,self.name)
         self.thrustMC       = db.read_row(-1,1)
-        self.thrustForced   = db.read_row(-1,1)
+        #self.thrustForced   = db.read_row(-1,1)
         self.sfcMC          = db.read_row(-1,1)
-        self.scfForced      = db.read_row(-1,1)
+        #self.scfForced      = db.read_row(-1,1)
         self.length         = db.read_row(-1,1)
         self.diameter       = db.read_row(-1,1)
         self.mass           = db.read_row(-1,1,False)
     
     def display(self):
         print self.name
-        print self.thrustForced
+        print self.thrustMC
         print self.mass
     
     def get_sfc(self,Mach,altitude,thrustReq):

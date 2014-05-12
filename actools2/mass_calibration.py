@@ -23,12 +23,15 @@ def run():
     m4 = ac4.mass.empty.get_total_mass()
     
     ac1.mass.empty.display()
+    ac2.mass.empty.display()
+    ac3.mass.empty.display()
+    ac4.mass.empty.display()
 
     mass2 = np.array([m1,m2,m3,m4])
     loc = np.array([1,2,3,4])
     width = 0.4
 
-    print 'exact\tcalculated\t\terror,\%'
+    print 'exact\tcalculated\t\terror,%'
     for me,mc in zip(mass1,mass2):
         print '%.2f\t%.2f\t\t%+.4f'%(me,mc,100.*(mc-me)/me)
     
