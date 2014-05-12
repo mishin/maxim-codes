@@ -297,7 +297,8 @@ def run_test1():
     from misc_tools import Timer
     import aircraft_FW as aircraft
     timer = Timer()
-    ac = aircraft.load('sample_B45c')
+    ac = aircraft.load('nEUROn')
+    ac.display()
     timer.lap('load')
     #ac.display()
     

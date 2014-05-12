@@ -24,7 +24,7 @@ class AircraftDisplay(object):
         self.points = list()
         self.text = list()
     
-    def add_wing(self,wing,nSurfPts=25,opacity=0.7,color=(0.49,1,0.83)):
+    def add_wing(self,wing,nSurfPts=25,opacity=1.0,color=(0.49,1,0.83)):
         nSeg = wing.nSeg
         nSec2 = 2*nSeg+1
         xMesh = np.zeros([nSec2,nSurfPts])
