@@ -49,8 +49,8 @@ class BlendedWingBodyMass(object):
         self.Kdw  = 1.0 # 0.786 for delta wing, otherwise Kdw=1.0
         self.Kvs  = 1.0 # 1.19 for variable sweep, otherwise 1.0
         self.Kdwf = 1.0 # 0.774 for delta wing, otherwise 1.0
-        self.Kcb  = 1.0
-        self.Ktpg = 1.0
+        self.Kcb  = 1.0 # 2.25 for cross beam landing gear, otherwise 1.0
+        self.Ktpg = 1.0 # 0.826 for tripod landing gear, otherwise 1.0
 
     def _get_data(self):
         self._get_coefficients()

@@ -83,6 +83,7 @@ class FlyingWing(object):
         self.landingGear.tireWidth      = db.read_row(-1,1,True)
         self.landingGear.tireDiameter   = db.read_row(-1,1,True)
         self.landingGear.strutLength    = db.read_row(-1,1,True)
+        #self.landingGear._set_right_mlg()
         idx = db.find_header(keyword+'VLM PARAM')
         self.vlm.panelsChordwise = db.read_row(idx+1,1,False)
         self.vlm.panelsSpanwise  = db.read_row(-1,1,False)
@@ -163,12 +164,27 @@ class FlyingWing(object):
 
 class LandingGear(object):
     def __init__(self):
-        self.tireWidth = 0.0
-        self.tireDiameter = 0.0
+        self.tireWidth = None
+        self.tireDiameter = None
         self.groundContactX = None
         self.groundContactY = None
         self.groundContactZ = None
         self.strutLength    = None
+
+#    def _set_right_mlg(self):
+#        assert len(self.groundContactX)>2
+#        self.groundContactX = np.hstack([self.groundContactX,self.groundContactX[1]])
+#        self.groundContactY = np.hstack([self.groundContactY,-self.groundContactY[1]])
+#        self.groundContactZ = np.hstack([self.groundContactZ,self.groundContactZ[1]])
+#        self.strutLength = np.hstack([self.strutLength,self.strutLength[1]])
+#        self.tireWidth = np.hstack([self.tireWidth,self.tireWidth[1]])
+#        self.tireDiameter = np.hstack([self.tireDiameter,self.tireDiameter[1]])
+#    
+    def get_cg(self):
+        pass
+    
+    def get_cg_retracted(self):
+        pass
 
 class DesignGoals(object):
     def __init__(self):
