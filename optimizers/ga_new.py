@@ -98,13 +98,17 @@ def selection(fitness,idxPrevious=None):
     return idxSelected
 
 def cross_over(p1,p2):
-    n = p1.shape[0]
+    if p1.ndim==2:
+        n = p1.shape[0]
+    else:
+        n = len(p1)
     c1 = np.zeros(n)
     c2 = np.zeros(n)
     for i in range(n):
-        k = np.random.rand()
-        c1[i] = k*p1[i] + (1.0-k)*p2[i]
-        c2[i] = (1.0-k)*p1[i] + k*p2[i]
+        k1 = np.random.rand()
+        k2 = np.random.rand()
+        c1[i] = k1*p1[i] + (1.0-k1)*p2[i]
+        c2[i] = (1.0-k2)*p1[i] + k2*p2[i]
     return c1, c2
 
 #def cross_over(p1,p2):

@@ -16,6 +16,12 @@ def func(x):
     x = 10*np.asarray(x)-5.0
     return (1.0-x[0])**2.0 + 100.*(x[1]-x[0]**2.0)**2.0
 
+def calc_error(func1,func2,x):
+    errSq = 0.0
+    for xval in x:
+        errSq += (func1(xval)-func2(xval))**2.0
+    return errSq**0.5/len(x)
+
 class Function:
     def __init__(self,func):
         self.func = func
@@ -59,7 +65,11 @@ def test_plot():
     plt.show()
 
 def run_test1():
-    xdoe = np.array([[0.,0],[0,0.5],[0,1],[0.5,0],[0.5,0.5],[0.5,1],[1.,0],[1.,0.5],[1,1]])
+    #xdoe = np.array([[0.,0],[0,0.5],[0,1],[0.5,0],[0.5,0.5],[0.5,1],[1.,0],[1.,0.5],[1,1]])
+    xdoe = read_tabulated_data_without_header('LHC9_2.txt')
+    ffd = read_tabulated_data_without_header('ffd5_2.txt')
+    ffd = (ffd-1)/4.0
+    xdoe = (xdoe+1.0)/2.
     fdoe = [func(xx) for xx in xdoe]
     newfunc = Function(func)
     err1,errSq1 = newfunc(xdoe)
@@ -82,9 +92,12 @@ def run_test1():
     #xrand = np.random.random([18,2])
     frand = [func(xx) for xx in xrand]
     print newfunc(xrand)[1]
-    
     model1 = RbfMod(xnew1,fnew1)
     model2 = RbfMod(xrand,frand)
+    
+    print calc_error(func,model1,ffd)
+    print calc_error(func,model2,ffd)
+    
     lb = np.array([0,0.])
     ub = np.array([1.,1])
     n = 40
