@@ -129,7 +129,9 @@ def run_o_mesh():
     lowFidelity = solver.run_for_single_aoa(2.0,iterMax=10000,turbulenceModel='ke-realizable')
 
 def run_lowRe():
-    af = airfoil.naca4(12,2,30)
+    #af = airfoil.naca4(12,2,30)
+    af = airfoil.read_txt('E:\\codes\\rae2822.txt')
+    af.display()
     #af.read_txt(r'E:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
 #    result = af.get_X_polar(0.02,0.355e6,[0,16,2.0],nIter=100)
     fc = FlightConditions(22.,0,0,0.24)

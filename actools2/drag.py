@@ -436,7 +436,7 @@ class WaveDrag(object):
 if __name__=="__main__":
     import aircraft_FW
     import matplotlib.pyplot as plt
-    ac = aircraft_FW.load('sample_B45c')
+    ac = aircraft_FW.load('X45C')
     wd = WaveDrag(ac.wing.area)
     fd = Friction(ac.wing.area)
     M = np.arange(0.1,2.1,0.01)

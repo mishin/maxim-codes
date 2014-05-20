@@ -37,6 +37,15 @@ class ControlSurface:
             self.area = self.areaPerSide
 
 
+class EquivalentWing(object):
+    def __init__(self,wing):
+        pass
+    
+    def _get_linear_equivalent(self):
+        pass
+    def _get_angular_equivalent(self):
+        pass
+
 class Wing(object):
     def __init__(self):
         self.locationLE        = np.zeros(3)
