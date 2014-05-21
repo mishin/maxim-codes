@@ -141,6 +141,7 @@ class Airfoil:
         self.thickness        = None
         self.camber           = None
         self.camberLocation   = None
+        self.leRadius         = None
         self.zTrailingEdge    = None
         self._curveUp         = None
         self._curveLo         = None
@@ -385,6 +386,15 @@ class Airfoil:
         for i in range(n):
             L[i] = ((self.pts[i,0]-self.pts[i+1,0])**2.0 + (self.pts[i,1]-self.pts[i+1,1])**2.0)**0.5
         self.length = L.sum()
+#        self._calc_leadingedge_radius()
+#        
+#    def _calc_leadingedge_radius(self):
+#        dt = 1e-5
+#        pt1 = self._curveLo(dt)
+#        pt2 = self._curveLo(0.0)
+#        pt3 = self._curveUp(dt)
+#        dx1,dx2 = pt3[0]-pt2[0], pt2[0]-pt1[0]
+#        print dx1, dx2
     
     def _sort_pts(self):
         xmin = 0.05
@@ -653,6 +663,7 @@ def run_test_geometry():
     print af.camber
     print af.camberLocation
     print af.thicknessLocation
+    print af.leRadius
 
 def run_test_aero_analysis():
     timer = Timer()

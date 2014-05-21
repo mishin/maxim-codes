@@ -34,6 +34,7 @@ class AircraftMass:
         self.total = MassList('Total')
         self.total.add_mass_list(self.empty)
         self.total.add_mass_list(self.payload)
+        self.total.add_mass_list(self.fuel)
         self.total.update_totals()
         self.totalMass = self.total.totalMass
         self.totalCG = self.total.CG

@@ -15,6 +15,8 @@ def get_flying_wing_mass(aircraft):
     mass.analyze()
     out.empty = mass.emptyMass
     out.payload = aircraft.mass.payload
+    out.fuel = aircraft.mass.fuel
+    out.update_total()
     return out
 
 

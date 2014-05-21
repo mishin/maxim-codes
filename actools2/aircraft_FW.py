@@ -151,16 +151,20 @@ class FlyingWing(object):
         self.aeroResults = aero.run_trim(fc)
         return self.aeroResults
 
-    def get_cg(self):
-        x = self.wing.MAClocation[0] + 0.3*self.wing.MAC
-        return np.array([x,0,0]) #FIXME: for debug only
+    def get_cg(self,update=True):
+        if update:
+            self._update_mass()
+        return self.mass.total.CG
 
-    def get_mass(self):
-        """ Returns total mass """
-        return 5000.0 #FIXME: for debug only
+    def get_mass(self,update=True):
+        if update:
+            self._update_mass()
+        return self.mass.total.totalMass
 
-    def get_mass_empty(self):
-        return 3000.0 #FIXME: for debug only
+    def get_mass_empty(self,update=True):
+        if update:
+            self._update_mass()
+        return self.mass.empty.totalMass
 
     def get_drag(self):
         return 0.03 #FIXME: for debug only
@@ -226,7 +230,7 @@ def run_test2():
     ac = FlyingWing()
     ac.load_xls('X47A')
     print ac.wing.area
-    ac.mass.empty.display()
+    ac.mass.display()
     ac.get_aero_trim(150,3000)
     ac.aeroResults.display()
 
