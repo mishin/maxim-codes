@@ -14,6 +14,7 @@ from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
 from drag import get_friction_drag_FW
 from wing import Wing
+from aero_avl_fw import Aerodynamics, FlightConditionsAVL
 
 path = MyPaths()
 
@@ -32,6 +33,7 @@ class FlyingWing(object):
         self.mass = AircraftMass() #total mass list
         self.drag = None #total drag list
         self.propulsion = Propulsion() #table lookup database
+        self.aeroResults = None
         
     def load_xls(self, name, xlsPath=None):
         self.name = str(name)
@@ -139,10 +141,20 @@ class FlyingWing(object):
         """
         self._update_parasite_drag(velocity,altitude)
         return self.drag.get_total_drag()
+    
+    def get_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
+                      mass=None,cg=None,inertia=None,CD0=None):
+        """ run avl analysis and return trim state """
+        aero = Aerodynamics(self)
+        fc = FlightConditionsAVL(self,velocity,altitude,CmTrim,loadFactor,mass,
+                                 cg,inertia,CD0)
+        self.aeroResults = aero.run_trim(fc)
+        return self.aeroResults
 
     def get_cg(self):
         x = self.wing.MAClocation[0] + 0.3*self.wing.MAC
         return np.array([x,0,0]) #FIXME: for debug only
+
     def get_mass(self):
         """ Returns total mass """
         return 5000.0 #FIXME: for debug only
@@ -215,7 +227,8 @@ def run_test2():
     ac.load_xls('X47A')
     print ac.wing.area
     ac.mass.empty.display()
-    ac.display()
+    ac.get_aero_trim(150,3000)
+    ac.aeroResults.display()
 
 def run_test1():
     import matplotlib.pyplot as plt
