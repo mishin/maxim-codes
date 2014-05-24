@@ -8,6 +8,29 @@ Created on Thu Jan 09 11:50:25 2014
 from datetime import datetime
 import numpy as np
 
+
+class SaveTextData():
+    def __init__(self,path):
+        self.fid = open(path,'wt')
+        self.ndecimal = 8
+        self.code = '%e'
+        self.fid.write('import numpy as np\n\n')
+
+    def write_array(self,inputArray,name):
+        self.fid.write('%s = np.array(['%name)
+        self._write_array(inputArray)
+        self.fid.write('])\n')
+    
+    def _write_array(self,inputArray):
+        for val in inputArray[:-1]:
+            self.fid.write(self.code%val)
+            self.fid.write(', ')
+        self.fid.write(self.code%inputArray[-1])
+        
+    def close(self):
+        self.fid.close()
+
+
 def read_tabulated_data(path,header=False,firstRow=0):
     if header:
         return read_tabulated_data_with_header(path,firstRow)
@@ -153,5 +176,11 @@ def run_test3():
     data = read_tabulated_data('test_file2.txt',header=False)
     print data['col1']
 
+def run_test4():
+    a = np.linspace(0,20,3)
+    fid = SaveTextData('new.txt')
+    fid.write_array(a,'a')
+    fid.close()
+
 if __name__=="__main__":
-    run_test3()
+    run_test4()

@@ -31,9 +31,10 @@ def run():
     ac2.mass.display()
     ac3.mass.display()
     ac4.mass.display()
-
-#    ac2.display()
-#    ac4.display()
+    ac1.display()
+    ac2.display()
+    ac3.display()
+    ac4.display()
     print ac1.designGoals.grossMass
     print ac2.designGoals.grossMass
     print ac3.designGoals.grossMass

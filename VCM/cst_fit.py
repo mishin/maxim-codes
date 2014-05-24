@@ -13,9 +13,9 @@ def cst_fit():
 
     
     af = airfoil.Airfoil()
-    #af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
+    af.read_txt(r'C:\Users\Maxim\Dropbox\2. projects\VCM\transonic airfoil\rae2822.txt',afType=2)
     #af.read_txt(r'D:\laptop_sync\1. Projects\RENN\airfoil design\AG24new.txt')
-    af.read_txt('pb092_closed.txt')
+    #af.read_txt('pb092_closed.txt')
     af.coord[:,1] = af.coord[:,1] - af.coord[:,0]*0.001868
     af.separate_coordinates()
     af.plot()
