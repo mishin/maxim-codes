@@ -74,6 +74,14 @@ def read_txt(afPath):
     af.read_txt(afPath)
     return af
 
+def text_to_xls(afPath,display=False):
+    af = Airfoil()
+    af.read_txt(afPath)
+    if display:
+        af.display()
+    af.build_aero_table()
+    af.write_db()
+
 # --- ---
 
 class CurveXyt:

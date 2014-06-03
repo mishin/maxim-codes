@@ -19,29 +19,35 @@ def get_total_cg(mass,CGx,CGy,CGz):
 
 class AircraftMass:
     def __init__(self,name='Aircraft',MAC=None,xMAC=None):
-        self.empty      = MassList('empty',MAC,xMAC)
-        self.payload    = MassList('payload',MAC,xMAC)
-        self.fuel       = Fuel('fuel',MAC,xMAC)
-        self.total      = MassList('Total',MAC,xMAC)
+        self.name = str(name)
+        self.empty      = MassList(self.name + ' empty',MAC,xMAC)
+        self.payload    = MassList(self.name + ' payload',MAC,xMAC)
+        self.fuel       = Fuel(self.name + ' fuel',MAC,xMAC)
+        self.total      = MassList(self.name + ' total',MAC,xMAC)
         self.totalMass = 0.0
         self.totalCG   = np.zeros(3)
         self.totalMOI  = np.zeros(3)
+        self.MAC = MAC
+        self.xMAC = xMAC
+        self.update_mac(MAC,xMAC)
 
     def update_total(self):
         """
         Updates total mass list.
         """
-        self.total = MassList('Total')
+        self.total = MassList(self.name +' total')
         self.total.add_mass_list(self.empty)
         self.total.add_mass_list(self.payload)
         self.total.add_mass_list(self.fuel)
         self.total.update_totals()
         self.totalMass = self.total.totalMass
         self.totalCG = self.total.CG
+        self.update_mac(self.MAC,self.xMAC)
     
     def update_mac(self,MAC,xMAC):
-        MAC = float(MAC)
-        xMAC = float(xMAC)
+        if not (MAC==None and xMAC==None):
+            MAC  = float(MAC)
+            xMAC = float(xMAC)
         self.total.MAC    = MAC
         self.total.xMAC   = xMAC
         self.empty.MAC    = MAC

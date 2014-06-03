@@ -72,7 +72,7 @@ class AVLsolver(object):
         pth.set_file_prefix('flyingwing')
         path = pth.get_tmp_file('avl')
         cg = self.ac.get_cg()
-        CD0 = 0.0 #self.ac.get_drag()
+        CD0 = self.ac.get_drag()
         fid = open(path,'wt')
         # general input
         fid.write('%s\n'%self.ac.name)
@@ -294,17 +294,21 @@ class RunCases:
         pass
 
 def run_test1():
-    from misc_tools import Timer
+    #from misc_tools import Timer
     import aircraft_FW as aircraft
-    timer = Timer()
+    #timer = Timer()
     ac = aircraft.load('X47B')
-    ac.display()
-    timer.lap('load')
+    ac.mass.display()
     #ac.display()
-    
+    #timer.lap('load')
+    #ac.display()
+
     aero = Aerodynamics(ac)
-    fc = FlightConditionsAVL(ac,200,1e4)
-    aero.run_trim(fc).display()
-    timer.stop('aero')
+    fc = FlightConditionsAVL(ac,0.5,1e4)
+    results = aero.run_trim(fc)
+    results.display()
+    #timer.stop('aero')
+
+
 if __name__=="__main__":
     run_test1()

@@ -44,6 +44,7 @@ class FlyingWing(object):
         idx = db.find_header(keyword+'DESIGN QUANTITIES')
         self.type                          = db.read_row(idx+1,1)
         self.designGoals.fuelMass          = db.read_row(-1,1)
+        self.designGoals.avionicsMass      = db.read_row(-1,1)
         self.designGoals.grossMass         = db.read_row(-1,1)
         self.designGoals.cruiseMach        = db.read_row(-1,1)
         self.designGoals.CruiseAltitude    = db.read_row(-1,1)
@@ -152,6 +153,7 @@ class FlyingWing(object):
         return self.aeroResults
 
     def get_cg(self,update=True):
+        # SI units [x,y,z]
         if update:
             self._update_mass()
         return self.mass.total.CG
@@ -205,6 +207,7 @@ class LandingGear(object):
 class DesignGoals(object):
     def __init__(self):
         self.fuelMass          = 0.0
+        self.avionicsMass      = 0.0
         self.grossMass         = 0.0
         self.cruiseSpeed       = 0.0
         self.cruiseAltitude    = 0.0

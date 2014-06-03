@@ -11,17 +11,19 @@ import matplotlib.pyplot as plt
 
 def run():
     mass1 = np.array([1740., 3600, 4900, 6350])
-    mass4 = np.array([2678.,8165,7000,20215])
+    mass4 = np.array([2684.,6780,6854,16102])
     name = ['X47A','X45C','nEUROn','X47B']
 
     ac1 = aircraft_FW.load(name[0])
     ac2 = aircraft_FW.load(name[1])
     ac3 = aircraft_FW.load(name[2])
     ac4 = aircraft_FW.load(name[3])
+
     m1 = ac1.mass.empty.get_total_mass()
     m2 = ac2.mass.empty.get_total_mass()
     m3 = ac3.mass.empty.get_total_mass()
     m4 = ac4.mass.empty.get_total_mass()
+
     m11 = ac1.mass.total.get_total_mass()
     m12 = ac2.mass.total.get_total_mass()
     m13 = ac3.mass.total.get_total_mass()
@@ -31,14 +33,17 @@ def run():
     ac2.mass.display()
     ac3.mass.display()
     ac4.mass.display()
-    ac1.display()
-    ac2.display()
-    ac3.display()
-    ac4.display()
-    print ac1.designGoals.grossMass
-    print ac2.designGoals.grossMass
-    print ac3.designGoals.grossMass
-    print ac4.designGoals.grossMass
+#    ac1.mass.empty.display()
+#    ac1.display()
+    #ac2.display()
+#    ac3.display()
+#    ac4.display()
+#    mass4 = list()
+#    mass4.append(ac1.designGoals.grossMass)
+#    mass4.append(ac2.designGoals.grossMass)
+#    mass4.append(ac3.designGoals.grossMass)
+#    mass4.append(ac4.designGoals.grossMass)
+#    mass4 = np.array(mass4)
 
     mass2 = np.array([m1,m2,m3,m4])
     mass3 = np.array([m11,m12,m13,m14])
@@ -49,6 +54,10 @@ def run():
     for me,mc in zip(mass1,mass2):
         print '%.2f\t%.2f\t\t%+.4f'%(me,mc,100.*(mc-me)/me)
 
+    print '\nexact\tcalculated\t\terror,%'
+    for me,mc in zip(mass4,mass3):
+        print '%.2f\t%.2f\t\t%+.4f'%(me,mc,100.*(mc-me)/me)
+
     plt.figure(1)
     plt.hold(True)
     plt.bar(loc-width,mass1,width=width,color='b')
@@ -57,7 +66,7 @@ def run():
     plt.ylabel('Empty mass, kg')
     plt.xticks(loc,name)
     plt.axis([0.4,4.6,0,7000])
-    
+
     plt.figure(2)
     plt.hold(True)
     plt.bar(loc-width,mass4,width=width,color='b')

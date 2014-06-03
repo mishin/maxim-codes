@@ -63,6 +63,7 @@ class BlendedWingBodyMass(object):
         self.Wl = self.Wdg
         self.Ne = self.ac.propulsion.numberOfEngines
         self.T  = convert.kgf_to_lbf(self.ac.propulsion.totalThrust)
+        self.mUav = convert.kg_to_lb(self.ac.designGoals.avionicsMass)
         Vi = self.ac.designGoals.fuelMass/self.fuelProp['kerosene']
         self.Vi = convert.cubm_to_gal(Vi)
     
@@ -94,6 +95,8 @@ class BlendedWingBodyMass(object):
         wingCGratio = self.constMass['wingCGratio']
         xCG = self.ac.wing.MAClocation[0] + self.ac.wing.MAC*wingCGratio
         zCG = self.ac.wing.secApex[0,2]
+        if wing.material=='composite':
+            m = m*self.constMass['compositeWing']
         self._add_mass1('wing',m,np.array([xCG,0.0,zCG]))
     
     def _mass_fuselage(self):
@@ -103,18 +106,22 @@ class BlendedWingBodyMass(object):
         m = 0.499*self.Kdwf*self.Wdg**0.35 *self.Nz**0.25 *L**0.5 *D**0.849 *W**0.685
         xCG = self.ac.wing.chords[0] * self.constMass['fuseCGratio'][1]
         zCG = self.ac.wing.secApex[0,2]
+        if self.ac.wing.material=='composite':
+            m = m*self.constMass['compositeBody']
         self._add_mass1('fuselage',m,np.array([xCG,0.0,zCG]))
     
     def _mass_mlg(self):
-        Lm = convert.m_to_ft(self.ac.landingGear.strutLength[1]) #TODO: check value
-        m = self.Kcb*self.Ktpg*(self.Wt*self.Nl)**0.25 * Lm**0.973
+#        Lm = convert.m_to_ft(self.ac.landingGear.strutLength[1]) #TODO: check value
+#        m = self.Kcb*self.Ktpg*(self.Wt*self.Nl)**0.25 * Lm**0.973
+        m = self.Wt * 0.04*0.85
         xCG = self.ac.landingGear.groundContactX[1]
         self._add_mass1('main landing gear',m,np.array([xCG,0,0]))
 
     def _mass_nlg(self):
-        Ln = convert.m_to_ft(self.ac.landingGear.strutLength[0])
-        Nnw = 1.0 # number of nose wheels
-        m = (self.Wl*self.Nl)**0.29 *Ln**0.5 *Nnw**0.525
+#        Ln = convert.m_to_ft(self.ac.landingGear.strutLength[0])
+#        Nnw = 1.0 # number of nose wheels
+#        m = (self.Wl*self.Nl)**0.29 *Ln**0.5 *Nnw**0.525
+        m = self.Wt * 0.04*0.15
         xCG = self.ac.landingGear.groundContactX[0]
         self._add_mass1('nose landing gear',m,np.array([xCG,0,0]))
 
@@ -193,7 +200,8 @@ class BlendedWingBodyMass(object):
         self._add_mass1('electric system',m)
     
     def _mass_avionics(self):
-        mUav = 600.#FIXME: uninstalled avionics weight is assumed 1000lb
+        #mUav = 600.#FIXME: uninstalled avionics weight is assumed 1000lb
+        mUav = self.mUav
         m = 2.117*mUav**0.933
         self._add_mass1('avionics',m)
 
