@@ -29,7 +29,7 @@ def g3(x):
     return C3
 
 def g2l(x):
-    return 0.05*x[0]+0.8*x[1]-2.2
+    return 0.05*x[0]+0.8*x[1]-4.0
 
 delta = 0.1
 x = np.arange(0, 10, delta)
