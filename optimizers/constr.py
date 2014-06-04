@@ -8,9 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
 from mpl_toolkits.mplot3d import axes3d
+from misc_tools import SaveTextData
 
+out = SaveTextData('output.py')
 
-tol = 0.001
+tol = 0.01
 err = 1.0
 
 def f(x):
@@ -29,7 +31,7 @@ def g3(x):
     return C3
 
 def g2l(x):
-    return 0.05*x[0]+0.8*x[1]-4.0
+    return 0.05*x[0]+0.8*x[1]-3.0
 
 delta = 0.1
 x = np.arange(0, 10, delta)
@@ -48,41 +50,75 @@ Z4 = np.reshape(Z4,X.shape)
 xopt = list()
 fopt = list()
 delta = list()
+epsilon = list()
+
+g1val = list()
+g2hval = list()
+g2lval = list()
+g2scval = list()
+g3val = list()
+itr = list()
+
 dg = 0.0
 x0 = np.array([5.,5])
 i = 0
 print 'iter\tx1\tx2\tdg'
+
 while err>tol:
+    itr.append(i)
     i += 1
     g2new = lambda x: g2l(x) + dg
+
+    delta.append(dg)
+    g1val.append(g1(x0))
+    g2hval.append(g2(x0))
+    g2lval.append(g2l(x0))
+    g2scval.append(g2new(x0))
+    g3val.append(g3(x0))
+    xopt.append(x0)
+    fopt.append(f(x0))
+    epsilon.append(err)
+    
     cnstr = ({'type':'ineq','fun':g1},
              {'type':'ineq','fun':g2new},
              {'type':'ineq','fun':g3},)
     rslt = minimize(f,x0,method='SLSQP',constraints=cnstr,bounds=((0,10),(0,10)))
     xnew = rslt.x
     err = np.linalg.norm(x0-xnew)
+    
     x0 = xnew
-    xopt.append(xnew)
-    fopt.append(rslt.fun)
     dg += g2(rslt.x) - g2new(rslt.x)
-    delta.append(dg)
+
     print '%d\t%.4f\t%.4f\t%.4f'%(i,xnew[0],xnew[1],dg)
 
 Z5 = np.array([g2new([xx,yy]) for xx,yy in zip(X,Y)])
 Z5 = np.reshape(Z5,X.shape)
 xopt = np.array(xopt)
+out.write_array(itr,'itr')
+out.write_array(xopt[:,0],'x1')
+out.write_array(xopt[:,1],'x2')
+out.write_array(fopt,'f')
+out.write_array(epsilon,'err')
+out.write_array(delta,'dg')
+out.write_array(g1val,'g1')
+out.write_array(g2hval,'g2h')
+out.write_array(g2lval,'g2l')
+out.write_array(g2scval,'g2new')
+out.write_array(g3val,'g3')
+out.close()
 
 plt.figure(1)
 plt.hold(True)
 plt.contour(X,Y,Z1,levels=[0])
-plt.contour(X,Y,Z2,levels=[0],colors=['r'])
+plt.contour(X,Y,Z2,levels=[0],colors=['r'],label='g2high')
 plt.contour(X,Y,Z3,levels=[0])
-plt.contour(X,Y,Z4,levels=[0],colors=['y'])
-plt.contour(X,Y,Z5,levels=[0],colors=['g'])
+plt.contour(X,Y,Z4,levels=[0],colors=['y'],label='g2low')
+plt.contour(X,Y,Z5,levels=[0],colors=['g'],label='g2low+dg')
 plt.plot(xopt[:,0],xopt[:,1],'ro-')
-fig2 = plt.figure(2)
-ax = fig2.add_subplot(111, projection='3d')
-ax.hold(True)
-ax.plot_wireframe(X, Y, Z2,color='r')
-ax.plot_wireframe(X, Y, Z4,color='g')
+
+#fig2 = plt.figure(2)
+#ax = fig2.add_subplot(111, projection='3d')
+#ax.hold(True)
+#ax.plot_wireframe(X, Y, Z2,color='r')
+#ax.plot_wireframe(X, Y, Z4,color='g')
 plt.show()

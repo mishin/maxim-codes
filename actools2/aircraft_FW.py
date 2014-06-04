@@ -169,7 +169,7 @@ class FlyingWing(object):
         return self.mass.empty.totalMass
 
     def get_drag(self):
-        return 0.03 #FIXME: for debug only
+        return 0.015 #FIXME: for debug only
     
     def get_inertia(self):
         return np.zeros(3) #FIXME: for debug only

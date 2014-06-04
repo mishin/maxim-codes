@@ -190,7 +190,7 @@ class ReadDatabase():
                 out.append(irow)
                 found = True
         if not found:
-            print "Error: specified header not found"
+            print "Error: \"%s\" header not found"%header
         if len(out)==1:
             return out[0]
         else:

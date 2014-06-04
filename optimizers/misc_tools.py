@@ -9,7 +9,28 @@ from datetime import datetime
 import numpy as np
 from scipy.interpolate import Rbf
 
+class SaveTextData():
+    def __init__(self,path):
+        self.fid = open(path,'wt')
+        self.ndecimal = 8
+        self.code = '%e'
+        self.fid.write('import numpy as np\n')
+        self.fid.write('import matplotlib.pyplot as plt\n\n')
 
+    def write_array(self,inputArray,name):
+        self.fid.write('%s = np.array(['%name)
+        self._write_array(inputArray)
+        self.fid.write('])\n')
+    
+    def _write_array(self,inputArray):
+        for val in inputArray[:-1]:
+            self.fid.write(self.code%val)
+            self.fid.write(', ')
+        self.fid.write(self.code%inputArray[-1])
+        
+    def close(self):
+        self.fid.close()
+        
 class RbfMod():
     def __init__(self,x,y):
         if x.ndim>1:
