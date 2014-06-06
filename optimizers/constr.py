@@ -31,11 +31,11 @@ def g3(x):
     return C3
 
 def g2l(x):
-    return 0.05*x[0]+0.8*x[1]-3.0
+    return 0.05*x[0]+0.8*x[1]-1.0
 
 delta = 0.1
-x = np.arange(0, 10, delta)
-y = np.arange(0, 10, delta)
+x = np.arange(0, 10+delta, delta)
+y = np.arange(0, 10+delta, delta)
 X, Y = np.meshgrid(x, y)
 
 Z1 = np.array([g1([xx,yy]) for xx,yy in zip(X,Y)])
@@ -62,7 +62,7 @@ itr = list()
 dg = 0.0
 x0 = np.array([5.,5])
 i = 0
-print 'iter\tx1\tx2\tdg'
+print 'iter\tx1\tx2\tdg\tg2high\tg2low\tg2adapt\tfval'
 
 while err>tol:
     itr.append(i)
@@ -89,7 +89,7 @@ while err>tol:
     x0 = xnew
     dg += g2(rslt.x) - g2new(rslt.x)
 
-    print '%d\t%.4f\t%.4f\t%.4f'%(i,xnew[0],xnew[1],dg)
+    print '%d\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f'%(i,xopt[-1][0],xopt[-1][1],dg,g2hval[-1],g2lval[-1],g2scval[-1],fopt[-1])
 
 Z5 = np.array([g2new([xx,yy]) for xx,yy in zip(X,Y)])
 Z5 = np.reshape(Z5,X.shape)
@@ -109,12 +109,30 @@ out.close()
 
 plt.figure(1)
 plt.hold(True)
-plt.contour(X,Y,Z1,levels=[0])
-plt.contour(X,Y,Z2,levels=[0],colors=['r'],label='g2high')
-plt.contour(X,Y,Z3,levels=[0])
-plt.contour(X,Y,Z4,levels=[0],colors=['y'],label='g2low')
-plt.contour(X,Y,Z5,levels=[0],colors=['g'],label='g2low+dg')
+cs1 = plt.contour(X,Y,Z1,levels=[0])
+cs2 = plt.contour(X,Y,Z2,levels=[0],colors=['r'],label='g2high')
+cs3 = plt.contour(X,Y,Z3,levels=[0])
+cs4 = plt.contour(X,Y,Z4,levels=[0],colors=['y'],label='g2low')
+cs5 = plt.contour(X,Y,Z5,levels=[0],colors=['g'],label='g2low+dg')
 plt.plot(xopt[:,0],xopt[:,1],'ro-')
+
+pth1 = cs1.collections[0].get_paths()[0].vertices
+pth2 = cs2.collections[0].get_paths()[0].vertices
+pth3 = cs3.collections[0].get_paths()[0].vertices
+pth4 = cs4.collections[0].get_paths()[0].vertices
+pth5 = cs5.collections[0].get_paths()[0].vertices
+
+plt.figure(2)
+plt.hold(True)
+plt.plot(pth1[:,0],pth1[:,1],'k-',label='g1')
+plt.plot(pth2[:,0],pth2[:,1],'r-',label='g2high',linewidth=2.0)
+plt.plot(pth3[:,0],pth3[:,1],'k-',label='g3')
+plt.plot(pth4[:,0],pth4[:,1],'b.-',label='g2low')
+plt.plot(pth5[:,0],pth5[:,1],'g--',label='g2adapted')
+plt.plot(xopt[:,0],xopt[:,1],'mo-',label='X optimum')
+plt.xlabel('X1')
+plt.ylabel('X2')
+plt.legend()
 
 #fig2 = plt.figure(2)
 #ax = fig2.add_subplot(111, projection='3d')
