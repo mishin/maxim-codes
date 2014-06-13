@@ -7,6 +7,7 @@ Created on Tue Apr 01 21:43:04 2014
 from db_tools import ReadDatabase
 from paths import MyPaths
 import numpy as np
+from scipy.interpolate import Akima1DInterpolator
 
 from engine_turbofan import Propulsion
 from weight_fw import get_flying_wing_mass, AircraftMass
@@ -35,6 +36,15 @@ class FlyingWing(object):
         self.propulsion = Propulsion() #table lookup database
         self.aeroResults = None
         
+        # FIXME: drag calculation is temporal - DO NOT USE for real calculation
+        cd = np.array([0.01718,0.01718, 0.01662, 0.01622, 0.01589, 0.0156, 0.01532, 0.01506, 
+                       0.0148, 0.03573, 0.04254, 0.03174, 0.02919, 0.02753, 0.02602, 
+                       0.02469, 0.0235, 0.02245, 0.02149])
+        M = np.array([0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 
+                      1.4, 1.5, 1.6, 1.7, 1.8, 1.9])
+        self._dragCurve = Akima1DInterpolator(M,cd)
+
+        
     def load_xls(self, name, xlsPath=None):
         self.name = str(name)
         if xlsPath==None:
@@ -47,7 +57,7 @@ class FlyingWing(object):
         self.designGoals.avionicsMass      = db.read_row(-1,1)
         self.designGoals.grossMass         = db.read_row(-1,1)
         self.designGoals.cruiseMach        = db.read_row(-1,1)
-        self.designGoals.CruiseAltitude    = db.read_row(-1,1)
+        self.designGoals.cruiseAltitude    = db.read_row(-1,1)
         self.designGoals.loadFactor        = db.read_row(-1,1)
         self.designGoals.loadFactorLanding = db.read_row(-1,1)
         self.designGoals.staticThrust      = db.read_row(-1,1)
@@ -143,13 +153,18 @@ class FlyingWing(object):
         self._update_parasite_drag(velocity,altitude)
         return self.drag.get_total_drag()
     
-    def get_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
+    def update_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
                       mass=None,cg=None,inertia=None,CD0=None):
-        """ run avl analysis and return trim state """
         aero = Aerodynamics(self)
         fc = FlightConditionsAVL(self,velocity,altitude,CmTrim,loadFactor,mass,
                                  cg,inertia,CD0)
         self.aeroResults = aero.run_trim(fc)
+    
+    def get_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
+                      mass=None,cg=None,inertia=None,CD0=None):
+        """ run avl analysis and return trim state """
+        self.update_aero_trim(velocity,altitude,CmTrim=0.0,loadFactor=1.0,
+                              mass=None,cg=None,inertia=None,CD0=None)
         return self.aeroResults
 
     def get_cg(self,update=True):
@@ -168,8 +183,14 @@ class FlyingWing(object):
             self._update_mass()
         return self.mass.empty.totalMass
 
-    def get_drag(self):
-        return 0.015 #FIXME: for debug only
+    def get_drag(self,velocity=None,altitude=None):
+        if velocity==None:
+            velocity = self.designGoals.cruiseSpeed
+        if altitude==None:
+            altitude = self.designGoals.cruiseAltitude
+        fc = FlightConditions(velocity,altitude)
+        cd = self._dragCurve(fc.Mach)
+        return cd #FIXME: for debug only
     
     def get_inertia(self):
         return np.zeros(3) #FIXME: for debug only
@@ -221,6 +242,12 @@ class DesignGoals(object):
         self.set_flight_conditions(MAC)
         self.cruiseMach = self.fc.Mach
         self.cruiseSpeed = self.fc.velocity
+    def __repr__(self):
+        out = 'Design goals\n====================\n'
+        for attr, value in self.__dict__.iteritems():
+            if type(value) is float or type(value) is np.float64:
+                out += '{:<15} = {:<12.2f}\n'.format(attr,value)
+        return out
 
 
 class VLMparameters(object):
@@ -228,6 +255,15 @@ class VLMparameters(object):
         self.panelsChordwise = 0
         self.panelsSpanwise  = 0
         self.distribution    = None
+
+def run_test3():
+    import matplotlib.pyplot as plt
+    ac = FlyingWing()
+    ac.load_xls('X47A')
+    M = np.linspace(0,1.2,50)
+    cd = np.array([ac.get_drag(m,1e4) for m in M])
+    plt.plot(M,cd,'bs-')
+    plt.show()
 
 def run_test2():
     ac = FlyingWing()
@@ -265,6 +301,9 @@ def run_test1():
     ac.drag.display()
     ac.display()
 
+def run_test4():
+    import matplotlib.pyplot as plt
+    ac = load('X45C')
 
 if __name__=="__main__":
-    run_test2()
+    run_test3()

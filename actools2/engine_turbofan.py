@@ -7,19 +7,21 @@ Created on Wed Apr 02 14:07:43 2014
 from db_tools import ReadDatabase
 from paths import MyPaths
 from weight_tools import get_total_cg
-from numpy import ones,array
+from numpy import ones,array,linspace
 from engine_turbofan_analysis import engine_modeling
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 
 
 class Propulsion(object):
     def __init__(self):
-        self.numberOfEngines = 0
+        self.numberOfEngines = 1
         self.engine = TurbofanEngine()
         self.CGx = None
         self.CGy = None
         self.CGz = None
         self.numberOfTanks = 1
+
     def _process_data(self):
         self.totalThrust = self.engine.thrustMC*self.numberOfEngines
         self._calc_cg()
@@ -32,8 +34,29 @@ class Propulsion(object):
         altitude = float(altitude)
         thrustReq = float(thrustReq) / self.numberOfEngines # thrust per engine
         sfcPerEngine = self.engine.get_sfc(Mach,altitude,thrustReq)
-        return sfcPerEngine*self.numberOfEngines
-        
+        return sfcPerEngine*self.numberOfEngines /3600. # kg/(kg*sec)
+    
+    def __call__(self,Mach,altitude,powerSetting):
+        """ NOTE: powerSetting is linear function - will be replaced """
+        thrustReq = self.engine.thrustMC * float(powerSetting)/100.
+        return self.get_sfc(Mach,altitude,thrustReq)
+
+    def test(self):
+        plt.figure()
+        plt.hold(True)
+        legend = list()
+        alt = 1e4
+        Mach = linspace(0.1,1,10)
+        Pset = linspace(10,100,5)
+        sfc = ones([len(Pset),len(Mach)])
+        for i,p in enumerate(Pset):
+            for j,M in enumerate(Mach):
+                sfc[i,j] = self.__call__(M,alt,p)
+            plt.plot(Mach,sfc[i])
+            legend.append('%.0f'%p)
+        plt.legend(legend)
+        plt.show()
+
 class TurbofanEngine(object):
     def __init__(self):
         self.name         = None
@@ -101,7 +124,12 @@ def run_test2():
     for i,M in enumerate(Mach):
         sfc[i] = engine.get_sfc(M,alt,3500)
         print M,sfc[i]
-    
+
+def run_test3():
+    prop = Propulsion()
+    prop.engine.load('F110')
+    prop.test()
+
 if __name__=="__main__":
-    run_test2()
+    run_test3()
         

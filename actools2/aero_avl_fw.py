@@ -207,7 +207,7 @@ class AVLsolver(object):
         results.coef.CL=self._selTxt(raw,'CLtot =','\n  CDtot')
         results.coef.CD=self._selTxt(raw,'CDtot =','\n  CDvis')
         results.coef.CDind=self._selTxt(raw,'CDff  =','\| Trefftz\n  CYff ')
-        results.k=results.coef.CDind/(results.coef.CL**2)         
+        results.k=results.coef.CDind/(results.coef.CL**2)    
         results.e=1.0/(results.k*np.pi*results.ARref)       
         results.a=self._selTxt(raw,'CLa =','CLb =')
         results.xNP=self._selNum(raw,'Neutral point  Xnp =   ',10)
@@ -297,15 +297,15 @@ def run_test1():
     #from misc_tools import Timer
     import aircraft_FW as aircraft
     #timer = Timer()
-    ac = aircraft.load('X-1')
+    ac = aircraft.load('X45C')
     ac.mass.display()
-    ac.display()
+    #ac.display()
     #ac.display()
     #timer.lap('load')
     #ac.display()
 
     aero = Aerodynamics(ac)
-    fc = FlightConditionsAVL(ac,0.7,1.9e4)
+    fc = FlightConditionsAVL(ac,0.7,1e4)
     results = aero.run_trim(fc)
     results.display()
     #timer.stop('aero')

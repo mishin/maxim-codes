@@ -30,6 +30,10 @@ class AircraftMass:
         self.MAC = MAC
         self.xMAC = xMAC
         self.update_mac(MAC,xMAC)
+    
+    def __call__(self):
+        self.update_total()
+        return self.total.totalMass
 
     def update_total(self):
         """

@@ -10,10 +10,10 @@ from scipy.optimize import minimize
 from mpl_toolkits.mplot3d import axes3d
 from misc_tools import SaveTextData
 
-out = SaveTextData('output.py')
+out = SaveTextData('output1.py')
 
 tol = 0.01
-err = 1.0
+err = tol+1.
 
 def f(x):
     f=x[0]+x[1]
@@ -33,6 +33,91 @@ def g3(x):
 def g2l(x):
     return 0.05*x[0]+0.8*x[1]-1.0
 
+
+
+dg = 0.0
+x0 = np.array([5.,5])
+i = 0
+print 'iter\tx1\tx2\tdg\tg2high\tg2low\tg2adapt\tfval'
+
+x1 = list()
+x2 = list()
+fval = list()
+g1val = list()
+g2hval = list()
+g2lval = list()
+g2aval = list()
+g3val = list()
+errorVal = list()
+offset = list()
+itr = list()
+
+neval = 0
+
+
+cnstr = ({'type':'ineq','fun':g1},
+             {'type':'ineq','fun':g2},
+             {'type':'ineq','fun':g3},)
+rslt = minimize(f,x0,method='SLSQP',constraints=cnstr,bounds=((0,10),(0,10)))
+xexact = rslt.x
+fexact = rslt.fun
+while err>tol:
+    g2new = lambda x: g2l(x) + dg
+    itr.append(i)
+    x1.append(x0[0])
+    x2.append(x0[1])
+    fval.append(f(x0))
+    g1val.append(g1(x0))
+    g2hval.append(g2(x0))
+    g2lval.append(g2l(x0))
+    g2aval.append(g2new(x0))
+    g3val.append(g3(x0))
+    offset.append(dg)
+    errorVal.append(err)
+    i += 1
+    
+   
+    cnstr = ({'type':'ineq','fun':g1},
+             {'type':'ineq','fun':g2new},
+             {'type':'ineq','fun':g3},)
+    rslt = minimize(f,x0,method='SLSQP',constraints=cnstr,bounds=((0,10),(0,10)))
+    xnew = rslt.x
+    neval += rslt.nfev
+    err = np.linalg.norm(x0-xnew)
+    
+    x0 = xnew
+    dg += g2(rslt.x) - g2new(rslt.x)
+
+    #print '%d\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f'%(i,xopt[-1][0],xopt[-1][1],dg,g2hval[-1],g2lval[-1],g2scval[-1],fopt[-1])
+
+print np.linalg.norm(xnew-xexact)
+print fval[-1]-fexact
+xopt = np.transpose(np.vstack([x1,x2]))
+print neval
+print i
+
+out.write_array(itr,'itr')
+out.write_array(x1,'x1')
+out.write_array(x2,'x2')
+out.write_array(fval,'f')
+out.write_array(errorVal,'err')
+out.write_array(offset,'dg')
+out.write_array(g1val,'g1')
+out.write_array(g2hval,'g2h')
+out.write_array(g2lval,'g2l')
+out.write_array(g2aval,'g2new')
+out.write_array(g3val,'g3')
+out.close()
+
+
+
+
+
+
+
+
+
+
 delta = 0.1
 x = np.arange(0, 10+delta, delta)
 y = np.arange(0, 10+delta, delta)
@@ -46,66 +131,8 @@ Z1 = np.reshape(Z1,X.shape)
 Z2 = np.reshape(Z2,X.shape)
 Z3 = np.reshape(Z3,X.shape)
 Z4 = np.reshape(Z4,X.shape)
-
-xopt = list()
-fopt = list()
-delta = list()
-epsilon = list()
-
-g1val = list()
-g2hval = list()
-g2lval = list()
-g2scval = list()
-g3val = list()
-itr = list()
-
-dg = 0.0
-x0 = np.array([5.,5])
-i = 0
-print 'iter\tx1\tx2\tdg\tg2high\tg2low\tg2adapt\tfval'
-
-while err>tol:
-    itr.append(i)
-    i += 1
-    g2new = lambda x: g2l(x) + dg
-
-    delta.append(dg)
-    g1val.append(g1(x0))
-    g2hval.append(g2(x0))
-    g2lval.append(g2l(x0))
-    g2scval.append(g2new(x0))
-    g3val.append(g3(x0))
-    xopt.append(x0)
-    fopt.append(f(x0))
-    epsilon.append(err)
-    
-    cnstr = ({'type':'ineq','fun':g1},
-             {'type':'ineq','fun':g2new},
-             {'type':'ineq','fun':g3},)
-    rslt = minimize(f,x0,method='SLSQP',constraints=cnstr,bounds=((0,10),(0,10)))
-    xnew = rslt.x
-    err = np.linalg.norm(x0-xnew)
-    
-    x0 = xnew
-    dg += g2(rslt.x) - g2new(rslt.x)
-
-    print '%d\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f'%(i,xopt[-1][0],xopt[-1][1],dg,g2hval[-1],g2lval[-1],g2scval[-1],fopt[-1])
-
 Z5 = np.array([g2new([xx,yy]) for xx,yy in zip(X,Y)])
 Z5 = np.reshape(Z5,X.shape)
-xopt = np.array(xopt)
-out.write_array(itr,'itr')
-out.write_array(xopt[:,0],'x1')
-out.write_array(xopt[:,1],'x2')
-out.write_array(fopt,'f')
-out.write_array(epsilon,'err')
-out.write_array(delta,'dg')
-out.write_array(g1val,'g1')
-out.write_array(g2hval,'g2h')
-out.write_array(g2lval,'g2l')
-out.write_array(g2scval,'g2new')
-out.write_array(g3val,'g3')
-out.close()
 
 plt.figure(1)
 plt.hold(True)
