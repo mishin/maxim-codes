@@ -5,6 +5,7 @@ Created on Wed Apr 02 14:07:43 2014
 @author: Maxim
 """
 from db_tools import ReadDatabase
+from flight_conditions import ISAtmosphere
 from paths import MyPaths
 from weight_tools import get_total_cg
 from numpy import ones,array,linspace
@@ -29,6 +30,7 @@ class Propulsion(object):
         if hasattr(self.CGx,'__iter__'):
             mass = ones(self.numberOfEngines)*self.engine.mass
             self.totalMass, self.CG = get_total_cg(mass,self.CGx,self.CGy,self.CGz)
+
     def get_sfc(self,Mach,altitude,thrustReq):
         Mach = float(Mach)
         altitude = float(altitude)
@@ -40,6 +42,11 @@ class Propulsion(object):
         """ NOTE: powerSetting is linear function - will be replaced """
         thrustReq = self.engine.thrustMC * float(powerSetting)/100.
         return self.get_sfc(Mach,altitude,thrustReq)
+    
+    def get_thrust_available(self,altitude):
+        atm = ISAtmosphere(altitude)
+        rho0 = 1.2255
+        return atm.density/rho0 *self.totalThrust
 
     def test(self):
         plt.figure()
@@ -56,6 +63,7 @@ class Propulsion(object):
             legend.append('%.0f'%p)
         plt.legend(legend)
         plt.show()
+
 
 class TurbofanEngine(object):
     def __init__(self):

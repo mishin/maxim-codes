@@ -124,11 +124,12 @@ class ClimbDescent(FlightMechanics):
         pass
     def run_min_glide_sinkrate(self):
         pass
-    def run_climb_rate(self,airspeed,powerSetting=100.):
-        basicInput = self.bi
+    def run_climb_rate(self,airspeed,altitude, powerSetting=100.):
+        basicInput   = self.bi
         thrustModule = self.tm
+        atm = ISAtmosphere(altitude)
         V       =airspeed
-        rho     =basicInput.density
+        rho     =atm.density
         Cd0     =basicInput.Cd0
         g       =basicInput.g
         k       =basicInput.k
@@ -141,8 +142,7 @@ class ClimbDescent(FlightMechanics):
         iMax    =100
         i       =0
         while change>tol and i<=iMax:            
-            tm(V,rho,powerSetting)
-            T  =thrustModule.thrust
+            T = thrustModule.get_thrust_available(altitude)
             L  =W*np.cos(CA)-T*np.sin(CA)
             Cl =L/Q/S
             Cd =Cd0+k*Cl*Cl
@@ -154,6 +154,7 @@ class ClimbDescent(FlightMechanics):
             CA =np.arcsin(RC/V)
             change=np.abs(ca-CA)
             i+=1
+        return RC
 
 class TurningFlight:
     def run_turn_rate(self,phi,airspeed,loadFactorMax,powerSetting):
@@ -176,8 +177,9 @@ def run_test1():
     print slf.run_max_SAR(alt)
     print 'MINIMUM FUEL'
     print slf.run_min_fuel(alt)
-#    clm = ClimbDescent(bi,ac.tm)
-#    clm.run_climb_rate(200.0)
+
+    clm = ClimbDescent(bi,ac.propulsion)
+    print clm.run_climb_rate(200.0, 0)
     
     
 
