@@ -1,7 +1,7 @@
 function fc = get_flight_conditions(altitude, velocity)
 
 if nargin<2
-    get_flight_conditions(0,100)
+    fc = get_flight_conditions(0,100);
     return
 end
 

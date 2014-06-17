@@ -1,7 +1,7 @@
 function generate_datcom_input_config()
 
-config = load_configuration();
-fc = get_datacom_flight_conditions();
+config = load_configuration(2);
+fc = get_flight_conditions();
 fid = fopen('for005.dat','wt');
 
 fprintf(fid,'CASEID 1 GBU-38 BETA=0.0,PHI=0\n');

@@ -23,6 +23,8 @@ config.wing.dihedral = 0;
 config.wing.thickness = 0.15;
 config.wing.location = [0.6838, 0.05]; % XZ
 %config.wing.airfoil = 0;
+config.wing.numberOfTails = 2;
+config.wing.xAngle = 0;
 config.wing.skinThickness = 0.0005;
 config.wing.airfoil = 'NASALRN1015.txt';
 
@@ -43,7 +45,7 @@ config.fin_extra2.numberOfTails=2;
 config.fin_extra2.xAngle=135;
 
 %config = geometry_analysis_datcom(config);
-config = geometry_analysis(config);
+config = geometry_analysis_small(config);
 config.massData = weight_analysis(config);
 config.CG = [config.massData.Xcg 0 0];
 
