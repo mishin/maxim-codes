@@ -12,7 +12,7 @@ from numpy import ones,array,linspace
 from engine_turbofan_analysis import engine_modeling
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
-
+import constants
 
 class Propulsion(object):
     def __init__(self):
@@ -88,7 +88,7 @@ class TurbofanEngine(object):
             xlsPath = path.db.engineTurbofan
         self.name = str(name)
         db = ReadDatabase(xlsPath,self.name)
-        self.thrustMC       = db.read_row(-1,1)
+        self.thrustMC       = db.read_row(-1,1) *constants.GRAVITY_ACCEL
         self.sfcMC          = db.read_row(-1,1)
         self.length         = db.read_row(-1,1)
         self.diameter       = db.read_row(-1,1)
@@ -107,7 +107,7 @@ class TurbofanEngine(object):
         print self.mass
     
     def get_sfc(self,Mach,altitude,thrustReq):
-        Tstatic = self.designThrust
+        Tstatic = self.thrustMC
         Mcr = self.designMach
         altD = self.deignAltitude
         d, Td, sfcD, sfcF = engine_modeling(Tstatic,Mcr,altD,thrustReq,altitude,Mach)

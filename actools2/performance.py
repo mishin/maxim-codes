@@ -61,7 +61,7 @@ class SteadyLevelFlight(FlightMechanics):
         atm = ISAtmosphere(altitude)
         Vstall = self.get_Vstall()
         args = (altitude,atm.soundSpeed,)
-        bound = np.array([Vstall,10.*Vstall])
+        bound = np.array([Vstall,0.85*atm.soundSpeed])
         opts = {'maxiter':100,'disp':False}
         def velocity_eqn(V,altitude,soundSpeed):
             D = self.get_required_thrust(V,altitude)
@@ -79,7 +79,7 @@ class SteadyLevelFlight(FlightMechanics):
         atm = ISAtmosphere(altitude)
         Vstall = self.get_Vstall()
         args = (altitude,atm.soundSpeed,)
-        bound = np.array([Vstall,10.*Vstall])
+        bound = np.array([Vstall,0.85*atm.soundSpeed])
         opts = {'maxiter':100,'disp':False}
         def velocity_eqn(V,altitude,soundSpeed):
             D = self.get_required_thrust(V,altitude)
@@ -111,20 +111,33 @@ class SteadyLevelFlight(FlightMechanics):
 
 class ClimbDescent(FlightMechanics):
     def run_max_climb_rate(self,altitude):
+        atm = ISAtmosphere(altitude)
         """ calculates maximum climb rate """
         Vstall = self.get_Vstall()
-        Vstall = self.get_Vstall()
-        #args = (altitude,atm.soundSpeed,)
-        bound = np.array([Vstall,5.*Vstall])
+        bound = np.array([Vstall,0.9*atm.soundSpeed])
         opts = {'maxiter':100,'disp':False}
-        
+        args = (altitude,)
+        fun = lambda velocity,altitude: -self.run_climb_rate(velocity,altitude)
+        rslt = minimize_scalar(fun,bracket=bound,bounds=bound,method='Bounded',
+                               options=opts,args=args)
+        velocity = rslt.x
+        RC = self.run_climb_rate(velocity,altitude)
+        #print velocity, RC
+        return RC
+    
+    def get_service_ceiling(self):
+        RCmin = 0.5
+        fun = lambda h: self.run_max_climb_rate(h)-RCmin
+        xopt = fsolve(fun,5e3,xtol=0.1)[0]
+        return xopt
+
     def run_max_climb_angle(self):
         pass
     def run_min_glide_angle(self):
         pass
     def run_min_glide_sinkrate(self):
         pass
-    def run_climb_rate(self,airspeed,altitude, powerSetting=100.):
+    def run_climb_rate(self,airspeed,altitude):
         basicInput   = self.bi
         thrustModule = self.tm
         atm = ISAtmosphere(altitude)
@@ -147,9 +160,7 @@ class ClimbDescent(FlightMechanics):
             Cl =L/Q/S
             Cd =Cd0+k*Cl*Cl
             D  =Q*S*Cd
-            PR =D*V
-            PA =T*V
-            RC =(PA-PR)/W
+            RC =(T-D)*V/W
             ca =CA
             CA =np.arcsin(RC/V)
             change=np.abs(ca-CA)
@@ -169,7 +180,8 @@ def run_test1():
     ac = aircraft_FW.load('X45C')
     bi = BasicInput(ac)
     slf =SteadyLevelFlight(bi,ac.propulsion)
-    alt = ac.designGoals.cruiseAltitude
+    #alt = ac.designGoals.cruiseAltitude
+    alt = 11000.
 
     print 'MAXIMUM SPEED'
     print slf.run_max_TAS(alt)
@@ -179,8 +191,8 @@ def run_test1():
     print slf.run_min_fuel(alt)
 
     clm = ClimbDescent(bi,ac.propulsion)
-    print clm.run_climb_rate(200.0, 0)
-    
+    #print clm.run_max_climb_rate(alt)
+    print clm.get_service_ceiling()
     
 
 if __name__=="__main__":

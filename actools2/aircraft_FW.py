@@ -303,7 +303,7 @@ def run_test1():
 
 def run_test4():
     import matplotlib.pyplot as plt
-    ac = load('X45C')
+    ac = load('X-1')
 
 if __name__=="__main__":
-    run_test3()
+    run_test4()

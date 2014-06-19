@@ -87,6 +87,7 @@ def engine_modeling(threq, Mcrz, AltH, thr, hh, Mf):
     d02, mfr, mcore= EngineSize(threq, thrust, bprdes, dspinner, m20, tt2,pt2) 
     
 # Engine Lip Area Design
+
     a1   = 0.25*pi*( d02**2 - dspinner**2) 
     a2   = a1
     a4   = a40*mcore     # NGV Area
@@ -157,7 +158,7 @@ def engine_modeling(threq, Mcrz, AltH, thr, hh, Mf):
     
 # Mass flow rate Calculation    
     mfr, mcore= MassFlow(bprdes, a2, m20, tt2,pt2)     
-
+    
     Dadd, Dvis= InletDrag(AltH, Mcrz , a1, mfr) 
      
     NDrag= NozzleDrag(AltH, Mcrz , d02)  
@@ -261,7 +262,7 @@ def engine_modeling(threq, Mcrz, AltH, thr, hh, Mf):
 
         # Mass flow rate Calculation    
         mfr, mcore= MassFlow(bprdes, a2, mm, tt2,pt2)     
-
+        
         Dadd, Dvis= InletDrag(hh, Mf , a1, mfr) 
 
         NDrag= NozzleDrag(hh, Mf , d02)  
@@ -304,7 +305,6 @@ def NozzleDrag(AltH, M0, d02):
     return NDrag
 
 
-#function [Dadd, Dvis]= InletDrag(AltH, M0, a1, mfr)
 def InletDrag(AltH, M0, a1, mfr):
 # Function calculates additive inlet drag
 
@@ -350,7 +350,7 @@ def InletDrag(AltH, M0, a1, mfr):
     u1        = mm*sqrt(gamma*287.058*t1) 
     rho1     = p1/(287.058*t1) 
     
-    Dadd = p1*a1*(1 + gamma*mm**2) - p0*a0*( (a1/a0) + gamma*M0**2 ) 
+    Dadd = p1*a1*(1 + gamma*mm**2.0) - p0*a0*( (a1/a0) + gamma*M0**2 ) 
     
     r1     = sqrt(a1/pi) 
     ld     = 8*r1 
@@ -407,7 +407,7 @@ def EngineSize(threq, thmfr, bpr, dspinner, m20, tt2,pt2):
     Mnorm= normass(gamma, m20) 
     
     area2 = sqrt(Cp*tt2)/(Mnorm*pt2) 
-    
+
     mcore = threq/thmfr  
     mfr = (1+bpr)*mcore   
     a02   = area2*mfr + 0.25*pi*dspinner**2 
