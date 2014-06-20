@@ -13,6 +13,7 @@ class PerformanceResults:
     def __init__(self):
         self.velocity        = 0.0
         self.Mach            = 0.0
+        self.SAR             = 0.0
         self.EAS             = 0.0
         self.altitude        = 0.0
         self.density         = 0.0
@@ -102,6 +103,7 @@ class SteadyLevelFlight(FlightMechanics):
         results.drag = results.thrust
         results.TSFC = self.tm.get_sfc(results.Mach,altitude,results.thrust)
         results.fuelFlow = results.TSFC*results.thrust
+        results.SAR = velocity/results.fuelFlow
         results.lift = self.bi.wt
         results.LD = results.lift / results.drag
         self.results = results
@@ -117,13 +119,12 @@ class ClimbDescent(FlightMechanics):
         bound = np.array([Vstall,0.9*atm.soundSpeed])
         opts = {'maxiter':100,'disp':False}
         args = (altitude,)
-        fun = lambda velocity,altitude: -self.run_climb_rate(velocity,altitude)
+        fun = lambda velocity,altitude: -self.run_climb_rate(velocity,altitude).climbRate
         rslt = minimize_scalar(fun,bracket=bound,bounds=bound,method='Bounded',
                                options=opts,args=args)
         velocity = rslt.x
-        RC = self.run_climb_rate(velocity,altitude)
-        #print velocity, RC
-        return RC
+        return self.run_climb_rate(velocity,altitude)
+
     
     def get_service_ceiling(self):
         RCmin = 0.5
@@ -133,6 +134,7 @@ class ClimbDescent(FlightMechanics):
 
     def run_max_climb_angle(self):
         pass
+
     def run_min_glide_angle(self):
         pass
     def run_min_glide_sinkrate(self):
@@ -165,7 +167,21 @@ class ClimbDescent(FlightMechanics):
             CA =np.arcsin(RC/V)
             change=np.abs(ca-CA)
             i+=1
-        return RC
+        results = PerformanceResults()
+        results.altitude = altitude
+        results.velocity = airspeed
+        results.thrust = T
+        results.climbAngle = CA
+        results.climbRate = RC
+        results.Mach = airspeed/atm.soundSpeed
+        results.density = atm.density
+        results.lift = L
+        results.drag = D
+        results.LD = L/D
+        results.TSFC = self.tm.get_sfc(results.Mach,altitude,results.thrust)
+        results.fuelFlow = results.TSFC*results.thrust
+        return results
+
 
 class TurningFlight:
     def run_turn_rate(self,phi,airspeed,loadFactorMax,powerSetting):
