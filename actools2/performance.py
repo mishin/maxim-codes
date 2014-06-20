@@ -6,7 +6,7 @@ Created on Thu Jun 12 11:44:42 2014
 """
 
 from perf_tools import BasicInput, FlightMechanics, ISAtmosphere
-from scipy.optimize import fminbound, fsolve, minimize_scalar
+from scipy.optimize import fminbound, fsolve, minimize_scalar,brenth
 import numpy as np
 
 class PerformanceResults:
@@ -46,11 +46,12 @@ class PerformanceResults:
 class SteadyLevelFlight(FlightMechanics):
     def run_max_TAS(self,altitude):
         """ Maximum velocity """
+        atm = ISAtmosphere(altitude)
         def velocity_eqn(V,altitude):
             Treq = self.get_required_thrust(V,altitude)
-            Tav = self.tm.totalThrust
+            Tav = self.tm.get_thrust_available(altitude)
             return Treq-Tav
-        V0 = 150.0
+        V0 = atm.soundSpeed*0.8
         V = fsolve(velocity_eqn,V0,(altitude,))[0]
         self.set_results(V,altitude)
         self.results.thrust = self.tm.totalThrust
@@ -66,7 +67,6 @@ class SteadyLevelFlight(FlightMechanics):
         def velocity_eqn(V,altitude,soundSpeed):
             D = self.get_required_thrust(V,altitude)
             sfc = self.tm.get_sfc(V/soundSpeed,altitude,D)
-            #print '%.2f\t%.4f'%(V,sfc)
             ff = D*sfc #fuel flow kg/sec
             return -V/ff
         rslt = minimize_scalar(velocity_eqn,bracket=bound,bounds=bound,method='Bounded',options=opts,args=args)
@@ -181,7 +181,7 @@ def run_test1():
     bi = BasicInput(ac)
     slf =SteadyLevelFlight(bi,ac.propulsion)
     #alt = ac.designGoals.cruiseAltitude
-    alt = 11000.
+    alt = 10000.
 
     print 'MAXIMUM SPEED'
     print slf.run_max_TAS(alt)

@@ -14,3 +14,6 @@ class Cruise(SteadyLevelFlight):
     
     def run_maximum_endurance(self,altitude,startFuel,endFuel):
         pass
+    
+    def run_maximum_speed(self,altitude,startFuel,endFuel):
+        pass
