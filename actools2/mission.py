@@ -8,6 +8,10 @@ Created on Fri Jun 13 16:50:41 2014
 from performance import SteadyLevelFlight, ClimbDescent, BasicInput
 from numpy import zeros, array, arange, linspace
 from scipy.integrate import simps
+import convert
+
+import aircraft_FW
+
 
 class MissionResults:
     """
@@ -63,11 +67,12 @@ class Cruise(SteadyLevelFlight):
         pass
     
     def run_maximum_speed(self,altitude,startFuel,endFuel):
+        """ attack at sea level """
         pass
 
 
 class Climb(ClimbDescent):
-    def run_climb(self,startAltitude,endAltitude,nSeg):
+    def run_climb(self,startAltitude,endAltitude,nSeg=10):
         altitude = linspace(startAltitude,endAltitude,nSeg)
         dh = altitude[1]-altitude[0]
         rateOfClimb = zeros(nSeg-1)
@@ -90,14 +95,42 @@ class Climb(ClimbDescent):
         return totalDist, totalTime, totalFuel
 
 
-def run_test1():
-    import aircraft_FW
-    
+def run_mission15():
     ac = aircraft_FW.load('X45C')
+    ac.mass.fuel.set_fuel_mass_burned
     bi = BasicInput(ac)
-    clm = Climb(bi,ac.propulsion)
-    print clm.run_climb(0,10000,10)
+    tm = ac.propulsion
+    slf = SteadyLevelFlight(bi,tm)
+    clm = Climb(bi,tm)
+    
+    hCruise = 10000 # cruise altitude, m
+    hPenetration = convert.ft_to_m(2000.) # penetration altitude, m
+    hField = 0.0
+    hReserve = 0.0
+    reserveTime = 30.0 #min
+    attackDistance = 370400. #m
+    
+    reserveTime *= 60.
+    
+    climb = clm.run_climb(hField, hCruise)
+    slf.bi.ac.mass.fuel.set_fuel_mass_burned(climb[2])
+    reserve = slf.run_min_fuel(hReserve)
+    reserveFuel = reserve.fuelFlow*reserveTime
+    
+    attack = slf.run_max_TAS(hPenetration)
+    attackTime = 2.0*attackDistance/attack.velocity
+    attackFuel = attackTime*attack.fuelFlow
 
+    print climb
+    print reserve
+    print reserveFuel
+    print attack
+    print attackFuel
+    
+    # calculate reserve fuel
+    # calculate climb
+    # calculate penetration->withdrawal fuel
+    # maximum range
 
 if __name__=="__main__":
-    run_test1()
+    run_mission15()

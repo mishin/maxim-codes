@@ -8,6 +8,7 @@ Created on Thu Jun 12 11:44:42 2014
 from perf_tools import BasicInput, FlightMechanics, ISAtmosphere
 from scipy.optimize import fminbound, fsolve, minimize_scalar,brenth
 import numpy as np
+import constants
 
 class PerformanceResults:
     def __init__(self):
@@ -102,7 +103,7 @@ class SteadyLevelFlight(FlightMechanics):
         results.thrust = self.get_required_thrust(velocity,altitude)
         results.drag = results.thrust
         results.TSFC = self.tm.get_sfc(results.Mach,altitude,results.thrust)
-        results.fuelFlow = results.TSFC*results.thrust
+        results.fuelFlow = results.TSFC*results.thrust/constants.GRAVITY_ACCEL
         results.SAR = velocity/results.fuelFlow
         results.lift = self.bi.wt
         results.LD = results.lift / results.drag

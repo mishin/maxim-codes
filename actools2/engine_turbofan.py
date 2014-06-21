@@ -36,7 +36,7 @@ class Propulsion(object):
         altitude = float(altitude)
         thrustReq = float(thrustReq) / self.numberOfEngines # thrust per engine
         sfcPerEngine = self.engine.get_sfc(Mach,altitude,thrustReq)
-        return sfcPerEngine*self.numberOfEngines /3600. # kg/(kg*sec)
+        return sfcPerEngine*self.numberOfEngines /3600. # kg/(N*sec)
     
     def __call__(self,Mach,altitude,powerSetting):
         """ NOTE: powerSetting is linear function - will be replaced """

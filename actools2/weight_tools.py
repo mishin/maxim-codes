@@ -71,7 +71,7 @@ class AircraftMass:
     def set_fuel_mass(self,fuelMass):
         self.payload.update_item('fuel',fuelMass)
 
-class MassComponent:
+class MassComponent(object):
     """
     Describing mass component by parameters described below
     
@@ -409,48 +409,26 @@ class MassList:
         fid.close()
 
 
-class Fuel(MassList):
-    """ Class describing fuel tank as point mass with given CG location and
-    fuel mass. Provides methods for setting fuel mass in different tanks or total.
-    """
-    def _init_fuel(self):
-        self.density = 750.0
-        self.maxMass = 0.0
-        self.volume = 0.0
-        self._dict = {'right':'Fuel tank Right',
-                      'left':'Fuel tank Left',
-                      'all':'all',
-                      'both':'all',
-                      'total':'total'}
-    def set_fuel_mass(self,fuelMass,tankName='total'):
-        n = len(self.items)
-        tankName = self._dict[tankName]
-        if tankName=='total':
-            fuelPerTank = fuelMass/float(n)
-            for i in range(n):
-                self.items[i].mass = fuelPerTank
-        elif tankName=='all':
-            for i in range(n):
-                self.items[i].mass = fuelMass
-        else:
-            self.update_item_mass(tankName,fuelMass)
-    def set_fuel_mass_burned(self,burnedFuelMass,tankName='total'):
-        mass = self.get_fuel_mass_total()
-        newMass = mass - burnedFuelMass
-        self.set_fuel_mass(newMass,tankName)
-    def get_fuel_mass_total(self):
-        mass = 0.0
-        for item in self.items:
-            mass += item.mass
-        return mass
-    def set_fuel_fraction(self,fuelFraction,tankName):
-        n = len(self.items)
-        if tankName=='all':
-            for i in range(n):
-                self.items[i].mass *= fuelFraction
-        else:
-            m = self.get_item_by_name(tankName).mass
-            self.update_item_mass(tankName,m*fuelFraction)
+class Fuel(MassComponent):
+    def __init__(self,mass,CG,inertia=np.zeros(3),
+                 density=750.,maximumMass=0.0,tankVolume=0.0):
+        super(Fuel,self).__init__('Fuel',mass,CG,inertia)
+        self.density = float(density)
+        self.maximumMass = float(maximumMass)
+        self.tankVolume = float(tankVolume)
+    
+    def set_fuel_mass(self,fuelMass):
+        self.mass = float(fuelMass)
+
+    def set_fuel_burned(self,burnedFuelMass):
+        self.mass += -float(burnedFuelMass)
+
+    def set_fuel_fraction(self,fuelFraction):
+        self.mass = self.maximumMass*fuelFraction
+    
+    def __repr__(self):
+        out = '{0:10} = {1:8.4f}kg'.format('FuelMass',self.mass)
+        return out
 
 
 class _AircraftMass:
