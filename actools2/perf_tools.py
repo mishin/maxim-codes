@@ -82,6 +82,11 @@ class BasicInput:
         self.ac.mass.fuel.set_fuel_mass(fuelMass)
         self.mass = self.ac.mass()
         self.wt = self.mass*self.g
+    
+    def update_fuel_mass_burned(self,fuelMass):
+        self.ac.mass.fuel.set_fuel_burned(fuelMass)
+        self.mass = self.ac.mass()
+        self.wt = self.mass*self.g
 
     def get_drag_coefficient(self,CL):
         """

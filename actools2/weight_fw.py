@@ -6,7 +6,7 @@ Created on Tue Apr 22 21:39:57 2014
 """
 import numpy as np
 import constants
-from weight_tools import AircraftMass, MassList
+from weight_tools import AircraftMass, MassList, Fuel
 import convert
 
 def get_flying_wing_mass(aircraft):

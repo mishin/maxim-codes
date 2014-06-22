@@ -22,7 +22,7 @@ class AircraftMass:
         self.name = str(name)
         self.empty      = MassList(self.name + ' empty',MAC,xMAC)
         self.payload    = MassList(self.name + ' payload',MAC,xMAC)
-        self.fuel       = Fuel(self.name + ' fuel',MAC,xMAC)
+        self.fuel       = Fuel()
         self.total      = MassList(self.name + ' total',MAC,xMAC)
         self.totalMass = 0.0
         self.totalCG   = np.zeros(3)
@@ -31,6 +31,10 @@ class AircraftMass:
         self.xMAC = xMAC
         self.update_mac(MAC,xMAC)
     
+    def set_fuel_mass(self,mass,CG):
+        self.fuel = Fuel(mass,CG)
+        self.update_total() 
+
     def __call__(self):
         self.update_total()
         return self.total.totalMass
@@ -42,7 +46,8 @@ class AircraftMass:
         self.total = MassList(self.name +' total')
         self.total.add_mass_list(self.empty)
         self.total.add_mass_list(self.payload)
-        self.total.add_mass_list(self.fuel)
+        self.total.add_component(self.fuel)
+        #self.total.add_mass_list(self.fuel)
         self.total.update_totals()
         self.totalMass = self.total.totalMass
         self.totalCG = self.total.CG
@@ -68,8 +73,6 @@ class AircraftMass:
         self.update_total()
         self.total.display()
 
-    def set_fuel_mass(self,fuelMass):
-        self.payload.update_item('fuel',fuelMass)
 
 class MassComponent(object):
     """
@@ -410,7 +413,7 @@ class MassList:
 
 
 class Fuel(MassComponent):
-    def __init__(self,mass,CG,inertia=np.zeros(3),
+    def __init__(self,mass=0.0,CG=np.zeros(3),inertia=np.zeros(3),
                  density=750.,maximumMass=0.0,tankVolume=0.0):
         super(Fuel,self).__init__('Fuel',mass,CG,inertia)
         self.density = float(density)
@@ -580,6 +583,7 @@ def run_test1():
     acmass = AircraftMass('sample aircraft')
     baggage = MassComponent('baggage',25,[1.0,0.0,0.0])
     acmass.payload.add_component(baggage)
+    acmass.set_fuel_mass(50,[1,2,3])
     acmass.display()
 
 

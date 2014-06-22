@@ -60,9 +60,22 @@ class MissionResults:
 
 
 class Cruise(SteadyLevelFlight):
-    def run_maximum_range(self,altitude,startFuel,endFuel):
-        pass
-    
+    def run_maximum_range(self,altitude,startFuel,endFuel,nSeg=10):
+        fuelMass = linspace(startFuel,endFuel,nSeg)
+        df = fuelMass[0]-fuelMass[1]
+        totalTime = 0.0
+        totalDist = 0.0
+        for i,m in enumerate(fuelMass[:-1]):
+            self.bi.update_fuel_mass(m)
+            results = self.run_max_SAR(altitude)
+            dist = results.SAR*df
+            totalDist += dist
+            time = dist/results.velocity
+            totalTime += time
+        return totalDist, totalTime
+            
+        
+
     def run_maximum_endurance(self,altitude,startFuel,endFuel):
         pass
     
@@ -91,16 +104,16 @@ class Climb(ClimbDescent):
             totalDist += distance[i]
             totalTime += time[i]
             totalFuel += fuelMass[i]
+            self.bi.update_fuel_mass_burned(fuelMass[i])
             
         return totalDist, totalTime, totalFuel
 
 
 def run_mission15():
     ac = aircraft_FW.load('X45C')
-    ac.mass.fuel.set_fuel_mass_burned
     bi = BasicInput(ac)
     tm = ac.propulsion
-    slf = SteadyLevelFlight(bi,tm)
+    slf = Cruise(bi,tm)
     clm = Climb(bi,tm)
     
     hCruise = 10000 # cruise altitude, m
@@ -113,20 +126,24 @@ def run_mission15():
     reserveTime *= 60.
     
     climb = clm.run_climb(hField, hCruise)
-    slf.bi.ac.mass.fuel.set_fuel_mass_burned(climb[2])
+    m1 = ac.mass.fuel.mass
+    distance =  slf.run_maximum_range(hCruise,m1,climb[2])
+    print m1
+    print m1-1000.
+    print distance
     reserve = slf.run_min_fuel(hReserve)
     reserveFuel = reserve.fuelFlow*reserveTime
     
-    attack = slf.run_max_TAS(hPenetration)
-    attackTime = 2.0*attackDistance/attack.velocity
-    attackFuel = attackTime*attack.fuelFlow
+#    attack = slf.run_max_TAS(hPenetration)
+#    attackTime = 2.0*attackDistance/attack.velocity
+#    attackFuel = attackTime*attack.fuelFlow
 
-    print climb
-    print reserve
-    print reserveFuel
-    print attack
-    print attackFuel
-    
+#    print climb
+#    print reserve
+#    print reserveFuel
+#    print attack
+#    print attackFuel
+#    
     # calculate reserve fuel
     # calculate climb
     # calculate penetration->withdrawal fuel

@@ -10,7 +10,7 @@ import numpy as np
 from scipy.interpolate import Akima1DInterpolator
 
 from engine_turbofan import Propulsion
-from weight_fw import get_flying_wing_mass, AircraftMass
+from weight_fw import get_flying_wing_mass, AircraftMass, Fuel
 from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
 from drag import get_friction_drag_FW
@@ -111,9 +111,11 @@ class FlyingWing(object):
         self.mass.update_total()
         self._process_data()
         fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
-        fuelCG2 = np.array([fuelCG[0],-fuelCG[1],fuelCG[2]])
-        self.mass.fuel.add_item('Fuel tank right',self.designGoals.fuelMass/2.,fuelCG)
-        self.mass.fuel.add_item('Fuel tank left',self.designGoals.fuelMass/2.,fuelCG2)
+        fuelCG = np.array([fuelCG[0],0,fuelCG[2]])
+        self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)
+#        fuelCG2 = np.array([fuelCG[0],-fuelCG[1],fuelCG[2]])
+        #self.mass.fuel.add_item('Fuel tank right',self.designGoals.fuelMass/2.,fuelCG)
+        #self.mass.fuel.add_item('Fuel tank left',self.designGoals.fuelMass/2.,fuelCG2)
         self.designGoals._process_data()
         self._update_mass()
 
@@ -303,7 +305,10 @@ def run_test1():
 
 def run_test4():
     import matplotlib.pyplot as plt
-    ac = load('X-1')
+    ac = load('X45C')
+    ac.mass.display()
+    ac.mass.fuel.set_fuel_burned(20)
+    ac.mass.display()
 
 if __name__=="__main__":
     run_test4()
