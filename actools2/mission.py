@@ -133,21 +133,35 @@ def run_mission15():
     print distance
     reserve = slf.run_min_fuel(hReserve)
     reserveFuel = reserve.fuelFlow*reserveTime
-    
-#    attack = slf.run_max_TAS(hPenetration)
-#    attackTime = 2.0*attackDistance/attack.velocity
-#    attackFuel = attackTime*attack.fuelFlow
 
-#    print climb
-#    print reserve
-#    print reserveFuel
-#    print attack
-#    print attackFuel
-#    
-    # calculate reserve fuel
-    # calculate climb
-    # calculate penetration->withdrawal fuel
-    # maximum range
+
+def run_mission11():
+    ac = aircraft_FW.load('X45C')
+    bi = BasicInput(ac)
+    tm = ac.propulsion
+    slf = Cruise(bi,tm)
+    clm = Climb(bi,tm)
+    
+    hCruise = 10000 # cruise altitude, m
+    hField = 0.0
+    hReserve = 0.0
+    reserveTime = 30.0 #min
+    
+
+    reserveTime *= 60.
+    
+    distClm, timeClm, fuelClm = clm.run_climb(hField, hCruise)
+    reserve = slf.run_min_fuel(hReserve)
+    reserveFuel = reserve.fuelFlow*reserveTime
+    m1 = ac.mass.fuel.mass
+    distCrs, timeCrs =  slf.run_maximum_range(hCruise,m1,reserveFuel)
+    print m1
+    print m1-1000.
+    print distCrs/1e3
+    print timeCrs/3600
+    reserve = slf.run_min_fuel(hReserve)
+    reserveFuel = reserve.fuelFlow*reserveTime
+
 
 if __name__=="__main__":
-    run_mission15()
+    run_mission11()
