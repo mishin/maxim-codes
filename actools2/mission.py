@@ -138,6 +138,7 @@ def run_mission15():
 def run_mission11():
     ac = aircraft_FW.load('Baseline1')
     ac.display()
+    ac.mass.display()
     bi = BasicInput(ac)
     tm = ac.propulsion
     slf = Cruise(bi,tm)

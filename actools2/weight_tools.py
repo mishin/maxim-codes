@@ -487,7 +487,7 @@ class _AircraftMass:
         aircraft name. Name is used in text reports only.
     """
     def __init__(self,name='noname aircraft',MAC=None,xMAC=None):
-        self.MAC = MAC
+        self.MAC = MACcomponents
         self.xMAC = xMAC
         self.aircraftName = name
         self.airframe = MassList('Airframe')
@@ -584,6 +584,8 @@ def run_test1():
     baggage = MassComponent('baggage',25,[1.0,0.0,0.0])
     acmass.payload.add_component(baggage)
     acmass.set_fuel_mass(50,[1,2,3])
+    acmass.display()
+    acmass.payload.add_item('Weapons',200,[2.,0,0])
     acmass.display()
 
 

@@ -667,6 +667,7 @@ def run_test_geometry():
     #af = naca4(12,2,30)
     af = naca4(12,5,40)
     af._analyze_geometry()
+    af.display('r--')
     print af.thickness
     print af.camber
     print af.camberLocation
