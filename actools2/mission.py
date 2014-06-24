@@ -136,7 +136,8 @@ def run_mission15():
 
 
 def run_mission11():
-    ac = aircraft_FW.load('X45C')
+    ac = aircraft_FW.load('Baseline1')
+    ac.display()
     bi = BasicInput(ac)
     tm = ac.propulsion
     slf = Cruise(bi,tm)
@@ -146,7 +147,6 @@ def run_mission11():
     hField = 0.0
     hReserve = 0.0
     reserveTime = 30.0 #min
-    
 
     reserveTime *= 60.
     

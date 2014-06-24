@@ -379,50 +379,51 @@ class WaveDrag(object):
         self.refArea = float(refArea)
     
     def analyze_wing(self,wing):
-        if self.fc.Mach>1.0:
-            tc  = wing.equivThickness
-            xtc = wing.equivThicknessLoc
-            r0t = wing.equivLEradius/tc
-            ht  = wing.equivCamber/tc
-            TR = wing.taperRatio
-            cosLE = np.cos(wing.equivSweepLErad)
-            cosTE = np.cos(wing.equivSweepTErad)
-            tanLE = np.tan(wing.equivSweepLErad)
-            tanTE = np.tan(wing.equivSweepTErad)
-            # airfoil factors
-            Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
-            Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
-            # thickness factor
-            r0t2 = r0t**0.5
-            Kt = 1.0+4.0*(0.5-xtc*(1.0+0.5*r0t2))**2.0 - 0.25*r0t2*(1.0-xtc)**2.0
-            Kc = 1.0+2.5*(ht)**2. # airfoil camber factor
-            Kp = (cosLE + 0.5/((1.0+TR)**2.0)*(tanLE**2.0 - tanTE**2.0))
-            Kp = Kp/(1.0 + 1.0/((1.0+TR*TR)**2.0)*(tanLE + tanTE)**2.0)
-            Fb = 0.3+0.7*Kp**(1.0+2.0*TR**(1./3.))
-            
-            betaLim = abs(tanLE)
-            beta = (self.fc.Mach**2.0-1.0)**0.5
-            betaBar = beta/(tc**(1.0/3.0))
-            if beta>betaLim:
-                z = cosLE + cosTE
-                m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)*(betaLim/beta)**z
-            else:
-                m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)
-            ARe = _calc_ARe(wing.aspectRatio,Kp)
-            # main equation
-            Fbm = Fb**m
-            var1 = Kt*Kw*Kc*Kb
-            var2 = (1.0/ARe)/(1.0+(1.0+TR)*Fb*betaBar**(1.0+Kw))
-            var3 = ARe**3.0/(1.0+1.0/3.0*ARe**3.0*betaBar**4.0)
-            CDbar = 2.0*var1/(betaBar*Kb*Kw*Fbm + (var2+var3))
-            var4 = betaBar*Kb*Kw**3.8*Fbm
-            var5 = (2.0/ARe**3.0)/(1.0+(2.0/3.0+TR)*Fb*betaBar**(1.0+Kw**3.8))
-            var6 = 1.0/(1.0+3.0*ARe*betaBar**4.0)
-            CDbar += 3.33*var1/(var4+var5+var6)
-            CDwave = CDbar*tc**(5./3)
-            return CDwave
+        #if self.fc.Mach>1.0:
+        tc  = wing.equivThickness
+        xtc = wing.equivThicknessLoc
+        r0t = wing.equivLEradius/tc
+        ht  = wing.equivCamber/tc
+        TR = wing.taperRatio
+        cosLE = np.cos(wing.equivSweepLErad)
+        cosTE = np.cos(wing.equivSweepTErad)
+        tanLE = np.tan(wing.equivSweepLErad)
+        tanTE = np.tan(wing.equivSweepTErad)
+        # airfoil factors
+        Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
+        Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
+        # thickness factor
+        r0t2 = r0t**0.5
+        Kt = 1.0+4.0*(0.5-xtc*(1.0+0.5*r0t2))**2.0 - 0.25*r0t2*(1.0-xtc)**2.0
+        Kc = 1.0+2.5*(ht)**2. # airfoil camber factor
+        Kp = (cosLE + 0.5/((1.0+TR)**2.0)*(tanLE**2.0 - tanTE**2.0))
+        Kp = Kp/(1.0 + 1.0/((1.0+TR*TR)**2.0)*(tanLE + tanTE)**2.0)
+        Fb = 0.3+0.7*Kp**(1.0+2.0*TR**(1./3.))
+        
+        betaLim = abs(tanLE)
+        M = self.fc.Mach*tanLE
+        beta = (M**2.0-1.0)**0.5
+        betaBar = beta/(tc**(1.0/3.0))
+        if beta>betaLim:
+            z = cosLE + cosTE
+            m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)*(betaLim/beta)**z
         else:
-            return 0.0
+            m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)
+        ARe = _calc_ARe(wing.aspectRatio,Kp)
+        # main equation
+        Fbm = Fb**m
+        var1 = Kt*Kw*Kc*Kb
+        var2 = (1.0/ARe)/(1.0+(1.0+TR)*Fb*betaBar**(1.0+Kw))
+        var3 = ARe**3.0/(1.0+1.0/3.0*ARe**3.0*betaBar**4.0)
+        CDbar = 2.0*var1/(betaBar*Kb*Kw*Fbm + (var2+var3))
+        var4 = betaBar*Kb*Kw**3.8*Fbm
+        var5 = (2.0/ARe**3.0)/(1.0+(2.0/3.0+TR)*Fb*betaBar**(1.0+Kw**3.8))
+        var6 = 1.0/(1.0+3.0*ARe*betaBar**4.0)
+        CDbar += 3.33*var1/(var4+var5+var6)
+        CDwave = CDbar*tc**(5./3)
+        return CDwave
+#        else:
+#            return 0.0
     
     def set_flight_conditions(self,velocity,altitude):
         """
