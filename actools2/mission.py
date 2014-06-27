@@ -5,9 +5,8 @@ Created on Fri Jun 13 16:50:41 2014
 @author: Maxim
 """
 
-from performance import SteadyLevelFlight, ClimbDescent, BasicInput
-from numpy import zeros, array, arange, linspace,float64
-from scipy.integrate import simps
+from performance import SteadyLevelFlight, ClimbDescent
+from numpy import zeros,linspace,float64
 import convert
 
 import aircraft_FW
@@ -199,7 +198,8 @@ def run_mission_B15():
     operRange = climb1.distance + cruise.distance + penetration.distance
     operRange += withdrawal.distance + climb2.distance
     operRange *= 0.5
-    print operRange
+    print operRange/1e3
+
 
 def run_mission_B11():
     """ maximum cruise range """
@@ -232,7 +232,7 @@ def run_mission_B11():
     cruise.display('Cruise')
     
     Range = climb1.distance + cruise.distance
-    print Range
+    print Range/1e3
 
 
 if __name__=="__main__":
