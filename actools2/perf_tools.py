@@ -104,10 +104,15 @@ class BasicInput:
 
 
 class FlightMechanics:
-    def __init__(self,basicInput, thrustModule):
-        self.bi = basicInput
-        self.tm = thrustModule
-    
+    def __init__(self,aircraft,CLmax=2.0,altitude=0.0):
+        self.ac = aircraft
+        self.bi = BasicInput(aircraft,CLmax,altitude)
+        self.tm = aircraft.propulsion
+
+    def drop_payload(self,name='drop payload'):
+        self.ac.mass.payload.remove_item(name)
+        self.__init__(self.ac,self.bi.Clmax)
+
     def get_Vstall(self,n=1.0):
         """
         Calculates stall speed at given load factor
@@ -171,8 +176,8 @@ class FlightMechanics:
 
 def run_test1():
     ac = aircraft_FW.load('X45C')
-    bi = BasicInput(ac)
-    fm = FlightMechanics(bi,ac.propulsion)
+    #bi = BasicInput(ac)
+    fm = FlightMechanics(ac)
     print fm.get_Vstall()
     print fm.get_EAS(100.,1.0)
     print fm.get_LDmax()
@@ -183,8 +188,8 @@ def run_test2():
     import matplotlib.pyplot as plt
     import numpy as np
     ac = aircraft_FW.load('X45C')
-    bi = BasicInput(ac)
-    fm = FlightMechanics(bi,ac.propulsion)
+    #bi = BasicInput(ac)
+    fm = FlightMechanics(ac)
     V = np.linspace(100,400,50)
     Treq = np.array([fm.get_required_thrust(v,10000)/1e3 for v in V])
     plt.figure()
@@ -192,4 +197,4 @@ def run_test2():
     plt.show()    
 
 if __name__=="__main__":
-    run_test2()
+    run_test1()

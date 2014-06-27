@@ -35,6 +35,23 @@ def cubm_to_gal(volume):
 def gal_to_cubm(volume):
     return float(volume)/264.172052
 
+def nm_to_m(distance):
+    return float(distance)*1852
+
+def m_to_nm(distance):
+    return float(distance)/1852
+
+def N_to_lbf(force):
+    return float(force)/4.44822162
+
+def lbf_to_N(force):
+    return float(force)*4.44822162
+
+def kt_to_msec(speed):
+    return float(speed)*0.514444444
+
+def msec_to_kt(speed):
+    return float(speed)/0.514444444
 #def sfcImp_to_sfcSI(sfc):
 #    """Convert specific fuel consumption from imperial units lb/(h*lbf) to 
 #    SI units kg/(h*kgf)"""
