@@ -294,21 +294,14 @@ class RunCases:
         pass
 
 def run_test1():
-    #from misc_tools import Timer
     import aircraft_FW as aircraft
-    #timer = Timer()
     ac = aircraft.load('X45C')
-    ac.mass.display()
-    #ac.display()
-    #ac.display()
-    #timer.lap('load')
-    #ac.display()
+
 
     aero = Aerodynamics(ac)
     fc = FlightConditionsAVL(ac,0.7,1e4)
     results = aero.run_trim(fc)
     results.display()
-    #timer.stop('aero')
 
 
 if __name__=="__main__":
