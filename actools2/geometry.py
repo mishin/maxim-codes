@@ -297,7 +297,8 @@ class CstCurve():
         self.shapeCurve = ShapeFcn(Anew)
 
 class BezierCurve():
-    def __init__(self,nodes):
+    def __init__(self,pts):
+        nodes = PtsArray(pts)
         self.order = nodes.nPts - 1
         self.nPts = nodes.nPts
         self.dimm = nodes.dimm
@@ -378,4 +379,4 @@ def sine_dist_test():
     plt.show()
 
 if __name__=="__main__":
-    runTest()
+    sine_dist_test()
