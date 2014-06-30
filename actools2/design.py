@@ -5,23 +5,28 @@ Created on Tue Jun 24 15:46:30 2014
 @author: Maxim
 """
 
-from aircraft_FW import aircraft_FW
+from aircraft_FW import FlyingWing
 
-class Design(aircraft_FW):
+class Design(FlyingWing):
     def set_chords(self,chords):
-        pass
+        assert len(chords)==self.wing.nSec
+        self.wing.chords = chords
+        self.wing._process_data()
     
     def set_chord_by_index(self,chord,idx):
-        pass
+        assert idx<=len(self.wing.chords)
+        self.wing.chords[idx] = chord
+        self.wing._process_data()
     
     def set_sweep_angles(self,sweep):
-        pass
+        assert len(sweep)==self.wing.nSeg
+        
     
     def set_sweep_by_index(self,sweep,idx):
         pass
 
     def set_spans(self,spans):
-        pass
+        assert len(spans)==len(self.wing.segSpans)
     
     def set_spans_by_index(self,spans,idx):
         pass
