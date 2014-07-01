@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 def run():
     mass1 = np.array([1740., 3600, 4900, 6350])
-    mass4 = np.array([2684.,6780,6854,16102])
+    mass4 = np.array([2684.,8165,6854,16102])
     name = ['X47A','X45C','nEUROn','X47B']
 
     ac1 = aircraft_FW.load(name[0])

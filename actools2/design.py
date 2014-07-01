@@ -33,7 +33,7 @@ class Design(FlyingWing):
     
     def set_taper_ratio_by_index(self,TR,idx):
         pass
-    
+    k
     def _upd_mass(self):
         pass
     

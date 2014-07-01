@@ -295,7 +295,7 @@ class RunCases:
 
 def run_test1():
     import aircraft_FW as aircraft
-    ac = aircraft.load('X45C')
+    ac = aircraft.load('Baseline1')
 
 
     aero = Aerodynamics(ac)
