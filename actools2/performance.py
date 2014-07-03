@@ -129,7 +129,7 @@ class ClimbDescent(FlightMechanics):
     
     def get_service_ceiling(self):
         RCmin = 0.5
-        fun = lambda h: self.run_max_climb_rate(h)-RCmin
+        fun = lambda h: self.run_max_climb_rate(h).climbRate-RCmin
         xopt = fsolve(fun,5e3,xtol=0.1)[0]
         return xopt
 
@@ -195,8 +195,8 @@ class Field:
 def run_test1():
     import aircraft_FW
     ac = aircraft_FW.load('X45C')
-    bi = BasicInput(ac)
-    slf =SteadyLevelFlight(bi,ac.propulsion)
+    ac.display()
+    slf =SteadyLevelFlight(ac)
     #alt = ac.designGoals.cruiseAltitude
     alt = 10000.
 
@@ -207,7 +207,7 @@ def run_test1():
     print 'MINIMUM FUEL'
     print slf.run_min_fuel(alt)
 
-    clm = ClimbDescent(bi,ac.propulsion)
+    clm = ClimbDescent(ac)
     #print clm.run_max_climb_rate(alt)
     print clm.get_service_ceiling()
     

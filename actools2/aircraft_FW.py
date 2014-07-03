@@ -37,11 +37,9 @@ class FlyingWing(object):
         self.aeroResults = None
         
         # FIXME: drag calculation is temporal - DO NOT USE for real calculation
-        cd = np.array([0.01718,0.01718, 0.01662, 0.01622, 0.01589, 0.0156, 0.01532, 0.01506, 
-                       0.0148, 0.03573, 0.04254, 0.03174, 0.02919, 0.02753, 0.02602, 
-                       0.02469, 0.0235, 0.02245, 0.02149])/2.5
-        M = np.array([0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 
-                      1.4, 1.5, 1.6, 1.7, 1.8, 1.9])
+        M = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9])
+        cd = np.array([0.00822, 0.00824, 0.00825, 0.00823, 0.0082, 0.00816, 0.02549, 0.04534, 0.02902, 0.01268, 0.00871, 0.00769, 0.00758, 0.00746, 0.00734, 0.00722, 0.00709, 0.00696])
+
         self._dragCurve = Akima1DInterpolator(M,cd)
 
         
@@ -305,7 +303,8 @@ def run_test1():
 
 def run_test4():
     import matplotlib.pyplot as plt
-    ac = load('X45C')
+    ac = load('Baseline1')
+    ac.display()
     ac.mass.display()
     ac.mass.fuel.set_fuel_burned(20)
     ac.mass.display()
