@@ -146,7 +146,7 @@ class Climb(ClimbDescent):
 
 def run_mission_B15():
     """ air assault mission """
-    ac = aircraft_FW.load('Baseline1')
+    ac = aircraft_FW.load('nEUROn')
     #ac.display()
     # -- mission inputs --
     altField = 0.0
@@ -204,7 +204,7 @@ def run_mission_B15():
 
 def run_mission_B11():
     """ maximum cruise range """
-    ac = aircraft_FW.load('Baseline1')
+    ac = aircraft_FW.load('nEUROn')
 
     slf = Cruise(ac)
     clm = Climb(ac)

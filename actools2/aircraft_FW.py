@@ -17,6 +17,8 @@ from wing import Wing
 from aero_avl_fw import Aerodynamics, FlightConditionsAVL
 from drag_aero09 import get_parasite_drag_fw
 
+import matplotlib.pyplot as plt
+
 path = MyPaths()
 
 def load(name):
@@ -126,9 +128,17 @@ class FlyingWing(object):
     
     def _update_parasite_drag(self):
         M, CD, Mdd, CDdd = get_parasite_drag_fw(self)
+        self._M = M
+        self._CD = CD
         self._dragCurve = Akima1DInterpolator(M,CD)
         self.Mdd = Mdd
         self.CDdd = CDdd
+    
+    def plot_drag(self):
+        plt.figure()
+        plt.plot(self._M, self._CD,'bs-')
+        plt.grid(True)
+        plt.show()
 
     def _update_mass(self):
         self.mass = get_flying_wing_mass(self)
@@ -297,12 +307,8 @@ def run_test1():
     ac.display()
 
 def run_test4():
-    import matplotlib.pyplot as plt
-    ac = load('Baseline1')
-    ac.display()
-    ac.mass.display()
-    ac.mass.fuel.set_fuel_burned(20)
-    ac.mass.display()
+    ac = load('nEUROn')
+    ac.plot_drag()
 
 if __name__=="__main__":
     run_test4()
