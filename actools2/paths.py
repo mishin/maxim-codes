@@ -41,10 +41,16 @@ class MyPaths:
         self.javafoil      = os.path.abspath(self.wdir + '/Jfoil/javafoil.jar')
         self.mhclasses     = os.path.abspath(self.wdir + '/Jfoil/mhclasses.jar')
         self.tmpDir        = os.path.abspath(self.wdir + '/temp')
-        self.aeroCD0       = os.path.abspath(self.wdir + '/aeroCD0/Min_Drag.exe')
-        self.aeroCD0in     = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.inp')
-        self.aeroCD0inWave = os.path.abspath(self.wdir + '/aeroCD0/WAV_KTX2.inp')
-        self.aeroCD0out    = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.out')
+        
+        self.aeroCD0dir    = os.path.abspath(self.wdir + '/aeroCD0')
+        self.aeroCD0       = 'Min_Drag.exe'
+        self.aeroCD0in     = 'drag_p_ktx2.inp'
+        self.aeroCD0inWave = 'WAV_KTX2.inp'
+        self.aeroCD0out    = 'drag_p_ktx2.out'
+#        self.aeroCD0in     = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.inp')
+#        self.aeroCD0inWave = os.path.abspath(self.wdir + '/aeroCD0/WAV_KTX2.inp')
+#        self.aeroCD0out    = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.out')
+        
         self.platform  = determine_platform()
         self._init_xfoilpath()
     
@@ -107,6 +113,11 @@ class MyPaths:
             self.java = jpath
         else:
             self.java = os.path.abspath(jpath)
+    
+    def clean_drag_files(self):
+        os.remove(self.aeroCD0in)
+        os.remove(self.aeroCD0inWave)
+        os.remove(self.aeroCD0out)
 
 
 def determine_platform():

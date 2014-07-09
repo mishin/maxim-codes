@@ -108,8 +108,6 @@ class SteadyLevelFlight(FlightMechanics):
         results.lift = self.bi.wt
         results.LD = results.lift / results.drag
         self.results = results
-        
-        
 
 
 class ClimbDescent(FlightMechanics):

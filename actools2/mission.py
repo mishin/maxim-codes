@@ -152,13 +152,13 @@ def run_mission_B15():
     altField = 0.0
     altCruise = 1.0e4
     altAttack = convert.ft_to_m(2000)
-    distAttack = convert.nm_to_m(200.0)
+    distAttack = convert.nm_to_m(200)
     timeReserve = 1800.0 # 30min
     speedMaxAttack = convert.kt_to_msec(360)
     
     Wf0 = ac.mass.fuel.mass
     # -- assumptions --
-    fuelReserveStart = 0.2*Wf0
+    fuelReserveStart = 0.1*Wf0
     fuelAttackStart = 0.5*Wf0
     
     # -- calculations --
@@ -184,6 +184,7 @@ def run_mission_B15():
     withdrawal.display('Withdrawal')
     
     # climb 2
+    clm.drop_payload()
     climb2 = clm.run_climb(altAttack,altCruise,withdrawal.fuelEnd)
     climb2.display('Climb2')
     
@@ -215,7 +216,7 @@ def run_mission_B11():
     
     Wf0 = ac.mass.fuel.mass
     # -- assumptions --
-    fuelReserveStart = 0.2*Wf0
+    fuelReserveStart = 0.1*Wf0
     
     # climb
     climb1 = clm.run_climb(altField, altCruise,Wf0)

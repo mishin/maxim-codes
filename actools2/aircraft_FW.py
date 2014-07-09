@@ -10,12 +10,12 @@ import numpy as np
 from scipy.interpolate import Akima1DInterpolator
 
 from engine_turbofan import Propulsion
-from weight_fw import get_flying_wing_mass, AircraftMass, Fuel
+from weight_fw import get_flying_wing_mass, AircraftMass
 from flight_conditions import FlightConditions
 from display_aircraft import flying_wing_display
-from drag import get_friction_drag_FW
 from wing import Wing
 from aero_avl_fw import Aerodynamics, FlightConditionsAVL
+from drag_aero09 import get_parasite_drag_fw
 
 path = MyPaths()
 
@@ -35,14 +35,9 @@ class FlyingWing(object):
         self.drag = None #total drag list
         self.propulsion = Propulsion() #table lookup database
         self.aeroResults = None
-        
+
         # FIXME: drag calculation is temporal - DO NOT USE for real calculation
-        M = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9])
-        cd = np.array([0.00822, 0.00824, 0.00825, 0.00823, 0.0082, 0.00816, 0.02549, 0.04534, 0.02902, 0.01268, 0.00871, 0.00769, 0.00758, 0.00746, 0.00734, 0.00722, 0.00709, 0.00696])
 
-        self._dragCurve = Akima1DInterpolator(M,cd)
-
-        
     def load_xls(self, name, xlsPath=None):
         self.name = str(name)
         if xlsPath==None:
@@ -115,6 +110,7 @@ class FlyingWing(object):
         #self.mass.fuel.add_item('Fuel tank right',self.designGoals.fuelMass/2.,fuelCG)
         #self.mass.fuel.add_item('Fuel tank left',self.designGoals.fuelMass/2.,fuelCG2)
         self.designGoals._process_data()
+        self._update_parasite_drag()
         self._update_mass()
 
     def _process_data(self):
@@ -128,30 +124,29 @@ class FlyingWing(object):
     def display(self,showAxes=False):
         flying_wing_display(self,showAxes)
     
-    def _update_parasite_drag(self,velocity,altitude):
-        if velocity==None:
-            velocity = self.designGoals.cruiseSpeed
-        if altitude==None:
-            altitude = self.designGoals.cruiseAltitude
-        self.drag = get_friction_drag_FW(self,velocity,altitude)
+    def _update_parasite_drag(self):
+        M, CD, Mdd, CDdd = get_parasite_drag_fw(self)
+        self._dragCurve = Akima1DInterpolator(M,CD)
+        self.Mdd = Mdd
+        self.CDdd = CDdd
 
     def _update_mass(self):
         self.mass = get_flying_wing_mass(self)
-    
-    def get_parasite_drag(self,velocity=None,altitude=None):
-        """
-        Returns friction and form drag coefficient at given velocity and altitude. 
-        If velocity and altitude are not specified then values from design targets
-        are used
-        
-        Parameters
-        ----------
-        
-        velocity : float, m/sec
-        altitude : float, m
-        """
-        self._update_parasite_drag(velocity,altitude)
-        return self.drag.get_total_drag()
+#    
+#    def get_parasite_drag(self,velocity=None,altitude=None):
+#        """
+#        Returns friction and form drag coefficient at given velocity and altitude. 
+#        If velocity and altitude are not specified then values from design targets
+#        are used
+#        
+#        Parameters
+#        ----------
+#        
+#        velocity : float, m/sec
+#        altitude : float, m
+#        """
+#        self._update_parasite_drag()
+#        return self.drag.get_total_drag()
     
     def update_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
                       mass=None,cg=None,inertia=None,CD0=None):
@@ -190,7 +185,7 @@ class FlyingWing(object):
             altitude = self.designGoals.cruiseAltitude
         fc = FlightConditions(velocity,altitude)
         cd = self._dragCurve(fc.Mach)
-        return cd #FIXME: for debug only
+        return cd
     
     def get_inertia(self):
         return np.zeros(3) #FIXME: for debug only
