@@ -14,13 +14,13 @@ fhigh1d = lambda x: (6.0*x-2.0)**2.0*np.sin(12.*x-4.)
 
 def fhigh(x):
     A = 0.08
-    B = 0.9
+    B = 1.2
     C = 2.0
     return fhigh1d(np.linalg.norm(A*x)) + B*np.sum(x) + C
 
 def flow(x):
     A = 0.07
-    B = 0.2
+    B = 0.1
     C = 0.0
     return fhigh1d(np.linalg.norm(A*x)) + B*np.sum(x) + C
 
@@ -29,26 +29,28 @@ g1low  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. - 2
 g2     = lambda x: (x[0]+x[1]-5)**2/30 + (x[0]-x[1]-12)**2/120 - 1
 
 def problem_2d():
+    cnstr = ({'type':'ineq','fun':g1high},{'type':'ineq','fun':g2})
+    print minimize(fhigh,[3.,3.],method='SLSQP',bounds=((0,10),(0,10),),constraints=cnstr)
     xL = np.array([0.,0.])
     xU = np.array([10.,10.])
-    x0 = np.array([5.0,5.0])
+    x0 = np.array([6.0,6.0])
     delta = 5.
-    
+    nw = 3
     tol = 1e-3
     err = tol+1
     iterMax = 50
     nIter = 0
     
-    prefix = 'GVFM'
-    fscaled = AdditiveScaling(fhigh,flow,0)
-    gscaled = AdditiveScaling(g1high,g1low,0)
+    prefix = 'AVCM'
+    fscaled = AdditiveScaling(fhigh,flow,nw)
+    gscaled = AdditiveScaling(g1high,g1low,nw)
     xDOE = np.array([[10.0,3.3333],[0.0,6.6667],[3.3333,0.0],[6.6667,10.0]])
-    fscaled.initialize_by_points(xDOE)
-    gscaled.initialize_by_points(xDOE)
+    #fscaled.initialize_by_points(xDOE)
+    #gscaled.initialize_by_points(xDOE)
     
     trReg = TrustRegionManagement(delta)
     
-    report = FileOutput('twodim_results_20131207.py')
+    report = FileOutput('twodim_results_20140715.py')
     _x10 = list()
     _x20 = list()
     _x1new = list()
@@ -94,7 +96,7 @@ def problem_2d():
         _rho.append(rho1)
         _err.append(err)
     
-    report.write_string('===== %s ====='%prefix)
+    report.write_string('#===== %s ====='%prefix)
     report.write_string(prefix+'fhEval = %d'%fscaled.fHigh._nEval)
     report.write_string(prefix+'flEval = %d'%fscaled.fLow._nEval)
     report.write_string(prefix+'ghEval = %d'%gscaled.fHigh._nEval)

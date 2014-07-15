@@ -9,17 +9,19 @@ from ScaledFunctions import *
 from scipy.optimize import minimize
 from write_data import FileOutput
 
-fhigh = lambda x: (6.0*x-2.0)**2.0*np.sin(12.*x-4.)
-flow  = lambda x: 0.5*fhigh(x) + 8.*(x-.5)+5.
+fhigh = lambda x: (6.0*x-2.0)**2.0*np.sin(12.*x-3.5)
+flow  = lambda x: 0.35*fhigh(x) + 4.*(x-.5)+3.0
+
+
 
 def run_test_additive():
     xL, x0, xU = 0.0, 0.5, 1.0
     delta = 0.5
     xDOE = np.array([0.2,0.55,0.8])
-    prefix = 'GVFMhybr'
-    fsc = HybridScaling(fhigh,flow,0,1e-6,0.)
-    report = FileOutput('onedim_results_20131206_2.py')
-    fsc.initialize_by_points(xDOE)
+    prefix = 'AVCMhybr'
+    fsc = HybridScaling(fhigh,flow,3,1e-6,0.5)
+    report = FileOutput('onedim_results_20140715.py')
+    #fsc.initialize_by_points(xDOE)
     
     trReg = TrustRegionManagement(delta)
     tol = 1e-6
@@ -37,6 +39,7 @@ def run_test_additive():
     _rho = list()
     _err = list()
     _delta = list()
+    print 'xnew\tx0\terr\tfnew\trho'
     while err>tol and nIter<iterMax:
         fsc.construct_scaling_model(x0)
         bnds = get_bounds(x0,delta,xL,xU)
@@ -72,6 +75,7 @@ def run_test_additive():
     report.write_array(_rho,prefix+'rho')
     report.write_array(_err,prefix+'err')
     report.write_array(_delta,prefix+'delta')
+    report.write_array(x, 'x')
     report.write_array(yh,'fhigh')
     report.write_array(yl,'flow')
     fSc = np.array([fsc(_x) for _x in x])
@@ -79,7 +83,7 @@ def run_test_additive():
     report.write_array(fsc._scalingAdd.fHigh._histXpart,prefix+'xHist')
     report.write_array(fsc._scalingAdd.fHigh._histFpart,prefix+'fHist')
 
-    fsc._scalingAdd.fHigh.write_history('history.txt')
+    fsc._scalingAdd.fHigh.write_history('history_20140715.txt')
     plt.figure(1)
     plt.hold(True)
     plt.plot(x,yh,'b')
@@ -92,4 +96,5 @@ def run_test_additive():
     plt.cla()
 
 if __name__=="__main__":
-    run_test_additive()
+    print minimize(fhigh,0.5,method='SLSQP',bounds=((0.0, 1.0),))
+    #run_test_additive()

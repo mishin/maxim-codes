@@ -160,7 +160,9 @@ def test_function_selection5():
         x = np.array(x)*0.085
         return forrester(np.linalg.norm(x))
     def f(x):
-        return forrester(np.linalg.norm(0.08*np.array(x))) + 0.1*np.linalg.norm(x) + 0.5*(x[0]+x[1])
+        return forrester(np.linalg.norm(0.08*np.array(x))) + 0.9*np.linalg.norm(x) + 0.2*(x[0]+x[1])
+    def f2(x):
+        return forrester(np.linalg.norm(0.07*np.array(x))) + 0.2*np.linalg.norm(x) + 0.1*(x[0]+x[1])
         
     font = {'family' : 'normal',
     'weight' : 'normal',

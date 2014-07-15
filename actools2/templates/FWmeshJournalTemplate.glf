@@ -348,3 +348,124 @@ unset _TMP(PW_37)
 $_TMP(mode_10) abort
 unset _TMP(mode_10)
 unset _TMP(con_18)
+
+# Appended by Pointwise V16.03R2 - Fri Jul 11 13:38:31 2014
+
+set _TMP(mode_1) [pw::Application begin Create]
+set _TMP(PW_1) [pw::SegmentSpline create]
+set _DB(1) [pw::DatabaseEntity getByName {model-4}]
+set _DB(2) [pw::DatabaseEntity getByName {model-8}]
+set _DB(3) [pw::DatabaseEntity getByName {quilt-8}]
+set _DB(4) [pw::DatabaseEntity getByName {quilt-4}]
+set _DB(5) [pw::DatabaseEntity getByName {model-7}]
+set _DB(6) [pw::DatabaseEntity getByName {quilt-7}]
+set _CN(1) [pw::GridEntity getByName {con-1}]
+set _DB(7) [pw::DatabaseEntity getByName {quilt-6}]
+set _DB(8) [pw::DatabaseEntity getByName {model-6}]
+set _CN(2) [pw::GridEntity getByName {con-2}]
+set _CN(3) [pw::GridEntity getByName {con-12}]
+$_TMP(PW_1) addPoint [$_CN(1) getPosition -arc 0]
+$_TMP(PW_1) addPoint [pwu::Vector3 add [pw::Application getXYZ [$_CN(1) getPosition -arc 0]] {0.05 0 0.05}]
+set _TMP(con_1) [pw::Connector create]
+$_TMP(con_1) addSegment $_TMP(PW_1)
+unset _TMP(PW_1)
+$_TMP(con_1) calculateDimension
+$_TMP(mode_1) end
+unset _TMP(mode_1)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_2) [pw::Application begin Create]
+set _TMP(PW_2) [pw::SegmentSpline create]
+set _DB(9) [pw::DatabaseEntity getByName {model-1}]
+set _DB(10) [pw::DatabaseEntity getByName {model-2}]
+set _DB(11) [pw::DatabaseEntity getByName {model-3}]
+set _DB(12) [pw::DatabaseEntity getByName {quilt-1}]
+set _DB(13) [pw::DatabaseEntity getByName {quilt-2}]
+set _DB(14) [pw::DatabaseEntity getByName {quilt-3}]
+set _DB(15) [pw::DatabaseEntity getByName {model-5}]
+set _DB(16) [pw::DatabaseEntity getByName {quilt-5}]
+set _CN(4) [pw::GridEntity getByName {con-14}]
+$_TMP(PW_2) addPoint [$_CN(1) getPosition -arc 1]
+$_TMP(PW_2) addPoint [pwu::Vector3 add [pw::Application getXYZ [$_CN(1) getPosition -arc 1]] {0.0 0 0.05}]
+unset _TMP(con_1)
+set _TMP(con_2) [pw::Connector create]
+$_TMP(con_2) addSegment $_TMP(PW_2)
+unset _TMP(PW_2)
+$_TMP(con_2) calculateDimension
+$_TMP(mode_2) end
+unset _TMP(mode_2)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_3) [pw::Application begin Create]
+set _TMP(PW_3) [pw::SegmentSpline create]
+set _CN(5) [pw::GridEntity getByName {con-19}]
+set _CN(6) [pw::GridEntity getByName {con-20}]
+$_TMP(PW_3) addPoint [$_CN(5) getPosition -arc 1]
+$_TMP(PW_3) addPoint [$_CN(6) getPosition -arc 1]
+unset _TMP(con_2)
+set _TMP(con_3) [pw::Connector create]
+$_TMP(con_3) addSegment $_TMP(PW_3)
+unset _TMP(PW_3)
+$_TMP(con_3) calculateDimension
+$_TMP(mode_3) end
+unset _TMP(mode_3)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_4) [pw::Application begin Create]
+set _TMP(PW_4) [pw::SegmentSpline create]
+set _CN(7) [pw::GridEntity getByName {con-21}]
+set _CN(8) [pw::GridEntity getByName {con-5}]
+set _CN(9) [pw::GridEntity getByName {con-6}]
+set _CN(10) [pw::GridEntity getByName {con-13}]
+set _CN(11) [pw::GridEntity getByName {con-17}]
+set _CN(12) [pw::GridEntity getByName {con-9}]
+set _CN(13) [pw::GridEntity getByName {con-10}]
+set _CN(14) [pw::GridEntity getByName {con-16}]
+$_TMP(PW_4) addPoint [$_CN(12) getPosition -arc 0]
+$_TMP(PW_4) addPoint [pwu::Vector3 add [pw::Application getXYZ [$_CN(12) getPosition -arc 0]] {0.05 0 -0.05}]
+unset _TMP(con_3)
+set _TMP(con_4) [pw::Connector create]
+$_TMP(con_4) addSegment $_TMP(PW_4)
+unset _TMP(PW_4)
+$_TMP(con_4) calculateDimension
+$_TMP(mode_4) end
+unset _TMP(mode_4)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_5) [pw::Application begin Create]
+set _TMP(PW_5) [pw::SegmentSpline create]
+set _CN(15) [pw::GridEntity getByName {con-18}]
+$_TMP(PW_5) addPoint [$_DB(11) closestPoint {7.6119999999999992 1.3322676295501878e-015 -4.5550000000000006}]
+$_TMP(PW_5) addPoint [pwu::Vector3 add [pw::Application getXYZ [$_CN(12) getPosition -arc 1]] {0.0 0 -0.05}]
+unset _TMP(con_4)
+set _TMP(con_5) [pw::Connector create]
+$_TMP(con_5) addSegment $_TMP(PW_5)
+unset _TMP(PW_5)
+$_TMP(con_5) calculateDimension
+$_TMP(mode_5) end
+unset _TMP(mode_5)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_6) [pw::Application begin Create]
+set _TMP(PW_6) [pw::SegmentSpline create]
+set _CN(16) [pw::GridEntity getByName {con-22}]
+set _CN(17) [pw::GridEntity getByName {con-23}]
+$_TMP(PW_6) addPoint [$_CN(16) getPosition -arc 1]
+$_TMP(PW_6) addPoint [$_CN(17) getPosition -arc 1]
+unset _TMP(con_5)
+set _TMP(con_6) [pw::Connector create]
+$_TMP(con_6) addSegment $_TMP(PW_6)
+unset _TMP(PW_6)
+$_TMP(con_6) calculateDimension
+$_TMP(mode_6) end
+unset _TMP(mode_6)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_7) [pw::Application begin Create]
+set _TMP(PW_7) [pw::SegmentSpline create]
+set _CN(18) [pw::GridEntity getByName {con-24}]
+$_TMP(PW_7) delete
+unset _TMP(PW_7)
+$_TMP(mode_7) abort
+unset _TMP(mode_7)
+unset _TMP(con_6)
