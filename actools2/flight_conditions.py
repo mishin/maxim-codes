@@ -157,6 +157,7 @@ class ISAtmosphere_mason(object):
         self.soundSpeed1 = (GAMMA*R*T)**0.5
         self.density = PP/(T/288.15) *RHO0
         TS = T/288.15
+        self.dT = dT
         self.temperature = T0*TS
         self.soundSpeed = A0*TS**0.5
         self.pressure = PP *P0

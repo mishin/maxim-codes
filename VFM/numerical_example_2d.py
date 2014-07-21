@@ -6,51 +6,62 @@ Created on Sat Dec 07 14:33:53 2013
 """
 
 from ScaledFunctions import *
-from scipy.optimize import minimize
+from scipy.optimize import minimize, rosen
 from write_data import FileOutput
 from mpl_toolkits.mplot3d import Axes3D
 
 fhigh1d = lambda x: (6.0*x-2.0)**2.0*np.sin(12.*x-4.)
 
 def fhigh(x):
-    A = 0.08
-    B = 1.2
-    C = 2.0
+    A = 0.07
+    B = 0.9
+    C = 0.2
     return fhigh1d(np.linalg.norm(A*x)) + B*np.sum(x) + C
 
 def flow(x):
-    A = 0.07
-    B = 0.1
-    C = 0.0
+    A = 0.035
+    B = 0.5
+    C = 0.1
     return fhigh1d(np.linalg.norm(A*x)) + B*np.sum(x) + C
 
-g1high = lambda x: x[0]**2*x[1]/20. - 1
-g1low  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. - 2
+fhigh = lambda x: rosen(x)
+flow = lambda x: 0.5*rosen(x) + 1.0*x[0] + .1*x[1] -1.0
+g1high   = lambda x: x[0]**2*x[1]/20. -.1
+g1low  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. -2
 g2     = lambda x: (x[0]+x[1]-5)**2/30 + (x[0]-x[1]-12)**2/120 - 1
+
+
+#fhigh = lambda x: 4.*x[0]**2. + x[1]**3. + x[0]*x[1]
+#flow = lambda x: 4.*(x[0]+0.1)**2. + (x[1]-0.1)**3. + x[0]*x[1]+0.1
+#
+#g1high = lambda x: -(1./x[0]+ 1/x[1] -2.)
+#g1low = lambda x: -(1./x[0] + 1./(x[1]+0.1)-2.001)
+
 
 def problem_2d():
     cnstr = ({'type':'ineq','fun':g1high},{'type':'ineq','fun':g2})
+    #cnstr = ({'type':'ineq','fun':g1high},)
     print minimize(fhigh,[3.,3.],method='SLSQP',bounds=((0,10),(0,10),),constraints=cnstr)
-    xL = np.array([0.,0.])
-    xU = np.array([10.,10.])
-    x0 = np.array([6.0,6.0])
-    delta = 5.
+    xL = np.array([-2,-2])
+    xU = np.array([2,2])
+    x0 = np.array([1,1])
+    delta = 1.0
     nw = 3
-    tol = 1e-3
+    tol = 1e-4
     err = tol+1
     iterMax = 50
     nIter = 0
-    
+
     prefix = 'AVCM'
     fscaled = AdditiveScaling(fhigh,flow,nw)
     gscaled = AdditiveScaling(g1high,g1low,nw)
-    xDOE = np.array([[10.0,3.3333],[0.0,6.6667],[3.3333,0.0],[6.6667,10.0]])
+    #xDOE = np.array([[10.0,3.3333],[0.0,6.6667],[3.3333,0.0],[6.6667,10.0]])
     #fscaled.initialize_by_points(xDOE)
     #gscaled.initialize_by_points(xDOE)
-    
+
     trReg = TrustRegionManagement(delta)
-    
-    report = FileOutput('twodim_results_20140715.py')
+
+    report = FileOutput('twodim_results_20140717.py')
     _x10 = list()
     _x20 = list()
     _x1new = list()
@@ -70,6 +81,7 @@ def problem_2d():
         gscaled.construct_scaling_model(x0)
         bnds = get_bounds(x0,delta,xL,xU)
         cnstr = ({'type':'ineq','fun':gscaled},{'type':'ineq','fun':g2})
+        #cnstr = ({'type':'ineq','fun':gscaled},)
         rslt = minimize(fscaled,x0,method='SLSQP',bounds=bnds,constraints=cnstr)
         xnew = rslt.x
         fnew = rslt.fun
@@ -81,7 +93,7 @@ def problem_2d():
         delta = min(delta1,delta2)
         nIter += 1
         print '%.4f\t%.4f\t%.4f\t%.4f\t%.2e\t%.4f\t%.4f'%(xnew[0],xnew[1],x0[0],x0[1], err, fnew, rho1)
-        
+
         _x10.append(x0[0])
         _x20.append(x0[1])
         _x1new.append(xnew[0])

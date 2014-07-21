@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm, rc
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, rosen
 
 def forrester_hi(x):
     return (5.0*x-2.0)**2.0*np.sin(12.*x-4.)
@@ -46,8 +46,8 @@ def test_function_selection1():
 
 
 def test_function_selection2():
-    lb = np.array([0.1,0.1])
-    ub = np.array([10.,10.])
+    lb = np.array([-2,-2])
+    ub = np.array([2.,2.])
     dx = 0.1
     #f = lambda x: (np.sin(2.*np.pi*x[0])**3 * np.sin(2.*np.pi*x[1]))/(x[0]**3*(x[0]+x[1]))
     f = lambda x: 4.*x[0]**2.+x[1]**3+x[0]*x[1]
@@ -156,23 +156,32 @@ def test_function_selection5():
 #    def f(x):
 #        x = np.array(x)*0.08
 #        return forrester(np.linalg.norm(x)) + 5.*np.linalg.norm(x) + 10.*(x[0]+x[1])
-    def f2(x):
-        x = np.array(x)*0.085
-        return forrester(np.linalg.norm(x))
-    def f(x):
-        return forrester(np.linalg.norm(0.08*np.array(x))) + 0.9*np.linalg.norm(x) + 0.2*(x[0]+x[1])
-    def f2(x):
-        return forrester(np.linalg.norm(0.07*np.array(x))) + 0.2*np.linalg.norm(x) + 0.1*(x[0]+x[1])
-        
-    font = {'family' : 'normal',
-    'weight' : 'normal',
-    'size'   : 14}
-    
-    rc('font', **font)
+#    def f2(x):
+#        x = np.array(x)*0.085
+#        return forrester(np.linalg.norm(x))
+#    def f(x):
+#        
+#        return forrester(np.linalg.norm(0.08*np.array(x))) + 0.9*np.linalg.norm(x) + 0.2*(x[0]+x[1])
+#    def f2(x):
+#        x[0] = x[0]+1.0
+#        x[1] = x[1]+1.0
+#        return forrester(np.linalg.norm(0.035*np.array(x))) + 0.5*np.linalg.norm(x) + 0.1*(x[0]+x[1])
+    f = lambda x: rosen(x)
+    f2 = lambda x: 0.5*rosen(x) + 1.0*x[0] + .1*x[1] -1.0
+    #f   = lambda x: x[0]**2*x[1]/20+.08
+    #f2  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/8.+.3
+    #f2     = lambda x: (x[0]+x[1]-5)**2/30 + (x[0]-x[1]-12)**2/120 - 3
+    #f = lambda x: x[0]**2*x[1]/20. - 1
+    #f2  = lambda x: x[0]**2*x[1]/20. + (x[0]+x[1])/5. - 2
+#    font = {'family' : 'normal',
+#    'weight' : 'normal',
+#    'size'   : 14}
+#    
+#    rc('font', **font)
     #f2 = lambda x: np.exp(x[0]/3)+np.exp(x[1]/5)-x[0]
-    lb = [0, 0.0]
-    ub = [10., 10.]
-    dx = 0.5
+    lb = [-2,-2]
+    ub = [2,2]
+    dx = 0.1
     x = y = np.arange(lb[0],ub[0],dx)
     X, Y = np.meshgrid(x,y)
     zs1 = np.array([f([x,y]) for x,y in zip(np.ravel(X),np.ravel(Y))])
@@ -191,25 +200,27 @@ def test_function_selection5():
     ax1 = Axes3D(fig1)
     ax1.hold(True)
     ax1.plot_wireframe(X,Y,Z1,color='r')
+    #ax1.contour(X,Y,Z1,color='r',levels=[0])
     #ax1.plot_wireframe(X,Y,Z2,color='b')
     #ax1.legend(['High fidelity function','Low fidelity function'])
     ax1.set_xlabel('x1')
     ax1.set_ylabel('x2')
     ax1.set_zlabel('f (x1,x2)')
-    ax1.axis([0,10,0,10])
-    ax1.set_zbound(-5,20)
+    #ax1.axis([0,10,0,10])
+    ax1.set_zbound(-500,4000)
     
     fig2 = plt.figure(2)
     ax2 = Axes3D(fig2)
     ax2.hold(True)
-    #ax2.plot_surface(X,Y,Z1,color='r')
+#    #ax2.plot_surface(X,Y,Z1,color='r')
     ax2.plot_wireframe(X,Y,Z2,color='b')
+    #ax1.contour(X,Y,Z2,color='b',levels=[0])
     #ax2.legend(['High fidelity function','Low fidelity function'])
     ax2.set_xlabel('x1')
     ax2.set_ylabel('x2')
     ax2.set_zlabel('f (x1,x2)')
-    ax2.axis([0,10,0,10])
-    ax2.set_zbound(-5,20)
+#    ax2.axis([0,10,0,10])
+    ax2.set_zbound(-500,4000)
     plt.show()
 
 if __name__=="__main__":

@@ -146,7 +146,7 @@ class Climb(ClimbDescent):
 
 def run_mission_B15():
     """ air assault mission """
-    ac = aircraft_FW.load('nEUROn')
+    ac = aircraft_FW.load('X45C')
     #ac.display()
     # -- mission inputs --
     altField = 0.0
@@ -173,7 +173,7 @@ def run_mission_B15():
     # climb 1
     climb1 = clm.run_climb(altField, altCruise,Wf0)
     climb1.display('Climb 1')
-    
+
     # penetration-withdrawal
     penetration = slf.run_distance_at_speed(altAttack,speedMaxAttack,distAttack,fuelAttackStart)
     penetration.display('Penetration')
@@ -182,19 +182,19 @@ def run_mission_B15():
 
     withdrawal = slf.run_distance_at_speed(altAttack,speedMaxAttack,distAttack,penetration.fuelEnd)
     withdrawal.display('Withdrawal')
-    
+
     # climb 2
     clm.drop_payload()
     climb2 = clm.run_climb(altAttack,altCruise,withdrawal.fuelEnd)
     climb2.display('Climb2')
-    
+
     # maximum range
     Wfcrs = Wf0 - climb1.fuelBurned - penetration.fuelBurned - withdrawal.fuelBurned
     Wfcrs += - climb2.fuelBurned
-    
+
     cruise = slf.run_maximum_range(altCruise,Wfcrs,WfReserve)
     cruise.display('Cruise')
-    
+
     # operational range
     operRange = climb1.distance + cruise.distance + penetration.distance
     operRange += withdrawal.distance + climb2.distance
@@ -204,7 +204,7 @@ def run_mission_B15():
 
 def run_mission_B11():
     """ maximum cruise range """
-    ac = aircraft_FW.load('nEUROn')
+    ac = aircraft_FW.load('X45C')
 
     slf = Cruise(ac)
     clm = Climb(ac)
