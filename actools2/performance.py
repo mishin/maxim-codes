@@ -5,8 +5,8 @@ Created on Thu Jun 12 11:44:42 2014
 @author: Maxim
 """
 
-from perf_tools import BasicInput, FlightMechanics, ISAtmosphere
-from scipy.optimize import fminbound, fsolve, minimize_scalar,brenth
+from perf_tools import FlightMechanics, ISAtmosphere
+from scipy.optimize import fsolve, minimize_scalar
 import numpy as np
 import constants
 
@@ -34,7 +34,8 @@ class PerformanceResults:
         self.turnRate        = 0.0
 
     def __repr__(self):
-        out = 'Aircraft performance\n====================\n'
+        #out = 'Aircraft performance\n====================\n'
+        out = 'performance data\n=========\n'
         for attr, value in self.__dict__.iteritems():
             if type(value) is float or type(value) is np.float64:
                 out += '{:<15} = {:<12.5f}\n'.format(attr,value)
@@ -57,7 +58,19 @@ class SteadyLevelFlight(FlightMechanics):
         V = fsolve(velocity_eqn,V0,(altitude,))[0]
         self.set_results(V,altitude)
         self.results.thrust = self.tm.totalThrust
-        return self.results #FIXME: too low speed
+        return self.results
+    
+    def run_min_TAS(self,altitude):
+        atm = ISAtmosphere(altitude)
+        def velocity_eqn(V,altitude):
+            Treq = self.get_required_thrust(V,altitude)
+            Tav = self.tm.get_thrust_available(altitude)
+            return Treq-Tav
+        V0 = atm.soundSpeed*0.3
+        V = fsolve(velocity_eqn,V0,(altitude,))[0]
+        self.set_results(V,altitude)
+        self.results.thrust = self.tm.totalThrust
+        return self.results
     
     def run_max_SAR(self,altitude):
         """ Maximum range """
@@ -75,7 +88,7 @@ class SteadyLevelFlight(FlightMechanics):
         V = rslt.x
         self.set_results(V,altitude)
         return self.results
-        
+    
     def run_min_fuel(self,altitude):
         """ Maximum endurance """
         atm = ISAtmosphere(altitude)
@@ -192,7 +205,7 @@ class Field:
 
 def run_test1():
     import aircraft_FW
-    ac = aircraft_FW.load('X45C')
+    ac = aircraft_FW.load('Baseline1')
     ac.display()
     slf =SteadyLevelFlight(ac)
     #alt = ac.designGoals.cruiseAltitude
@@ -200,6 +213,8 @@ def run_test1():
 
     print 'MAXIMUM SPEED'
     print slf.run_max_TAS(alt)
+    print 'MINIMUM SPEED'
+    print slf.run_min_TAS(alt)
     print 'MAXIMUM SAR'
     print slf.run_max_SAR(alt)
     print 'MINIMUM FUEL'

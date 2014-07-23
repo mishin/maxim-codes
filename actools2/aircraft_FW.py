@@ -307,7 +307,9 @@ def run_test1():
     ac.display()
 
 def run_test4():
-    ac = load('nEUROn')
+    ac = load('Baseline1')
+    print ac.mass.empty()
+    print ac.mass.display()
     ac.plot_drag()
 
 if __name__=="__main__":

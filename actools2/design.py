@@ -27,6 +27,7 @@ class Design(FlyingWing):
     def set_sweep_angles(self,sweep):
         """ NOTE: spans should be specified before sweeps """
         assert len(sweep)==self.wing.nSeg
+        sweep = np.radians(sweep)
         offset = np.tan(sweep)*self.wing.segSpans
         self.wing.secOffset = offset
         self.wing._process_data()

@@ -61,7 +61,22 @@ class Cruise(SteadyLevelFlight):
         return results
 
 
-    def run_maximum_endurance_time(self,altitude,startFuel,totalDuration,nSeg=10):
+    def run_maximum_endurance_fuel(self,altitude,startFuel,totalDuration,nSeg=10):
+        """
+        Calculates maximum endurance
+        
+        Parameters
+        ----------
+        
+        altitude : float, m
+            cruise altitude
+        startFuel : float, kg
+            mission start fuel
+        totalDuration : float, hours
+            endurance time
+        nSeg : int
+            number of segments for integration
+        """
         time = linspace(0,totalDuration,nSeg)
         dt = time[1]-time[0]
         totalFuel = 0.0
@@ -144,6 +159,7 @@ class Climb(ClimbDescent):
         return results
 
 
+# --- standard missions ---
 def run_mission_B15():
     """ air assault mission """
     ac = aircraft_FW.load('X45C')
@@ -208,12 +224,12 @@ def run_mission_B11():
 
     slf = Cruise(ac)
     clm = Climb(ac)
-    
+
     # -- mission inputs --
     altField = 0.0
     altCruise = 1.0e4
     timeReserve = 1800.0 # 30min
-    
+
     Wf0 = ac.mass.fuel.mass
     # -- assumptions --
     fuelReserveStart = 0.1*Wf0
@@ -223,7 +239,7 @@ def run_mission_B11():
     climb1.display('Climb 1')
 
     # reserve fuel
-    reserve = slf.run_maximum_endurance_time(altField,fuelReserveStart,timeReserve)
+    reserve = slf.run_maximum_endurance_fuel(altField,fuelReserveStart,timeReserve)
     reserve.display('Reserve')
     WfReserve = reserve.fuelBurned + 0.05*Wf0
     

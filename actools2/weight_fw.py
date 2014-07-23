@@ -90,7 +90,12 @@ class BlendedWingBodyMass(object):
         TR = wing.taperRatio
         sweepC4 = wing.equivSweepC4rad
         Scsw  = wing.csArea
-        m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+TR)**0.5*np.cos(sweepC4)**(-1.0)* Scsw**0.04
+        try:
+            m = 0.0103*self.Kdw*self.Kvs* (self.Wdg*self.Nz)**0.5* Sw**0.622* A**0.785 *tcRoot**(-0.4)* (1+TR)**0.5*np.cos(sweepC4)**(-1.0)* Scsw**0.04
+        except ValueError:
+            print Sw, A, tcRoot, TR, sweepC4, Scsw
+            self.ac.display()
+            raw_input()
         m = corr*Kms*m
         wingCGratio = self.constMass['wingCGratio']
         xCG = self.ac.wing.MAClocation[0] + self.ac.wing.MAC*wingCGratio

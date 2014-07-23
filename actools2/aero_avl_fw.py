@@ -31,7 +31,7 @@ class FlightConditionsAVL(FlightConditions):
         if inertia==None:
             inertia =aircraft.get_inertia()
         if CD0==None:
-            CD0 = aircraft.get_drag()
+            CD0 = aircraft.get_drag(velocity,altitude)
         self.set_flight_conditions(velocity,altitude,CmTrim,loadFactor,mass,cg,inertia,CD0)
     
     def set_flight_conditions(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
@@ -105,7 +105,7 @@ class AVLsolver(object):
         self.avl = AVL()
         self.run_avl_trim(fc)
         result = self._process_output()
-        result.CD0 = fc.CD0
+        result.CD0 = float(fc.CD0)
         result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
         self.avl.terminate()
         return result
@@ -295,7 +295,7 @@ class RunCases:
 
 def run_test1():
     import aircraft_FW as aircraft
-    ac = aircraft.load('Baseline1')
+    ac = aircraft.load('X45C')
 
 
     aero = Aerodynamics(ac)
