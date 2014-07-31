@@ -128,7 +128,7 @@ class ClimbDescent(FlightMechanics):
         atm = ISAtmosphere(altitude)
         """ calculates maximum climb rate """
         Vstall = self.get_Vstall()
-        bound = np.array([Vstall,0.9*atm.soundSpeed])
+        bound = np.array([2.0*Vstall,0.8*atm.soundSpeed])
         opts = {'maxiter':100,'disp':False}
         args = (altitude,)
         fun = lambda velocity,altitude: -self.run_climb_rate(velocity,altitude).climbRate
@@ -136,7 +136,21 @@ class ClimbDescent(FlightMechanics):
                                options=opts,args=args)
         velocity = rslt.x
         return self.run_climb_rate(velocity,altitude)
-
+    
+    def run_best_climb_rate(self,altitude):
+        atm = ISAtmosphere(altitude)
+        """ calculates maximum climb rate """
+        Vstall = self.get_Vstall()
+        bound = np.array([2.0*Vstall,0.8*atm.soundSpeed])
+        opts = {'maxiter':100,'disp':False}
+        args = (altitude,)
+        def fun(velocity,altitude):
+            rslt = self.run_climb_rate(velocity,altitude)
+            return -rslt.climbRate/rslt.fuelFlow
+        rslt = minimize_scalar(fun,bracket=bound,bounds=bound,method='Bounded',
+                               options=opts,args=args)
+        velocity = rslt.x
+        return self.run_climb_rate(velocity,altitude)
     
     def get_service_ceiling(self):
         RCmin = 0.5
@@ -176,6 +190,10 @@ class ClimbDescent(FlightMechanics):
             D  =Q*S*Cd
             RC =(T-D)*V/W
             ca =CA
+#            if RC/V>1.0:
+#                print 'value of RC is too high, temporarily changing the value'
+#                print 'this feature MUST be fixed'
+#                RC=V#FIXME: must be repaired
             CA =np.arcsin(RC/V)
             change=np.abs(ca-CA)
             i+=1
@@ -206,7 +224,7 @@ class Field:
 def run_test1():
     import aircraft_FW
     ac = aircraft_FW.load('Baseline1')
-    ac.display()
+    #ac.display()
     slf =SteadyLevelFlight(ac)
     #alt = ac.designGoals.cruiseAltitude
     alt = 10000.
@@ -221,7 +239,8 @@ def run_test1():
     print slf.run_min_fuel(alt)
 
     clm = ClimbDescent(ac)
-    #print clm.run_max_climb_rate(alt)
+    print clm.run_max_climb_rate(0)
+    print clm.run_best_climb_rate(0)
     print clm.get_service_ceiling()
     
 

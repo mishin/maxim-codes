@@ -6,29 +6,33 @@ Created on Mon Jul 21 20:58:10 2014
 """
 
 import design
-from scipy.optimize import minimize, fmin_slsqp
+from scipy.optimize import fmin_slsqp
 import numpy as np
+from mission import run_mission_B11, run_mission_B15
+from performance import SteadyLevelFlight, ClimbDescent
+import copy
+from weight_tools import MassComponent
 
 class DesignFormulation(design.Design):
     def setup(self):
-        self.lb = np.array([40., 6.0,  0.5,    0.15,   8.0,   2.089])
-        self.ub = np.array([60., 7.5,  0.7,    0.35,   10.0,  3.600])
-        self.x0 = np.array([55., 6.91, 0.6006, 0.2656, 9.110, 2.886])
+        self.lb = np.array([40., 6.0,  0.5,    0.15,   8.0,   2.089, -3.00, 40])
+        self.ub = np.array([60., 7.5,  0.7,    0.35,   10.0,  3.600,  1.00, 60])
+        self.x0 = np.array([55., 6.91, 0.6006, 0.2656, 9.110, 2.886,  0.00, 55])
         self.xCurrent = np.zeros(len(self.x0))
         self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
-        # --- finite difference ---
-        self.dx = 1.0e-4
         # --- constraints ---
-        self.WemptyMax = 3533.0
-        self.CnbMin = 0.0001
-        self.ClbMax = -0.04
-        self.SMmin = -0.10
-        self.SMmax = 0.10
-        self.RangeMin = 3000.0
+        self.WemptyMax      = 3533.0
+        self.CnbMin         = 0.0
+        self.ClbMax         = -0.05
+        self.SMmin          = -0.10
+        self.SMmax          = 0.10
+        self.RangeMin       = 3000.0
         self.RangeCombatMin = 800.0
-        self.RCmin = 100.0
-        self.VmaxMin = 0.7 # Mach
-        self.VminMax = 0.2
+        self.RCmin          = 110.0
+        self.VmaxMin        = 0.85 # Mach
+        self.VminMax        = 0.2
+        # --- payload ---
+        self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
 
     def set_x(self,x):
         """
@@ -38,7 +42,14 @@ class DesignFormulation(design.Design):
         if not (x==self.xCurrent).all():
             self.xCurrent = x
             self._upd_configuration(x)
-            self._upd_analysis(x)
+            try:
+                self._upd_analysis(x)
+            except ValueError:
+                print x
+                print self.g(self.xCurrent)
+                print self._cnstrData
+                raise ValueError
+                
     
     def _upd_configuration(self,x):
         sweepLE = x[0] # leading edge sweep
@@ -47,13 +58,16 @@ class DesignFormulation(design.Design):
         TR2     = x[3] # 2nd segment taper ratio
         l       = x[4] # wing span
         l1      = x[5] # 1st segment span (central part)
+        twist   = x[6] # tip section twist
+        sweep2  = x[7]
         l1 = l1/2.0
         l2 = l/2.0 - l1
         self.set_spans([l1,l2])
-        self.set_sweep_angles([sweepLE, sweepLE])
+        self.set_sweep_angles([sweepLE, sweep2])
         self.set_chord_by_index(cr,0)
         self.set_taper_ratio_by_index(TR1,0)
         self.set_taper_ratio_by_index(TR2,1)
+        self.set_twist_by_index(twist,1)
     
     def _upd_analysis(self,x):
         # update mass and balance
@@ -63,7 +77,36 @@ class DesignFormulation(design.Design):
         V = self.designGoals.cruiseSpeed
         alt = self.designGoals.cruiseAltitude
         self.aero = self.get_aero_trim(V,alt)
-    
+        # mission
+        ac1 = copy.deepcopy(self)
+        ac2 = copy.deepcopy(self)
+        if not ac1.mass.payload.item_exists(self.SDB.name):
+            ac1.mass.payload.add_component(self.SDB)
+        if ac2.mass.payload.item_exists(self.SDB.name):
+            ac2.mass.payload.remove_item(self.SDB.name)
+        ac3 = copy.copy(ac1)
+        ac4 = copy.copy(ac2)
+        #print ac1.mass(), ac2.mass(), ac3.mass(), ac4.mass()
+        self.R = run_mission_B11(ac2)
+        self.Rcombat = run_mission_B15(ac1)
+        # performance
+        slf = SteadyLevelFlight(ac3)
+        clm = ClimbDescent(ac4)
+        self.Vmax = slf.run_max_TAS(self.designGoals.cruiseAltitude).Mach
+        self.Vmin = slf.run_min_TAS(self.designGoals.cruiseAltitude).Mach
+        self.RC = clm.run_max_climb_rate(0).climbRate
+        self._cnstrData = np.zeros(10)
+        self._cnstrData[0] = self.mass.empty()
+        self._cnstrData[1] = self.aero.derivs.Cnb
+        self._cnstrData[2] = self.aero.derivs.Clb
+        self._cnstrData[3] = self.aero.SM
+        self._cnstrData[4] = self.aero.SM
+        self._cnstrData[5] = self.R
+        self._cnstrData[6] = self.Rcombat
+        self._cnstrData[7] = self.RC
+        self._cnstrData[8] = self.Vmax
+        self._cnstrData[9] = self.Vmin
+
     def f(self,x):
         self.set_x(x)
         LD = self.aero.coef.CL/self.aero.coef.CD
@@ -80,13 +123,21 @@ class DesignFormulation(design.Design):
     
     def g(self,x):
         self.set_x(x)
-        g = np.zeros(5)
+        g = np.zeros(9)
         g[0] = self.WemptyMax - self.mass.empty()
         g[1] = self.aero.derivs.Cnb - self.CnbMin
         g[2] = self.ClbMax - self.aero.derivs.Clb
         g[3] = self.SMmax - self.aero.SM
         g[4] = self.aero.SM - self.SMmin
-        g = g*1.0e4
+        g[5] = self.R - self.RangeMin
+        g[6] = self.Rcombat - self.RangeCombatMin
+        g[7] = self.RC - self.RCmin
+        g[8] = self.Vmax - self.VmaxMin
+        #g[9] = self.VminMax - self.Vmin
+        g[1] *= 1.0e4
+        g[2] *= 1.0e2
+        g[3] *= 1.0e1
+        g[4] *= 1.0e1
         return g
 
 
@@ -96,12 +147,13 @@ def run_optimization():
     ac.setup()
     
     rslt = fmin_slsqp(ac.f, ac.x0, f_ieqcons=ac.g, bounds=ac.bnds,
-                      epsilon=5e-4,iprint=2)
+                      epsilon=1e-4,iprint=2)
     
     print ac.g(rslt)
-    print ac.mass.empty()
     print ac.aero.display()
+    print rslt
     ac.set_x(rslt)
+    print ac._cnstrData
     ac.display()
 
 

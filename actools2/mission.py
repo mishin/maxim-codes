@@ -140,7 +140,7 @@ class Climb(ClimbDescent):
         totalTime = 0.0
         totalFuel = 0.0
         for i,alt in enumerate(altitude[:-1]):
-            data = self.run_max_climb_rate(alt)
+            data = self.run_best_climb_rate(alt)
             rateOfClimb[i] = data.climbRate
             time[i] = dh/rateOfClimb[i]
             distance[i] = data.velocity*time[i]
@@ -160,9 +160,10 @@ class Climb(ClimbDescent):
 
 
 # --- standard missions ---
-def run_mission_B15():
+def run_mission_B15(ac=None):
     """ air assault mission """
-    ac = aircraft_FW.load('X45C')
+    if ac==None:
+        ac = aircraft_FW.load('Baseline1')
     #ac.display()
     # -- mission inputs --
     altField = 0.0
@@ -182,46 +183,40 @@ def run_mission_B15():
     clm = Climb(ac)
     
     # reserve fuel
-    reserve = slf.run_maximum_endurance_time(altField,fuelReserveStart,timeReserve)
-    reserve.display('Reserve')
+    reserve = slf.run_maximum_endurance_fuel(altField,fuelReserveStart,timeReserve)
     WfReserve = reserve.fuelBurned + 0.05*Wf0
 
     # climb 1
     climb1 = clm.run_climb(altField, altCruise,Wf0)
-    climb1.display('Climb 1')
 
     # penetration-withdrawal
     penetration = slf.run_distance_at_speed(altAttack,speedMaxAttack,distAttack,fuelAttackStart)
-    penetration.display('Penetration')
 
     slf.drop_payload()
-
     withdrawal = slf.run_distance_at_speed(altAttack,speedMaxAttack,distAttack,penetration.fuelEnd)
-    withdrawal.display('Withdrawal')
 
     # climb 2
-    clm.drop_payload()
+    #clm.drop_payload()
     climb2 = clm.run_climb(altAttack,altCruise,withdrawal.fuelEnd)
-    climb2.display('Climb2')
 
     # maximum range
     Wfcrs = Wf0 - climb1.fuelBurned - penetration.fuelBurned - withdrawal.fuelBurned
     Wfcrs += - climb2.fuelBurned
-
+    
     cruise = slf.run_maximum_range(altCruise,Wfcrs,WfReserve)
-    cruise.display('Cruise')
 
     # operational range
     operRange = climb1.distance + cruise.distance + penetration.distance
     operRange += withdrawal.distance + climb2.distance
     operRange *= 0.5
-    print operRange/1e3
+    return operRange
 
 
-def run_mission_B11():
+def run_mission_B11(ac=None):
     """ maximum cruise range """
-    ac = aircraft_FW.load('X45C')
-
+    if ac==None:
+        ac = aircraft_FW.load('Baseline1')
+    #ac.mass.payload.remove_item('drop payload')
     slf = Cruise(ac)
     clm = Climb(ac)
 
@@ -235,23 +230,25 @@ def run_mission_B11():
     fuelReserveStart = 0.1*Wf0
     
     # climb
+    
     climb1 = clm.run_climb(altField, altCruise,Wf0)
-    climb1.display('Climb 1')
+    #climb1.display('Climb 1')
 
     # reserve fuel
     reserve = slf.run_maximum_endurance_fuel(altField,fuelReserveStart,timeReserve)
-    reserve.display('Reserve')
+    #reserve.display('Reserve')
     WfReserve = reserve.fuelBurned + 0.05*Wf0
     
     # cruise
-    Wfcrs = Wf0 - climb1.fuelBurned - reserve.fuelBurned
+    Wfcrs = Wf0 - climb1.fuelBurned
     cruise = slf.run_maximum_range(altCruise,Wfcrs,WfReserve)
-    cruise.display('Cruise')
+    #cruise.display('Cruise')
     
     Range = climb1.distance + cruise.distance
-    print Range/1e3
+    #print Range/1e3
+    return Range
 
 
 if __name__=="__main__":
-    run_mission_B15()
-    run_mission_B11()
+    print run_mission_B15()
+    print run_mission_B11()

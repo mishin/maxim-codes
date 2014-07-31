@@ -283,21 +283,23 @@ class MassList:
         name : string
             name of the item to be checked
         """
-        try:
-            self.names.index(name)
-            exist = True
-        except:
-            exist = False
-        return exist
+        return self.item_exists(name)
         
     def remove_item(self,name):
         """ remove mass component with specified name from mass list
         """
-        try:
+        if name in self.names:
            k=self.names.index(name)
            del self.items[k]
-        except:
+           del self.names[k]
+           self.update_totals()
+        else:
             print 'Specified mass item not found: %s'%name
+            print self.names
+    
+    def item_exists(self,name):
+        return name in self.names
+            
     def update_item(self,name,mass=None,cg=None):
         """ update mass and CG of the component with given name
         

@@ -65,6 +65,10 @@ class Design(FlyingWing):
     
     def _upd_aero(self):
         pass
+    
+    def set_twist_by_index(self,twist,idx):
+        self.wing.secTwist[idx] = float(twist)
+        self.wing._process_data()
 
 
 def run_test1():

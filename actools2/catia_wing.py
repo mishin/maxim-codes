@@ -14,26 +14,26 @@ import paths
 
 
 def create_catia_wing():
-    ac = aircraft_FW.load('Baseline1')
-    
+    ac = aircraft_FW.load('X47B')
+    scale = 1000.
     paths.myPaths.set_file_prefix('fw2')
     fileIgs = paths.myPaths.get_tmp_file('igs')
 
     pd = CadDesigner(True)
     pd.add_new_part()
-    zte = 0.01 # trailing edge gap
+    zte = 0.0 # trailing edge gap
     xref, yref, zref = 0.0, 0.0, 0.0
     pd.refPoint = np.array([xref,yref,zref])
-    chord = ac.wing.chords[0]
+    chord = ac.wing.chords[0] *scale
     incidence = ac.wing.incidence
     af = Airfoil2D()
     af.convert_af(ac.wing.airfoils[0])
     af.set_trailing_edge_gap(zte/chord)
     pd.create_airfoil(af,chord,incidence,0.25,True)
     for i in range(ac.wing.nSec-1):
-        chord = ac.wing.chords[i+1]
+        chord = ac.wing.chords[i+1]*scale
         incidence += ac.wing.secTwist[i]
-        span = ac.wing.segSpans[i]
+        span = ac.wing.segSpans[i]*scale
         sweep = ac.wing.segSweepLEdeg[i]
         dihedral = ac.wing.segDihedral[i]
         af = Airfoil2D()
