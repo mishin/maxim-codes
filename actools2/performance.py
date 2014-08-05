@@ -137,7 +137,7 @@ class ClimbDescent(FlightMechanics):
         velocity = rslt.x
         return self.run_climb_rate(velocity,altitude)
     
-    def run_best_climb_rate(self,altitude):
+    def run_most_economical_climb(self,altitude):
         atm = ISAtmosphere(altitude)
         """ calculates maximum climb rate """
         Vstall = self.get_Vstall()
@@ -146,7 +146,7 @@ class ClimbDescent(FlightMechanics):
         args = (altitude,)
         def fun(velocity,altitude):
             rslt = self.run_climb_rate(velocity,altitude)
-            return -rslt.climbRate/rslt.fuelFlow
+            return rslt.fuelFlow/rslt.climbRate
         rslt = minimize_scalar(fun,bracket=bound,bounds=bound,method='Bounded',
                                options=opts,args=args)
         velocity = rslt.x
@@ -240,7 +240,7 @@ def run_test1():
 
     clm = ClimbDescent(ac)
     print clm.run_max_climb_rate(0)
-    print clm.run_best_climb_rate(0)
+    print clm.run_most_economical_climb(0)
     print clm.get_service_ceiling()
     
 

@@ -191,21 +191,31 @@ def run_optimization():
     ac.display()
 
 def function_for_sensitivity():
-    lb = np.array([40, 40, 6, 0.5, 0.15, 1, 3, -4, -4])
-    ub = np.array([60, 60, 7.5, 0.7, 0.35, 1.8, 3.2, 0, 0])
-    x0 = np.array([55, 55, 6.91, 0.6006, 0.2656, 1.443, 3.112, 0, -3])
+    pathIn = 'ucav_input.txt'
+    pathOut = 'ucav_output.txt'
+
+    fid = open(pathIn,'rt')
+    line = fid.readline().split()
+    fid.close()
+    
+    n = len(line)
+    x = np.zeros(n)
+    
+    for i in range(n):
+        x[i] = float(line[i])
+#    lb = np.array([40, 40, 6, 0.5, 0.15, 1, 3, -4, -4])
+#    ub = np.array([60, 60, 7.5, 0.7, 0.35, 1.8, 3.2, 0, 0])
+#    x0 = np.array([55, 55, 6.91, 0.6006, 0.2656, 1.443, 3.112, 0, -3])
     
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
     ac.setup()
-    
-    ac._set_dvar(lb)
-    ac.display()
-    ac._set_dvar(ub)
-    ac.display()
-    ac._set_dvar(x0)
-    ac.display()
+    out = ac.run_full_analysis(x)
 
+    fid = open(pathOut,'wt')
+    for val in out:
+        fid.write('%f\t'%val)
+    fid.close()
 
 if __name__=="__main__":
     function_for_sensitivity()

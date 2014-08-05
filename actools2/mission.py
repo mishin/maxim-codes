@@ -140,7 +140,8 @@ class Climb(ClimbDescent):
         totalTime = 0.0
         totalFuel = 0.0
         for i,alt in enumerate(altitude[:-1]):
-            data = self.run_best_climb_rate(alt)
+            data = self.run_most_economical_climb(alt)
+            #data = self.run_max_climb_rate(alt)
             rateOfClimb[i] = data.climbRate
             time[i] = dh/rateOfClimb[i]
             distance[i] = data.velocity*time[i]
@@ -232,7 +233,7 @@ def run_mission_B11(ac=None):
     # climb
     
     climb1 = clm.run_climb(altField, altCruise,Wf0)
-    #climb1.display('Climb 1')
+    climb1.display('Climb 1')
 
     # reserve fuel
     reserve = slf.run_maximum_endurance_fuel(altField,fuelReserveStart,timeReserve)
@@ -250,5 +251,5 @@ def run_mission_B11(ac=None):
 
 
 if __name__=="__main__":
-    print run_mission_B15()
-    print run_mission_B11()
+    print run_mission_B15()/1e3
+    print run_mission_B11()/1e3
