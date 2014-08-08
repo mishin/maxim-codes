@@ -127,16 +127,20 @@ class FlyingWing(object):
         flying_wing_display(self,showAxes)
     
     def _update_parasite_drag(self):
-        M, CD, Mdd, CDdd = get_parasite_drag_fw(self)
-        self._M = M
-        self._CD = CD
-        self._dragCurve = Akima1DInterpolator(M,CD)
+        M, CD, Mdd, CDdd = get_parasite_drag_fw(self,self.designGoals.cruiseAltitude)
+        self._M = np.hstack([M[0]-.2,M[0]-.1,M])+.1
+        self._CD = np.hstack([CD[0],CD[0],CD])
+        self._dragCurve = Akima1DInterpolator(self._M,self._CD)
         self.Mdd = Mdd
         self.CDdd = CDdd
     
     def plot_drag(self):
+        m = np.linspace(self._M[0],self._M[-1],100)
+        cd = np.array([self.get_drag(_m) for _m in m])
         plt.figure()
+        plt.hold(True)
         plt.plot(self._M, self._CD,'bs-')
+        plt.plot(m,cd,'r-')
         plt.grid(True)
         plt.show()
 
@@ -170,6 +174,16 @@ class FlyingWing(object):
         """ run avl analysis and return trim state """
         self.update_aero_trim(velocity,altitude,CmTrim=0.0,loadFactor=1.0,
                               mass=None,cg=None,inertia=None,CD0=None)
+        return self.aeroResults
+    
+    def get_aero_single_point(self,velocity,altitude,alpha=0.0,beta=0.0,
+                              elevator=0.0,mass=None,cg=None,inertia=None,CD0=None):
+        aero = Aerodynamics(self)
+        fc = FlightConditionsAVL(self,velocity,altitude,0,1,mass,cg,inertia,CD0)
+        alpha = float(alpha)
+        beta = float(beta)
+        elevator = float(elevator)
+        self.aeroResults = aero.run_single_point(fc,alpha,beta,elevator)
         return self.aeroResults
 
     def get_cg(self,update=True):
@@ -311,6 +325,7 @@ def run_test4():
     print ac.mass.empty()
     print ac.mass.display()
     ac.plot_drag()
+    ac.get_aero_single_point(0.7,1e4,2,0).display()
 
 if __name__=="__main__":
     run_test4()

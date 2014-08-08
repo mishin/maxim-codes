@@ -103,15 +103,27 @@ class AVLsolver(object):
     def run_trim(self,fc):
         self.create_input_file()
         self.avl = AVL()
-        self.run_avl_trim(fc)
+        self.run_avl(fc)
         result = self._process_output()
         result.CD0 = float(fc.CD0)
         result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
         self.avl.terminate()
         return result
-        #self.avl.terminate()
 
-    def run_avl_trim(self,fc):
+    def run_single_point(self,fc,alpha=0,beta=0,elevator=0):
+        alpha    = float(alpha)
+        beta     = float(beta)
+        elevator = float(elevator)
+        self.create_input_file()
+        self.avl = AVL()
+        self.run_avl(fc,False,alpha,beta,elevator)
+        result = self._process_output()
+        result.CD0 = float(fc.CD0)
+        result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
+        self.avl.terminate()
+        return result
+
+    def run_avl(self,fc,runTrim=True,alpha=0,beta=0,elevator=0):
         self.avl.cmd('LOAD\n%s'%pth.get_tmp_file('avl'))
         self.avl.cmd('OPER')
         self.avl.cmd('O')
@@ -163,13 +175,24 @@ class AVLsolver(object):
         self.avl.cmd(fc.cg[2]) 
         self.avl.cmd(' ')
         # --- set trim constraints ---
-        CLreq = fc.get_CLreq()
-        self.avl.cmd('A')
-        self.avl.cmd('C')
-        self.avl.cmd(CLreq)
-        self.avl.cmd('D1') # elevator
-        self.avl.cmd('PM')
-        self.avl.cmd(fc.CmTrim)
+        if runTrim:
+            CLreq = fc.get_CLreq()
+            self.avl.cmd('A')
+            self.avl.cmd('C')
+            self.avl.cmd(CLreq)
+            self.avl.cmd('D1') # elevator
+            self.avl.cmd('PM')
+            self.avl.cmd(fc.CmTrim)
+        else:
+            self.avl.cmd('A')
+            self.avl.cmd('A')
+            self.avl.cmd(alpha)
+            self.avl.cmd('B')
+            self.avl.cmd('B')
+            self.avl.cmd(beta)
+            self.avl.cmd('D1')
+            self.avl.cmd('D1')
+            self.avl.cmd(elevator)
         # --- run analysis ---
         self.avl.cmd('X')
         self.avl.cmd('ST')
@@ -277,12 +300,8 @@ class AVLsolver(object):
 
     def set_flight_conditions(self,flightConditions):
         pass
-    def run_single_point(self):
-        pass
-    def run_alpha_sweep(self):
-        pass
-    def run_beta_sweep(self):
-        pass
+
+
 
 
 class Aerodynamics(AVLsolver):
@@ -295,13 +314,16 @@ class RunCases:
 
 def run_test1():
     import aircraft_FW as aircraft
-    ac = aircraft.load('X45C')
+    ac = aircraft.load('Baseline1')
 
 
     aero = Aerodynamics(ac)
     fc = FlightConditionsAVL(ac,0.7,1e4)
     results = aero.run_trim(fc)
     results.display()
+    
+    results2 = aero.run_single_point(fc,0.0,2.0)
+    results2.display()
 
 
 if __name__=="__main__":

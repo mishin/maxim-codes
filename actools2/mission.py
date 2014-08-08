@@ -233,7 +233,7 @@ def run_mission_B11(ac=None):
     # climb
     
     climb1 = clm.run_climb(altField, altCruise,Wf0)
-    climb1.display('Climb 1')
+    #climb1.display('Climb 1')
 
     # reserve fuel
     reserve = slf.run_maximum_endurance_fuel(altField,fuelReserveStart,timeReserve)

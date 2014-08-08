@@ -11,7 +11,7 @@ from misc_tools import read_tabulated_data_without_header
 
 pth = MyPaths()
 
-def get_parasite_drag_fw(ac):
+def get_parasite_drag_fw(ac,altitude=0.0):
     
     path1 = pth.aeroCD0in
     path2 = pth.aeroCD0inWave
@@ -26,7 +26,7 @@ def get_parasite_drag_fw(ac):
     fid1 = open(path1,'wt')
     #h = ac.designGoals.cruiseAltitude
     #h = convert.m_to_ft(h)
-    h = 0.0
+    h = float(altitude)
     Sref = convert.sqm_to_sqft(Sref)
     Abase = 0.095
     Dexit = 0.0

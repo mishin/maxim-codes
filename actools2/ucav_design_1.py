@@ -74,24 +74,35 @@ class DesignFormulation(design.Design):
         # update drag
         self._update_mass()
         self._upd_drag()
-        V = self.designGoals.cruiseSpeed
+        V   = self.designGoals.cruiseSpeed
         alt = self.designGoals.cruiseAltitude
-        self.aero = self.get_aero_trim(V,alt)
+        self.aero = self.get_aero_single_point(V,alt,0)
         # mission
         ac1 = copy.deepcopy(self)
         ac2 = copy.deepcopy(self)
+
+        Wf = ac1.mass.fuel.mass
+        CGf = ac1.mass.fuel.coords
         if not ac1.mass.payload.item_exists(self.SDB.name):
             ac1.mass.payload.add_component(self.SDB)
         if ac2.mass.payload.item_exists(self.SDB.name):
             ac2.mass.payload.remove_item(self.SDB.name)
-        ac3 = copy.copy(ac1)
-        ac4 = copy.copy(ac2)
+        #ac3 = copy.copy(ac1)
+        #ac4 = copy.copy(ac2)
         #print ac1.mass(), ac2.mass(), ac3.mass(), ac4.mass()
         self.R = run_mission_B11(ac2)
         self.Rcombat = run_mission_B15(ac1)
         # performance
-        slf = SteadyLevelFlight(ac3)
-        clm = ClimbDescent(ac4)
+        ac1.mass.set_fuel_mass(Wf,CGf)
+        ac2.mass.set_fuel_mass(Wf,CGf)
+        
+        if not ac1.mass.payload.item_exists(self.SDB.name):
+            ac1.mass.payload.add_component(self.SDB)
+        if not ac2.mass.payload.item_exists(self.SDB.name):
+            ac2.mass.payload.add_component(self.SDB)
+
+        slf = SteadyLevelFlight(ac1)
+        clm = ClimbDescent(ac2)
         self.Vmax = slf.run_max_TAS(self.designGoals.cruiseAltitude).Mach
         self.Vmin = slf.run_min_TAS(self.designGoals.cruiseAltitude).Mach
         self.RC = clm.run_max_climb_rate(0).climbRate
@@ -144,14 +155,12 @@ class DesignFormulation(design.Design):
         sweep1 = x[0]
         sweep2 = x[1]
         cr     = x[2]
-        TR1    = x[3]
-        TR2    = x[4]
+        c2    = x[3]
+        c3    = x[4]
         l1     = x[5]
         l2     = x[6]
         twist1 = x[7]
         twist2 = x[8]
-        c2 = cr*TR1
-        c3 = c2*TR2
         self.set_chord_by_index(cr,0)
         self.set_chord_by_index(c2,1)
         self.set_chord_by_index(c3,2)
@@ -182,7 +191,7 @@ def run_optimization():
     
     rslt = fmin_slsqp(ac.f, ac.x0, f_ieqcons=ac.g, bounds=ac.bnds,
                       epsilon=1e-4,iprint=2)
-    
+
     print ac.g(rslt)
     print ac.aero.display()
     print rslt
@@ -197,10 +206,10 @@ def function_for_sensitivity():
     fid = open(pathIn,'rt')
     line = fid.readline().split()
     fid.close()
-    
+
     n = len(line)
     x = np.zeros(n)
-    
+
     for i in range(n):
         x[i] = float(line[i])
 #    lb = np.array([40, 40, 6, 0.5, 0.15, 1, 3, -4, -4])
@@ -211,11 +220,9 @@ def function_for_sensitivity():
     ac.load_xls('Baseline1')
     ac.setup()
     out = ac.run_full_analysis(x)
+    print out
+    return out
 
-    fid = open(pathOut,'wt')
-    for val in out:
-        fid.write('%f\t'%val)
-    fid.close()
 
 if __name__=="__main__":
     function_for_sensitivity()

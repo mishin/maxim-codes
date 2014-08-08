@@ -6,7 +6,7 @@ Created on Thu Jun 12 11:44:42 2014
 """
 
 from perf_tools import FlightMechanics, ISAtmosphere
-from scipy.optimize import fsolve, minimize_scalar
+from scipy.optimize import fsolve, minimize_scalar, brentq
 import numpy as np
 import constants
 
@@ -54,10 +54,16 @@ class SteadyLevelFlight(FlightMechanics):
             Treq = self.get_required_thrust(V,altitude)
             Tav = self.tm.get_thrust_available(altitude)
             return Treq-Tav
-        V0 = atm.soundSpeed*0.8
-        V = fsolve(velocity_eqn,V0,(altitude,))[0]
+        V0 = atm.soundSpeed*0.5
+        V2 = atm.soundSpeed
+        #V = fsolve(velocity_eqn,V0,(altitude,))[0]
+        try:
+            V = brentq(velocity_eqn,V0,V2,xtol=1e-3,args=(altitude,))
+        except ValueError:
+            V = fsolve(velocity_eqn,atm.soundSpeed*0.9,(altitude,))[0]
         self.set_results(V,altitude)
-        self.results.thrust = self.tm.totalThrust
+        #self.results.thrust = self.tm.totalThrust
+        self.results.thrust = self.get_required_thrust(V,altitude)
         return self.results
     
     def run_min_TAS(self,altitude):
