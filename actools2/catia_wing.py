@@ -14,12 +14,15 @@ import paths
 
 
 def create_catia_wing():
-    ac = aircraft_FW.load('X47B')
-    scale = 1000.
+    ac = aircraft_FW.load('Baseline1')
+    scale = 1.
+    symmetric = True
+    show = True
+    Rle = 0.1207**2./2
     paths.myPaths.set_file_prefix('fw2')
     fileIgs = paths.myPaths.get_tmp_file('igs')
 
-    pd = CadDesigner(True)
+    pd = CadDesigner(show)
     pd.add_new_part()
     zte = 0.0 # trailing edge gap
     xref, yref, zref = 0.0, 0.0, 0.0
@@ -28,6 +31,9 @@ def create_catia_wing():
     incidence = ac.wing.incidence
     af = Airfoil2D()
     af.convert_af(ac.wing.airfoils[0])
+    af.leRad = Rle
+    af.leCenter = [Rle, 0]
+    af.leSlope = 0.0
     af.set_trailing_edge_gap(zte/chord)
     pd.create_airfoil(af,chord,incidence,0.25,True)
     for i in range(ac.wing.nSec-1):
@@ -42,10 +48,12 @@ def create_catia_wing():
         pd.create_tip_section(af,chord,incidence,0.25,span,sweep,dihedral,False,True)
     pd.join_wing(True)
     pd.rotate_wing(-90.0,[0,0,0],[1,0,0])
-    pd.symmetry_wing('xy')
+    if symmetric:
+        pd.symmetry_wing('xy')
     pd.hide_curves()
     pd.save_part_igs(fileIgs)
-    #pd.close_part()
+    
+    pd.close_part()
 
 
 if __name__=="__main__":

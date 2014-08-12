@@ -164,7 +164,7 @@ class Climb(ClimbDescent):
 def run_mission_B15(ac=None):
     """ air assault mission """
     if ac==None:
-        ac = aircraft_FW.load('Baseline1')
+        ac = aircraft_FW.load('X45C')
     #ac.display()
     # -- mission inputs --
     altField = 0.0
@@ -216,7 +216,7 @@ def run_mission_B15(ac=None):
 def run_mission_B11(ac=None):
     """ maximum cruise range """
     if ac==None:
-        ac = aircraft_FW.load('Baseline1')
+        ac = aircraft_FW.load('X45C')
     #ac.mass.payload.remove_item('drop payload')
     slf = Cruise(ac)
     clm = Climb(ac)
@@ -250,6 +250,58 @@ def run_mission_B11(ac=None):
     return Range
 
 
+def run_mission_B10(ac=None):
+    """ Suppression of enemy air defenses (SEAD) """
+    if ac==None:
+        ac = aircraft_FW.load('X45C')
+        # -- mission inputs --
+    altField = 0.0
+    altCruise = ac.designGoals.cruiseAltitude
+    altAttack = convert.ft_to_m(20000)
+    distAttack = convert.nm_to_m(50)
+    timeReserve = 1800.0 # 30min
+    speedMaxAttack = convert.kt_to_msec(540)
+    
+    Wf0 = ac.mass.fuel.mass
+    # -- assumptions --
+    fuelReserveStart = 0.1*Wf0
+    fuelAttackStart = 0.5*Wf0
+    
+    # -- calculations --
+    slf = Cruise(ac)
+    clm = Climb(ac)
+    
+    # reserve fuel
+    reserve = slf.run_maximum_endurance_fuel(altField,fuelReserveStart,timeReserve)
+    WfReserve = reserve.fuelBurned + 0.05*Wf0
+
+    # climb 1
+    climb1 = clm.run_climb(altField, altCruise,Wf0)
+
+    # penetration-withdrawal
+    penetration = slf.run_distance_at_speed(altAttack,speedMaxAttack,distAttack,fuelAttackStart)
+
+    slf.drop_payload()
+    withdrawal = slf.run_distance_at_speed(altAttack,speedMaxAttack,distAttack,penetration.fuelEnd)
+
+    # climb 2
+    #clm.drop_payload()
+    climb2 = clm.run_climb(altAttack,altCruise,withdrawal.fuelEnd)
+
+    # maximum range
+    Wfcrs = Wf0 - climb1.fuelBurned - penetration.fuelBurned - withdrawal.fuelBurned
+    Wfcrs += - climb2.fuelBurned
+    
+    cruise = slf.run_maximum_range(altCruise,Wfcrs,WfReserve)
+
+    # operational range
+    operRange = climb1.distance + cruise.distance + penetration.distance
+    operRange += withdrawal.distance + climb2.distance
+    operRange *= 0.5
+    return operRange
+
+
 if __name__=="__main__":
     print run_mission_B15()/1e3
     print run_mission_B11()/1e3
+    print run_mission_B10()/1e3

@@ -127,7 +127,9 @@ class FlyingWing(object):
         flying_wing_display(self,showAxes)
     
     def _update_parasite_drag(self):
-        M, CD, Mdd, CDdd = get_parasite_drag_fw(self,self.designGoals.cruiseAltitude)
+        alt = self.designGoals.cruiseAltitude
+        #alt = 0
+        M, CD, Mdd, CDdd = get_parasite_drag_fw(self,alt)
         self._M = np.hstack([M[0]-.2,M[0]-.1,M])+.1
         self._CD = np.hstack([CD[0],CD[0],CD])
         self._dragCurve = Akima1DInterpolator(self._M,self._CD)

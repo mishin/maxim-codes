@@ -17,6 +17,7 @@ import numpy as np
 import random as rd
 from ucav_design_1 import DesignFormulation
 
+np.random.seed(10)
 
 param_file = 'ucav_sensitivity_input.txt'
 pf = read_param_file(param_file)
@@ -31,13 +32,13 @@ ac = DesignFormulation()
 ac.load_xls('Baseline1')
 ac.setup()
 
-Y = np.zeros([len(param_values),8])
-fid = open('SGOutput.txt','wt')
+Y = np.zeros([len(param_values),9])
+fid = open('SGOutput2.txt','wt')
 fid.close()
 for i,param in enumerate(param_values):
     out = ac.run_full_analysis(param)
     Y[i] = out
-    fid = open('SGOutput.txt','at')
+    fid = open('SGOutput2.txt','at')
     for val in out:
         fid.write('%.10e '%val)
     fid.write('\n')
@@ -45,4 +46,4 @@ for i,param in enumerate(param_values):
 
 
 for i in range(len(out)):
-    Si = sobol.analyze(param_file, 'SGOutput.txt', column = i, calc_second_order = False, conf_level = 0.95)
+    Si = sobol.analyze(param_file, 'SGOutput2.txt', column = i, calc_second_order = False, conf_level = 0.95)

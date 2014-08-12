@@ -172,7 +172,7 @@ class DesignFormulation(design.Design):
     def run_full_analysis(self,x):
         self._set_dvar(x)
         self._upd_analysis()
-        g = np.zeros(8)
+        g = np.zeros(9)
         g[0] = self.mass.empty()
         g[1] = self.aero.derivs.Cnb
         g[2] = self.aero.derivs.Clb
@@ -181,6 +181,7 @@ class DesignFormulation(design.Design):
         g[5] = self.Rcombat
         g[6] = self.RC
         g[7] = self.Vmax
+        g[8] = self.aero.coef.CL/self.aero.coef.CD
         return g
 
 
