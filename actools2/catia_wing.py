@@ -42,18 +42,18 @@ def create_catia_wing():
         span = ac.wing.segSpans[i]*scale
         sweep = ac.wing.segSweepLEdeg[i]
         dihedral = ac.wing.segDihedral[i]
-        af = Airfoil2D()
-        af.convert_af(ac.wing.airfoils[i+1])
+#        af = Airfoil2D()
+#        af.convert_af(ac.wing.airfoils[i+1])
+#        af.leRad = Rle
+#        af.leCenter = [Rle, 0]
+#        af.leSlope = 0.0
         af.set_trailing_edge_gap(zte/chord)
         pd.create_tip_section(af,chord,incidence,0.25,span,sweep,dihedral,False,True)
-    pd.join_wing(True)
-    pd.rotate_wing(-90.0,[0,0,0],[1,0,0])
-    if symmetric:
-        pd.symmetry_wing('xy')
-    pd.hide_curves()
-    pd.save_part_igs(fileIgs)
+    pd.rot_sym_cfd()
+
+    #pd.save_part_igs(fileIgs)
     
-    pd.close_part()
+    #pd.close_part()
 
 
 if __name__=="__main__":

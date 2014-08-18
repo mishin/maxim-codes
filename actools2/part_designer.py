@@ -200,6 +200,14 @@ class CadDesigner():
         axis = self.line_pt_dir([axisRoot[0],axisRoot[1],0],axisDir)
         self.wingSurface = self.rotate(self.wingSurface,axis,angle)
     
+    def rot_sym_cfd(self):
+        axis = self.line_pt_dir([0,0,0],[1,0,0])
+        angle = -90
+        self.join_wing(True)
+        self.wingSurface = self.rotate(self.wingSurface,axis,angle,show=False)
+        self.symmetry(self.wingSurface,'xy',True)
+        self.hide_curves()
+    
     def symmetry_wing(self,surf='xz'):
         self.join_wing(True)
         self.symmetry(self.wingSurface,surf,True)
