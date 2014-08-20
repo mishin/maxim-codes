@@ -104,7 +104,7 @@ class FlyingWing(object):
             MOI  = np.array([float(val) for val in line[5:8]])
             self.mass.payload.add_item(name,mass,CG,MOI)
         self.mass.update_total()
-        self._process_data()
+        self._process_data(True)
         fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
         fuelCG = np.array([fuelCG[0],0,fuelCG[2]])
         self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)
@@ -115,8 +115,8 @@ class FlyingWing(object):
         self._update_parasite_drag()
         self._update_mass()
 
-    def _process_data(self):
-        self.wing._process_data()
+    def _process_data(self,updateAirfoils=False):
+        self.wing._process_data(updateAirfoils)
         self.designGoals.set_flight_conditions(self.wing.MAC)
         self.designGoals._process_data()
         self.propulsion._process_data()
@@ -325,7 +325,8 @@ def run_test1():
 def run_test4():
     ac = load('Baseline1')
     print ac.mass.empty()
-    print ac.mass.display()
+    ac.mass.display()
+    print ac.propulsion.get_sfc(0.7, 1e4, 2500)
     ac.plot_drag()
     ac.get_aero_single_point(0.7,1e4,2,0).display()
 

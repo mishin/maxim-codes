@@ -24,11 +24,11 @@ class DesignFormulation(design.Design):
         self.WemptyMax      = 3400.0
         self.CnbMin         = 0.0001
         self.ClbMax         = -0.05
-        self.SMmin          = -0.05
+        self.SMmin          = -0.08
         self.SMmax          = 0.10
         self.RangeMin       = 3000.0
-        self.combatRadiusMin= 1200.0
-        self.RCmin          = 125.0
+        self.combatRadiusMin= 1000.0
+        self.RCmin          = 100.0
         self.VmaxMin        = 0.90 # Mach
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
@@ -123,11 +123,11 @@ class DesignFormulation(design.Design):
         g[5] = self.analysisData[5] - self.combatRadiusMin
         g[6] = self.analysisData[6] - self.RCmin
         g[7] = self.analysisData[7] - self.VmaxMin
-
-        g[1] *= 1.0e4
-        g[2] *= 1.0e4
-        g[3] *= 1.0e1
-        g[4] *= 1.0e1
+#
+#        g[1] *= 1.0e4
+#        g[2] *= 1.0e4
+#        g[3] *= 1.0e1
+#        g[4] *= 1.0e1
         return g
 
 
@@ -136,7 +136,7 @@ def run_optimization():
     ac.load_xls('Baseline1')
     ac.setup()
     rslt = fmin_slsqp(ac.f, ac.x0, f_ieqcons=ac.g, bounds=ac.bnds,
-                      epsilon=1e-3,iprint=2)
+                      epsilon=1e-4,iprint=2)
     ac.set_x(rslt)
     print ac.analysisData
     print ac.aero.display()
@@ -170,4 +170,8 @@ def function_for_sensitivity():
 
 
 if __name__=="__main__":
-    run_optimization()
+    ac = DesignFormulation()
+    ac.load_xls('Baseline1')
+    ac.setup()
+    ac.set_x(ac.x0)
+    #run_optimization()

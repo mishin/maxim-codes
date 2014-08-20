@@ -78,11 +78,12 @@ class Wing(object):
         z = zLE(y)
         return np.array([x,y,z])
         
-    def _process_data(self):
+    def _process_data(self,updateAirfoils=False):
         self.nSeg = len(self.segSpans)
         self.nSec = self.nSeg+1
         self.segDihedralRad = np.radians(self.segDihedral)
-        self._load_airfoils()
+        if updateAirfoils:
+            self._load_airfoils()
         self._calc_geometry_data()
     
     def set_elevon(self,ailLocation):
