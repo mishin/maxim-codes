@@ -76,7 +76,7 @@ class FlyingWing(object):
         self.wing.fuelTankCGratio    = db.read_row(-1,1,True)
         idx = db.find_header(keyword+'PROPULSION')
         engineName                      = db.read_row(idx+1,1,False)
-        self.propulsion.engine.load(engineName)
+        self.propulsion.load(engineName)
         self.propulsion.numberOfEngines = int(db.read_row(-1,1,False))
         self.propulsion.CGx             = db.read_row(-1,1,True)
         self.propulsion.CGy             = db.read_row(-1,1,True)
@@ -328,7 +328,7 @@ def run_test4():
     ac.mass.display()
     print ac.propulsion.get_sfc(0.7, 1e4, 2500)
     ac.plot_drag()
-    ac.get_aero_single_point(0.7,1e4,2,0).display()
+    ac.get_aero_single_point(0.7,1e4,0,0).display()
 
 if __name__=="__main__":
     run_test4()

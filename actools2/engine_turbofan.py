@@ -14,7 +14,9 @@ from engine_turbofan_analysis import engine_modeling
 from scipy.interpolate import interp1d, Rbf
 import matplotlib.pyplot as plt
 import constants
-from misc_tools import Normalization
+from misc_tools import Normalization, read_tabulated_data_with_header
+import os.path
+
 
 class Propulsion(object):
     def __init__(self):
@@ -24,15 +26,24 @@ class Propulsion(object):
         self.CGy = None
         self.CGz = None
         self.numberOfTanks = 1
+        self.sfcModel = None
 
-    def load(self,name):
+    def load(self,name,buildTable=False):
         self.engine.load(name)
-        self._process_data()
+        self._process_data(buildTable)
 
-    def _process_data(self):
+    def _process_data(self,buildTable=False):
         self.totalThrust = self.engine.thrustMC*self.numberOfEngines
         self._calc_cg()
-        self._build_thrust_table()
+        if buildTable:
+            path = MyPaths()
+            thrustTablePath = '%s//ThrustTable_%s.txt'%(path.db.wdir,self.engine.name)
+            if os.path.isfile(thrustTablePath):
+                print 'loading thrust table'
+                self._load_thrust_table(thrustTablePath)
+            else:
+                print 'building thrust table'
+                self._build_thrust_table()
 
     def _calc_cg(self):
         if hasattr(self.CGx,'__iter__'):
@@ -40,7 +51,7 @@ class Propulsion(object):
             self.totalMass, self.CG = get_total_cg(mass,self.CGx,self.CGy,self.CGz)
 
 
-    def get_sfc(self,Mach,altitude,thrustReq):
+    def get_sfc_direct(self,Mach,altitude,thrustReq):
         Mach      = float(Mach)
         altitude  = float(altitude)
         thrustReq = float(thrustReq) / self.numberOfEngines # thrust per engine
@@ -54,36 +65,73 @@ class Propulsion(object):
         Treq = self._normTreq.normalize(thrustReq)
         return self.sfcModel(Mach,alt,Treq)
     
-    def _build_thrust_table(self):
-        n = 15
-        MachList = linspace(0.05, 1.0, n)
-        altList  = linspace(0, 2e4, n)
+    def get_sfc(self,Mach,altitude,thrustReq):
+        if self.sfcModel==None:
+            return self.get_sfc_direct(Mach,altitude,thrustReq)
+        else:
+            return self.get_sfc2(Mach,altitude,thrustReq)
+    
+    def _load_thrust_table(self,path):
+        self._get_thrust_table_limits()
+        data = read_tabulated_data_with_header(path)
+        self._normMach = Normalization(data['Mach'].min(), data['Mach'].max(),0,1)
+        self._normAlt = Normalization(data['altitude'].min(), data['altitude'].max(),0,1)
+        self._normTreq = Normalization(data['ThrustRequired'].min(), data['ThrustRequired'].max(),0,1)
+        normMach = self._normMach.normalize(data['Mach'])
+        normAlt = self._normAlt.normalize(data['altitude'])
+        normTreq = self._normTreq.normalize(data['ThrustRequired'])
+        self.sfcModel = Rbf(normMach,normAlt,normTreq,data['sfc'])
+    
+    def _get_thrust_table_limits(self):
+        n = 11
+        MachMin = 0.05
+        MachMax = 1.0
+        altMin = 0
+        altMax = 2e4
         Tmc = self.totalThrust
-        TreqList = linspace(0.05*Tmc, Tmc, n)
+        Tmin = 0.05 *Tmc
+        Tmax = Tmc
+        self._normMach = Normalization(MachMin,MachMax, 0,1)
+        self._normAlt  = Normalization(altMin,altMax,0,1)
+        self._normTreq = Normalization(Tmin, Tmax,0,1)
+        return n, MachMin, MachMax, altMin, altMax, Tmin, Tmax
+
+    def _build_thrust_table(self):
+        n, MachMin, MachMax, altMin, altMax, Tmin, Tmax = self._get_thrust_table_limits()
+        MachList = linspace(MachMin, MachMax, n)
+        altList  = linspace(altMin, altMax, n)
+        TreqList = linspace(Tmin, Tmax, n)
         nsfc = n*n*n
         sfc       = ones(nsfc)
         Mach      = ones(nsfc)
         altitude  = ones(nsfc)
         thrustReq = ones(nsfc)
         
-        self._normMach = Normalization(MachList[0], MachList[-1],0,1)
-        self._normAlt  = Normalization(altList[0],altList[-1],0,1)
-        self._normTreq = Normalization(TreqList[0],TreqList[-1],0,1)
-        
         i = 0
         for M in MachList:
             for alt in altList:
                 for Treq in TreqList:
-                    _sfc = self.get_sfc(M,alt,Treq)
+                    _sfc = self.get_sfc_direct(M,alt,Treq)
                     if not isnan(_sfc):
                         sfc[i] = _sfc
-                        Mach[i] = self._normMach.normalize(M)
-                        altitude[i] = self._normAlt.normalize(alt)
-                        thrustReq[i] = self._normTreq.normalize(Treq)
+                        Mach[i] = M #self._normMach.normalize(M)
+                        altitude[i] = alt #self._normAlt.normalize(alt)
+                        thrustReq[i] = Treq #self._normTreq.normalize(Treq)
                         i += 1
                         #print '%d\t%.4f\t%.0f\t%.0f\t%.6f'%(i, M, alt, Treq, _sfc)
+        
+        path = MyPaths()
+        thrustTablePath = '%s//ThrustTable_%s.txt'%(path.db.wdir,self.engine.name)
+        fid = open(thrustTablePath,'wt')
+        fid.write('Mach\taltitude\tThrustRequired\tsfc\n')
+        for M,alt,Treq,_sfc in zip(Mach[:i],altitude[:i],thrustReq[:i],sfc[:i]):
+            fid.write('%.32f\t%.32e\t%.32e\t%.32e\n'%(M,alt,Treq,_sfc))
+        fid.close()
 
-        self.sfcModel = Rbf(Mach[:i], altitude[:i], thrustReq[:i], sfc[:i])
+        normMach = self._normMach.normalize(Mach[:i])
+        normAlt  = self._normAlt.normalize(altitude[:i])
+        normTreq = self._normTreq.normalize(thrustReq[:i])
+        self.sfcModel = Rbf(normMach, normAlt, normTreq, sfc[:i])
 
     def __call__(self,Mach,altitude,powerSetting):
         """ NOTE: powerSetting is linear function - will be replaced """
@@ -103,13 +151,12 @@ class Propulsion(object):
         Mach = linspace(0.1,1,100)
         Tmc = self.totalThrust
         Pset = linspace(0.05*Tmc, Tmc ,5)
-        print Pset
         sfc = ones([len(Pset),len(Mach)])
         sfc2 = ones([len(Pset),len(Mach)])
 
         for i,p in enumerate(Pset):
             for j,M in enumerate(Mach):
-                sfc[i,j] = self.get_sfc(M,alt,p)
+                sfc[i,j] = self.get_sfc_direct(M,alt,p)
                 sfc2[i,j] = self.get_sfc2(M,alt,p)
 
             plt.plot(Mach,sfc[i],marker='*')
@@ -174,7 +221,7 @@ class TurbofanEngine(object):
 
 def run_test3():
     prop = Propulsion()
-    prop.load('F404')
+    prop.load('F404',True)
     prop.test()
 
 if __name__=="__main__":

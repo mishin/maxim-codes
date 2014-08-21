@@ -22,11 +22,11 @@ class DesignFormulation(design.Design):
         self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
         self.WemptyMax      = 3400.0
-        self.CnbMin         = 0.0001
+        self.CnbMin         = 0.001
         self.ClbMax         = -0.05
-        self.SMmin          = -0.08
+        self.SMmin          = -0.05
         self.SMmax          = 0.10
-        self.RangeMin       = 3000.0
+        #self.RangeMin       = 3000.0
         self.combatRadiusMin= 1000.0
         self.RCmin          = 100.0
         self.VmaxMin        = 0.90 # Mach
@@ -124,21 +124,28 @@ class DesignFormulation(design.Design):
         g[6] = self.analysisData[6] - self.RCmin
         g[7] = self.analysisData[7] - self.VmaxMin
 #
-#        g[1] *= 1.0e4
-#        g[2] *= 1.0e4
-#        g[3] *= 1.0e1
-#        g[4] *= 1.0e1
+        g[0] *= 1e-2
+        g[1] *= 1e4
+        g[2] *= 1e3
+        g[3] *= 1e3
+        g[4] *= 1e3
+        g[5] *= 1e-2
+        g[6] *= 1e-1
+        g[7] *= 1e2
+        
         return g
 
 
 def run_optimization():
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
+    ac.propulsion._build_thrust_table()
     ac.setup()
     rslt = fmin_slsqp(ac.f, ac.x0, f_ieqcons=ac.g, bounds=ac.bnds,
-                      epsilon=1e-4,iprint=2)
+                      epsilon=1e-3,iprint=2,acc=2e-3)
     ac.set_x(rslt)
     print ac.analysisData
+    print ac.g(rslt)
     print ac.aero.display()
     print rslt
     ac.display()
@@ -170,8 +177,9 @@ def function_for_sensitivity():
 
 
 if __name__=="__main__":
-    ac = DesignFormulation()
-    ac.load_xls('Baseline1')
-    ac.setup()
-    ac.set_x(ac.x0)
-    #run_optimization()
+#    ac = DesignFormulation()
+#    ac.load_xls('Baseline1')
+#    ac.propulsion._build_thrust_table()
+#    ac.setup()
+#    ac.set_x(ac.x0)
+    run_optimization()
