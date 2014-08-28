@@ -22,13 +22,12 @@ class DesignFormulation(design.Design):
         self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
         self.WemptyMax      = 3400.0
-        self.CnbMin         = 0.001
+        self.CnbMin         = 0.0001
         self.ClbMax         = -0.05
         self.SMmin          = -0.05
         self.SMmax          = 0.10
-        #self.RangeMin       = 3000.0
-        self.combatRadiusMin= 1000.0
-        self.RCmin          = 100.0
+        self.combatRadiusMin= 900.0
+        self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
@@ -141,6 +140,8 @@ def run_optimization():
     ac.load_xls('Baseline1')
     ac.propulsion._build_thrust_table()
     ac.setup()
+    ac.set_x(ac.x0)
+
     rslt = fmin_slsqp(ac.f, ac.x0, f_ieqcons=ac.g, bounds=ac.bnds,
                       epsilon=1e-3,iprint=2,acc=2e-3)
     ac.set_x(rslt)
@@ -176,10 +177,37 @@ def function_for_sensitivity():
     return out
 
 
+def run_design_table():
+    from misc_tools import read_tabulated_data_without_header, Normalization
+    data = read_tabulated_data_without_header('9dvars_100pts.txt')
+
+    pathOut = 'design_out.txt'
+    ac = DesignFormulation()
+    ac.load_xls('Baseline1')
+    ac.propulsion._build_thrust_table()
+    ac.setup()
+    
+    normalizers = list()
+    for l,u in zip(ac.lb, ac.ub):
+        normalizers.append(Normalization(l,u))
+
+    dataNew = np.zeros(data.shape)
+    n = data.shape[1]
+    for i,xNorm in enumerate(data):
+        dataNew[i] = np.array([normalizers[ii].denormalize(xNorm[ii]) for ii in range(n)])
+        ac.set_x(dataNew[i])
+        fid = open(pathOut,'at')
+        for val in ac.analysisData:
+            fid.write('%.20f\t'%val)
+        fid.write('\n')
+        fid.close()
+        print i,'\n', ac.analysisData
+
+
 if __name__=="__main__":
 #    ac = DesignFormulation()
 #    ac.load_xls('Baseline1')
 #    ac.propulsion._build_thrust_table()
 #    ac.setup()
 #    ac.set_x(ac.x0)
-    run_optimization()
+    run_design_table()

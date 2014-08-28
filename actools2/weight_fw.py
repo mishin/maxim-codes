@@ -100,6 +100,7 @@ class BlendedWingBodyMass(object):
         self._add_mass1('wing',m,np.array([xCG,0.0,zCG]))
     
     def _mass_fuselage(self):
+        # Raymer - fighter
         L = convert.m_to_ft(self.ac.wing.chords[0])
         D = convert.m_to_ft(self.ac.wing.airfoils[0].thickness)
         W = convert.m_to_ft(self.ac.fusWidth)
@@ -113,6 +114,7 @@ class BlendedWingBodyMass(object):
     def _mass_mlg(self):
 #        Lm = convert.m_to_ft(self.ac.landingGear.strutLength[1]) #TODO: check value
 #        m = self.Kcb*self.Ktpg*(self.Wt*self.Nl)**0.25 * Lm**0.973
+        # Gundlach - UAV design
         m = self.Wt * 0.04*0.85
         xCG = self.ac.landingGear.groundContactX[1]
         self._add_mass1('main landing gear',m,np.array([xCG,0,0]))
@@ -121,6 +123,7 @@ class BlendedWingBodyMass(object):
 #        Ln = convert.m_to_ft(self.ac.landingGear.strutLength[0])
 #        Nnw = 1.0 # number of nose wheels
 #        m = (self.Wl*self.Nl)**0.29 *Ln**0.5 *Nnw**0.525
+        # Gundlach - UAV design
         m = self.Wt * 0.04*0.15
         xCG = self.ac.landingGear.groundContactX[0]
         self._add_mass1('nose landing gear',m,np.array([xCG,0,0]))
