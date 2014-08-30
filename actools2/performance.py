@@ -222,7 +222,7 @@ class ClimbDescent(FlightMechanics):
 class TurningFlight:
     def run_turn_rate(self,phi,airspeed,loadFactorMax,powerSetting):
         pass
-    
+
 
 class Field:
     pass

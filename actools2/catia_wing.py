@@ -13,14 +13,14 @@ from airfoil_cad import Airfoil2D
 import paths
 
 
-def create_catia_wing():
+def create_catia_wing(ac, fileIgs):
     ac = aircraft_FW.load('Baseline1')
     scale = 1.
     symmetric = True
-    show = True
+    show = False
     Rle = 0.1207**2./2
-    paths.myPaths.set_file_prefix('fw2')
-    fileIgs = paths.myPaths.get_tmp_file('igs')
+    #paths.myPaths.set_file_prefix('fw2')
+    #fileIgs = paths.myPaths.get_tmp_file('igs')
 
     pd = CadDesigner(show)
     pd.add_new_part()
@@ -51,9 +51,8 @@ def create_catia_wing():
         pd.create_tip_section(af,chord,incidence,0.25,span,sweep,dihedral,False,True)
     pd.rot_sym_cfd()
 
-    #pd.save_part_igs(fileIgs)
-    
-    #pd.close_part()
+    pd.save_part_igs(fileIgs)
+    pd.close_part()
 
 
 if __name__=="__main__":

@@ -6,13 +6,23 @@ Created on Mon Aug 18 15:21:54 2014
 """
 import aircraft_FW
 import numpy as np
+import os
 
-def create_fw_cmesh():
-    ac = aircraft_FW.load('Baseline1')
+
+def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yplus=0.5):
+    if ac==None:
+        ac = aircraft_FW.load('Baseline1')
+    if igsPath==None:
+        igsPath = r'E:/1. Current work/2014 - UAV performance code/CFD automation/fw3.igs'
+    if casPathSym==None:
+        casPathSym = 'fw_case_sym.cas'
+    if casPathNonsym==None:
+        casPathNonsym = 'fw_case_nonsym.cas'
+
     fid = open('./templates/fw_automation.glf')
     lines = fid.readlines()
     fid.close()
-    print ac.get_cg()
+    #print ac.get_cg()
 
     nWallChord = 65
     nWallSeg1  = 30
@@ -22,7 +32,7 @@ def create_fw_cmesh():
     nFFy = 100
     nFFz = 55
     
-    yplus = 0.5
+    #yplus = 0.5
     dsLE = 1e-3
 
     dsFFy = 1e-3
@@ -30,6 +40,9 @@ def create_fw_cmesh():
     dsTopFront = 1e-2
     dsZ = 1e-3
     
+    # igs input file
+    
+    lines[14] = '  $_TMP(mode_1) initialize -type Automatic {%s}\n'%igsPath
     # wing tip
     tc = ac.wing.airfoils[-1].thickness
     tc *= ac.wing.chords[-1] / 2.
@@ -79,11 +92,18 @@ def create_fw_cmesh():
     lines[600] = '  $_TMP(PW_72) setEndSpacing %.10f\n'%(dsLEt)
     lines[608] = '  $_TMP(PW_73) setEndSpacing %.10f\n'%(dsLEt)
 
-
-    fid = open('new.glf','wt')
+    # case file export
+    lines[1094] = '  $_TMP(mode_1) initialize -type CAE {%s}\n'%casPathNonsym
+    lines[1118] = '  $_TMP(mode_4) initialize -type CAE {%s}\n'%casPathSym
+    
+    glfPath = os.path.abspath('temp/new.glf')
+    fid = open(glfPath,'wt')
     for line in lines:
         fid.write(line)
     fid.close()
+    os.system('\"%s\"'%glfPath)
+    os.remove(glfPath)
+
 
 if __name__=="__main__":
     create_fw_cmesh()

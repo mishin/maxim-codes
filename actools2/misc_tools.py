@@ -7,6 +7,31 @@ Created on Thu Jan 09 11:50:25 2014
 
 from datetime import datetime
 import numpy as np
+from scipy.interpolate import Rbf
+
+
+class RbfMod():
+    def __init__(self,x,y):
+        if x.ndim>1:
+            x = np.transpose(x)
+            x = self._get_tuple(x)
+            args = x + (y,)
+        else:
+            args = (x,y)
+        self.rbf = Rbf(*args)
+
+    def __call__(self,x):
+        if hasattr(x,'__iter__'):
+            x = self._get_tuple(x)
+            return self.rbf(*x)
+        else:
+            return self.rbf(x)
+
+    def _get_tuple(self,xArray):
+        xTuple = tuple()
+        for x in xArray:
+            xTuple += (x,)
+        return xTuple
 
 
 class SaveTextData():

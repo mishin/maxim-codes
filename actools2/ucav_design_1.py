@@ -179,14 +179,14 @@ def function_for_sensitivity():
 
 def run_design_table():
     from misc_tools import read_tabulated_data_without_header, Normalization
-    data = read_tabulated_data_without_header('9dvars_100pts.txt')
+    data = read_tabulated_data_without_header('DOE_LHS250_FFD2_3.txt')
 
-    pathOut = 'design_out.txt'
+    pathOut = 'design_out3.txt'
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
     ac.propulsion._build_thrust_table()
     ac.setup()
-    
+
     normalizers = list()
     for l,u in zip(ac.lb, ac.ub):
         normalizers.append(Normalization(l,u))
