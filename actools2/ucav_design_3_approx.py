@@ -19,8 +19,8 @@ def get_rbf(x,f):
 
 
 def run_optimization_1():
-    pathIn = 'design_out3.txt'
-    pathInSamples = 'DOE_LHS250_FFD2_3.txt'
+    pathIn = 'design_out4.txt'
+    pathInSamples = 'DOE_LHS250_FFD2_3_3.txt'
     learnData = read_tabulated_data_without_header(pathIn)
     xNorm = read_tabulated_data_without_header(pathInSamples)
     #xNorm = np.transpose(xNorm)
