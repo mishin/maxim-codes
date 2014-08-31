@@ -9,6 +9,7 @@ from misc_tools import read_tabulated_data_without_header, Normalization, RbfMod
 from scipy.optimize import fmin_slsqp, minimize
 import numpy as np
 from scipy.interpolate import Rbf
+import matplotlib.pyplot as plt
 
 from ucav_design_1 import DesignFormulation
 
@@ -33,7 +34,7 @@ def run_optimization_1():
     SMmax          = 0.10
     combatRadiusMin= 1000.0
     RCmin          = 125.0
-    VmaxMin        = 0.9 # Mach
+    VmaxMin        = 0.95 # Mach
     
     LD      = RbfMod(xNorm, learnData[0])
     We      = RbfMod(xNorm, learnData[1])
@@ -85,10 +86,19 @@ def run_optimization_1():
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
     ac.setup()
+    ac.set_x(ac.x0)
+    x2dBaseline = ac.wing.x2d
+    y2dBaseline = ac.wing.y2d
+    print 'Baseline'
+    print ac.analysisData
+    print '--->'
     normalize = Normalization(ac.lb,ac.ub)
     xoptDenorm = normalize.denormalize(xopt)
+
     print xoptDenorm
     ac.set_x(xoptDenorm)
+    x2dOptimum = ac.wing.x2d
+    y2dOptimum = ac.wing.y2d
     print ac.analysisData, '\n---'
     print (ac.analysisData[0] - LD(xopt)) / ac.analysisData[0]
     print (ac.analysisData[1] - We(xopt)) / ac.analysisData[1]
@@ -98,6 +108,13 @@ def run_optimization_1():
     print (ac.analysisData[5] - Rcombat(xopt)) / ac.analysisData[5]
     print (ac.analysisData[6] - RC(xopt)) / ac.analysisData[6]
     print (ac.analysisData[7] - Vmax(xopt)) / ac.analysisData[7]
+    
+    plt.figure()
+    plt.hold(True)
+    plt.plot(x2dBaseline, y2dBaseline, 'r-')
+    plt.plot(x2dOptimum, y2dOptimum, 'k-')
+    plt.legend(['Baseline','Low-fi Optimum'])
+    plt.show()
 
     ac.display()
 

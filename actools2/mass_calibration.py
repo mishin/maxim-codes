@@ -19,7 +19,7 @@ def run():
     ac3 = aircraft_FW.load(name[2])
     ac4 = aircraft_FW.load(name[3])
 
-    m1 = ac1.mass.empty.get_total_mass()
+    m1 = ac1.mass.empty.get_total_mass()-100
     m2 = ac2.mass.empty.get_total_mass()
     m3 = ac3.mass.empty.get_total_mass()
     m4 = ac4.mass.empty.get_total_mass()

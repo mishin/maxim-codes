@@ -85,6 +85,27 @@ class Wing(object):
         if updateAirfoils:
             self._load_airfoils()
         self._calc_geometry_data()
+        self._calc_2d_points_data()
+    
+    def _calc_2d_points_data(self):
+        npts = 5*self.nSeg
+        x = np.zeros([npts])
+        y = np.zeros([npts])
+        for i in range(self.nSeg):
+            _n = 5*i
+            x[_n] = None
+            y[_n] = None
+            x[_n+1] = self.secApex[i,0]
+            y[_n+1] = self.secApex[i,1]
+            x[_n+2] = self.secApex[i+1,0]
+            y[_n+2] = self.secApex[i+1,1]
+            x[_n+3] = self.secApex[i+1,0] + self.chords[i+1]
+            y[_n+3] = self.secApex[i+1,1]
+            x[_n+4] = self.secApex[i,0] + self.chords[i]
+            y[_n+4] = self.secApex[i,1]
+        ynew = np.hstack([np.flipud(x[1:]), x])
+        self.y2d = -ynew
+        self.x2d = np.hstack([-np.flipud(y[1:]), y])
     
     def set_elevon(self,ailLocation):
         self.elevon = ControlSurface(ailLocation,self.chords,self.segSpans,False)

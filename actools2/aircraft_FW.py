@@ -126,6 +126,12 @@ class FlyingWing(object):
     def display(self,showAxes=False):
         flying_wing_display(self,showAxes)
     
+    def display_2d(self):
+        plt.figure()
+        plt.plot(self.wing.x2d, self.wing.y2d,'k-')
+        plt.axis('equal')
+        plt.show()
+    
     def _update_parasite_drag(self):
         alt = self.designGoals.cruiseAltitude
         #alt = 0
@@ -324,11 +330,13 @@ def run_test1():
 
 def run_test4():
     ac = load('Baseline1')
-    print ac.mass.empty()
-    ac.mass.display()
-    print ac.propulsion.get_sfc(0.7, 1e4, 2500)
-    ac.plot_drag()
-    ac.get_aero_single_point(0.7,1e4,0,0).display()
+#    print ac.mass.empty()
+#    ac.mass.display()
+#    print ac.propulsion.get_sfc(0.7, 1e4, 2500)
+    print ac.wing.secApex
+    ac.display_2d()
+    #ac.plot_drag()
+    #ac.get_aero_single_point(0.7,1e4,0,0).display()
 
 if __name__=="__main__":
     run_test4()
