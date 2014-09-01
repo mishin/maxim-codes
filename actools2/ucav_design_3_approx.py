@@ -28,7 +28,7 @@ def run_optimization_1():
     learnData = np.transpose(learnData)
     
     WemptyMax      = 3400.0
-    CnbMin         = 0.0002
+    CnbMin         = 0.001
     ClbMax         = -0.05
     SMmin          = -0.05
     SMmax          = 0.10
@@ -49,6 +49,8 @@ def run_optimization_1():
     SM = lambda x: _SM(x)/1e3
     bnds = np.ones([9,2])
     bnds[:,0] = -bnds[:,0]
+    bnds[8,0] = 0
+    bnds[7,0] = 0
     bnds = tuple(bnds)
 
     f  = lambda x: -LD(x)
@@ -108,7 +110,7 @@ def run_optimization_1():
     print (ac.analysisData[5] - Rcombat(xopt)) / ac.analysisData[5]
     print (ac.analysisData[6] - RC(xopt)) / ac.analysisData[6]
     print (ac.analysisData[7] - Vmax(xopt)) / ac.analysisData[7]
-    
+
     plt.figure()
     plt.hold(True)
     plt.plot(x2dBaseline, y2dBaseline, 'r-')

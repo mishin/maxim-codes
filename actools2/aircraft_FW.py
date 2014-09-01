@@ -38,9 +38,15 @@ class FlyingWing(object):
         self.propulsion = Propulsion() #table lookup database
         self.aeroResults = None
 
-        # FIXME: drag calculation is temporal - DO NOT USE for real calculation
-
     def load_xls(self, name, xlsPath=None):
+        """
+        Loads aircraft data from *.xls datasheet and calculates necessary 
+        parameters:
+        - full geometry data set
+        - weight and cg
+        - parasite drag curve: CD0 vs Mach
+        - engine thrust table if it does not exist for selected engine
+        """
         self.name = str(name)
         if xlsPath==None:
             xlsPath = path.db.aircraftFW
@@ -106,11 +112,8 @@ class FlyingWing(object):
         self.mass.update_total()
         self._process_data(True)
         fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
-        fuelCG = np.array([fuelCG[0],0,fuelCG[2]])
+        fuelCG[1] = 0.0
         self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)
-#        fuelCG2 = np.array([fuelCG[0],-fuelCG[1],fuelCG[2]])
-        #self.mass.fuel.add_item('Fuel tank right',self.designGoals.fuelMass/2.,fuelCG)
-        #self.mass.fuel.add_item('Fuel tank left',self.designGoals.fuelMass/2.,fuelCG2)
         self.designGoals._process_data()
         self._update_parasite_drag()
         self._update_mass()
@@ -120,13 +123,24 @@ class FlyingWing(object):
         self.designGoals.set_flight_conditions(self.wing.MAC)
         self.designGoals._process_data()
         self.propulsion._process_data()
+
     def save_xls(self):
+        """
+        Saves configuration to *.xls datasheet
+        """
         pass
 
     def display(self,showAxes=False):
+        """
+        Displays current aircraft configuration using mayavi. If method produces 
+        error: refer to manual.
+        """
         flying_wing_display(self,showAxes)
     
     def display_2d(self):
+        """
+        Displays 2D planform shape of the wing.
+        """
         plt.figure()
         plt.plot(self.wing.x2d, self.wing.y2d,'k-')
         plt.axis('equal')
@@ -220,7 +234,7 @@ class FlyingWing(object):
         return cd
     
     def get_inertia(self):
-        return np.zeros(3) #FIXME: for debug only
+        return np.zeros(3) #FIXME: should be replaced by real calculation
     
     def get_sfc(self,velocity,altitude,thrustRequired):
         fc = FlightConditions(velocity,altitude,0.0,self.wing.MAC)
@@ -283,6 +297,8 @@ class VLMparameters(object):
         self.panelsSpanwise  = 0
         self.distribution    = None
 
+
+# --- debug and test section ---
 def run_test3():
     import matplotlib.pyplot as plt
     ac = FlyingWing()
@@ -333,8 +349,10 @@ def run_test4():
 #    print ac.mass.empty()
 #    ac.mass.display()
 #    print ac.propulsion.get_sfc(0.7, 1e4, 2500)
-    print ac.wing.secApex
-    ac.display_2d()
+    print ac.wing.get_max_segment_length(2.87)
+    print ac.wing.segSweepTEdeg
+    print ac.wing.segSweepLEdeg
+    #ac.display_2d()
     #ac.plot_drag()
     #ac.get_aero_single_point(0.7,1e4,0,0).display()
 

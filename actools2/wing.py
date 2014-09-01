@@ -68,8 +68,10 @@ class Wing(object):
         self.csArea            = 0
     
     def locate_on_wing(self,chordRatio,spanRatio):
-        """ returns coordinate of the point that is located on the wing with 
-        given span and chord ratio"""
+        """
+        returns coordinate of the point that is located on the wing with 
+        given span and chord ratio
+        """
         y = self.span/2.0 * spanRatio
         chords = interp1d(self.secApex[:,1],self.chords,'linear')
         xLE = interp1d(self.secApex[:,1],self.secApex[:,0],'linear')
@@ -271,3 +273,29 @@ class Wing(object):
         self.segSweepC2deg = np.degrees(self.segSweepC2rad)
         self.segSweepC4deg = np.degrees(self.segSweepC4rad)
         self.segSweepTEdeg = np.degrees(self.segSweepTErad)
+    
+    def get_max_segment_length(self,width):
+        """
+        Calculates maximum length of payload (assumed to be rectangular) 
+        that can be located inside wing central part (1st segment). 
+        Method returns front fuselage station (x-coordinate) of payload and 
+        maximum length.
+        
+        Parameters
+        ----------
+        
+        width : float, m
+            payload width
+        """
+        width *= 0.5
+
+        if width>self.segSpans[0]:
+            return 0.0
+        
+        fsFront = width * np.tan(self.segSweepLErad[0])
+        if self.segSweepTEdeg[0]>=0:
+            fsAft = self.secApex[0,0] + self.chords[0]
+        else:
+            fsAft = self.chords[0] + width *np.tan(self.segSweepTErad[0])
+        length = fsAft - fsFront
+        return fsFront, length
