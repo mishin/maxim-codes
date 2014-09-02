@@ -24,7 +24,8 @@ def engine_modeling(threq, Mcrz, AltH, thr, hh, Mf):
     """
      
 # engine design data
-    bprdes = 0.8
+    #bprdes = 0.8
+    bprdes = 0.34
     pifan = 2.345
     etafan = 0.84
     pilpc = 3.0

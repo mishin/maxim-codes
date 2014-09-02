@@ -33,6 +33,7 @@ class BlendedWingBodyMass(object):
         self._mass_fuselage()
         self._mass_mlg()
         self._mass_nlg()
+        self._mass_engine()
         self._mass_engine_mount()
         self._mass_engine_section()
         self._mass_engine_cooling()
@@ -45,7 +46,6 @@ class BlendedWingBodyMass(object):
         self._mass_hydraulics()
         self._mass_electrical()
         self._mass_avionics()
-        self._mass_engine()
     
     def _get_coefficients(self):
         self.Kdw  = 1.0 # 0.786 for delta wing, otherwise Kdw=1.0
@@ -129,13 +129,15 @@ class BlendedWingBodyMass(object):
         self._add_mass1('nose landing gear',m,np.array([xCG,0,0]))
 
     def _mass_engine_mount(self):
+        cg = self.emptyMass.get_item_cg_by_name('engine')
         m = 0.013*self.Ne**0.795*self.T**0.579 *self.Nz
-        self._add_mass1('engine mount',m)
+        self._add_mass1('engine mount',m,cg)
         
     def _mass_engine_section(self):
+        cg = self.emptyMass.get_item_cg_by_name('engine')
         We = convert.kg_to_lb(self.ac.propulsion.engine.mass)
         m = 0.01*We**0.717*self.Ne*self.Nz
-        self._add_mass1('engine section',m)
+        self._add_mass1('engine section',m,cg)
         
     def _mass_airintake(self):
         Kvg = 1.0 # 1.62 for variable geometry
@@ -149,10 +151,11 @@ class BlendedWingBodyMass(object):
         
     def _mass_engine_cooling(self):
         #FIXME: engine shroud length is assumed 0.15*total length
+        cg = self.emptyMass.get_item_cg_by_name('engine')
         Lsh = convert.m_to_ft(self.ac.propulsion.engine.length)*0.15
         De = convert.m_to_ft(self.ac.propulsion.engine.diameter)
         m = 4.55*De*Lsh*self.Ne
-        self._add_mass1('engine cooling',m)
+        self._add_mass1('engine cooling',m,cg)
         
     def _mass_oil_cooling(self):
         m = 37.82*self.Ne**1.023
@@ -160,9 +163,10 @@ class BlendedWingBodyMass(object):
     
     def _mass_engine_controls(self):
         #FIXME: assumed that engine controls are close to engine since it is UAV
+        cg = self.emptyMass.get_item_cg_by_name('engine')
         Lec = 0.25*convert.m_to_ft(self.ac.propulsion.engine.length)
         m = 10.5*self.Ne**1.008*Lec**0.222
-        self._add_mass1('engine controls',m)
+        self._add_mass1('engine controls',m,cg)
     
     def _mass_starter_pneumatic(self):
         Te = convert.kgf_to_lbf(self.ac.propulsion.engine.thrustMC)

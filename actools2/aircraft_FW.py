@@ -352,9 +352,14 @@ def run_test4():
     print ac.wing.get_max_segment_length(2.87)
     print ac.wing.segSweepTEdeg
     print ac.wing.segSweepLEdeg
+    ac.mass.empty.display()
+    ac.mass.display()
     #ac.display_2d()
     #ac.plot_drag()
-    #ac.get_aero_single_point(0.7,1e4,0,0).display()
+    ac.get_aero_single_point(0.7,1e4,0,0).display()
+    print (ac.aeroResults.xNP - ac.wing.MAClocation)/ac.wing.MAC
+    print ac.wing.MAClocation
+    print ac.wing.MAC
 
 if __name__=="__main__":
     run_test4()
