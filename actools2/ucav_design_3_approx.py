@@ -22,14 +22,14 @@ def run_optimization_1():
     #xNorm = np.transpose(xNorm)
     learnData = np.transpose(learnData)
     
-    WemptyMax      = 3400.0
+    WemptyMax      = 3500.0
     CnbMin         = 0.0001
     ClbMax         = -0.05
     SMmin          = -0.05
     SMmax          = 0.10
     combatRadiusMin= 1000.0
     RCmin          = 125.0
-    VmaxMin        = 0.95 # Mach
+    VmaxMin        = 0.90 # Mach
     
     LD      = RbfMod(xNorm, learnData[0])
     We      = RbfMod(xNorm, learnData[1])

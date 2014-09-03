@@ -16,6 +16,9 @@ def get_flying_wing_mass(aircraft):
     out.empty = mass.emptyMass
     out.payload = aircraft.mass.payload
     out.fuel = aircraft.mass.fuel
+    fuelCG = aircraft.wing.locate_on_wing(aircraft.wing.fuelTankCGratio[0],aircraft.wing.fuelTankCGratio[1])
+    fuelCG[1] = 0.0
+    out.set_fuel_mass(aircraft.designGoals.fuelMass,fuelCG)
     out.update_total()
     return out
 

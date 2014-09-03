@@ -33,12 +33,17 @@ class DesignFormulation(design.Design):
         self.combatRadiusMin= 1000.0
         self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
+        self.minSectionLen  = 1.5*self.propulsion.engine.length
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
         # --- misc ---
         self.analysisData = np.zeros(8)
         self._upd_approximation()
-    
+        # --- initial data ---
+        self.Wf  = self.mass.fuel.mass
+        self.CGf = self.mass.fuel.coords
+        self.engineOffset = 0.75*self.propulsion.engine.length
+
     def _upd_approximation(self):
         pathIn = 'design_out4.txt'
         pathInSamples = 'DOE_LHS250_FFD2_3_3.txt'
@@ -82,6 +87,15 @@ class DesignFormulation(design.Design):
         self.set_chords([chord1,chord2,chord3])
         self.set_twist_by_index(twist1,0)
         self.set_twist_by_index(twist2,1)
+        self._set_engine_location()
+        self._update_mass()
+    
+    def _set_engine_location(self):
+        engineDiameter = self.propulsion.engine.diameter
+        x,l = self.wing.get_max_segment_length(engineDiameter)
+        self.maxSectionLength = l
+        cgNew = x+self.engineOffset
+        self.mass.empty.update_item_cg('engine',cgNew[0],cgNew[1],cgNew[2])
     
     def _upd_analysis(self,xnorm,fullUpdate):
         self._update_mass()
@@ -93,37 +107,29 @@ class DesignFormulation(design.Design):
 
         if fullUpdate:
         # mission
-            ac1 = copy.copy(self)
-            ac2 = copy.copy(self)
+            self.mass.set_fuel_mass(self.Wf, self.CGf)
+            if not self.mass.payload.item_exists(self.SDB.name):
+                self.mass.payload.add_component(self.SDB)
     
-            Wf = ac1.mass.fuel.mass
-            CGf = ac1.mass.fuel.coords
-            if not ac1.mass.payload.item_exists(self.SDB.name):
-                ac1.mass.payload.add_component(self.SDB)
-            if ac2.mass.payload.item_exists(self.SDB.name):
-                ac2.mass.payload.remove_item(self.SDB.name)
-    
-            self.combatRadius = run_mission_B15(ac1)
+            self.combatRadius = run_mission_B15(self)
             # performance
-            ac1.mass.set_fuel_mass(Wf,CGf)
-            ac2.mass.set_fuel_mass(Wf,CGf)
-            if not ac1.mass.payload.item_exists(self.SDB.name):
-                ac1.mass.payload.add_component(self.SDB)
-            if not ac2.mass.payload.item_exists(self.SDB.name):
-                ac2.mass.payload.add_component(self.SDB)
-    
-            slf = SteadyLevelFlight(ac1)
-            clm = ClimbDescent(ac2)
-            
-            
+            self.mass.set_fuel_mass(self.Wf,self.CGf)
+            if not self.mass.payload.item_exists(self.SDB.name):
+                self.mass.payload.add_component(self.SDB)
+
+            slf = SteadyLevelFlight(self)
             self.analysisData[1] = self.mass.empty()
-            
             self.analysisData[2] = self.Cnb(xnorm)  #self.aero.derivs.Cnb
             self.analysisData[3] = self.Clb(xnorm)  #self.aero.derivs.Clb
             self.analysisData[4] = self.aero.SM
             self.analysisData[5] = self.combatRadius
-            self.analysisData[6] = clm.run_max_climb_rate(0).climbRate
             self.analysisData[7] = slf.run_max_TAS(alt).Mach
+
+            self.mass.set_fuel_mass(self.Wf,self.CGf)
+            if not self.mass.payload.item_exists(self.SDB.name):
+                self.mass.payload.add_component(self.SDB)
+            clm = ClimbDescent(self)
+            self.analysisData[6] = clm.run_max_climb_rate(0).climbRate
         print self.analysisData[0]
 
     def f(self,x):
@@ -132,7 +138,7 @@ class DesignFormulation(design.Design):
 
     def g(self,x):
         self.set_x(x,True)
-        g = np.zeros(8)
+        g = np.zeros(9)
         g[0] = self.WemptyMax - self.analysisData[1]
         g[1] = self.analysisData[2] - self.CnbMin
         g[2] = self.ClbMax - self.analysisData[3]
@@ -141,6 +147,7 @@ class DesignFormulation(design.Design):
         g[5] = self.analysisData[5] - self.combatRadiusMin
         g[6] = self.analysisData[6] - self.RCmin
         g[7] = self.analysisData[7] - self.VmaxMin
+        g[8] = self.maxSectionLength - self.minSectionLen
 #
         g[0] *= 1e-2
         g[1] *= 1e4

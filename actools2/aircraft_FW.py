@@ -111,9 +111,9 @@ class FlyingWing(object):
             self.mass.payload.add_item(name,mass,CG,MOI)
         self.mass.update_total()
         self._process_data(True)
-        fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
-        fuelCG[1] = 0.0
-        self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)
+#        fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
+#        fuelCG[1] = 0.0
+#        self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)
         self.designGoals._process_data()
         self._update_parasite_drag()
         self._update_mass()

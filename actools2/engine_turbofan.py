@@ -83,7 +83,7 @@ class Propulsion(object):
         self.sfcModel = Rbf(normMach,normAlt,normTreq,data['sfc'])
     
     def _get_thrust_table_limits(self):
-        n = 11
+        n = 10
         MachMin = 0.05
         MachMax = 1.0
         altMin = 0
@@ -148,7 +148,7 @@ class Propulsion(object):
         plt.hold(True)
         legend = list()
         alt = 1e4
-        Mach = linspace(0.1,1,100)
+        Mach = linspace(0.1,1,200)
         Tmc = self.totalThrust
         Pset = linspace(0.05*Tmc, Tmc ,5)
         sfc = ones([len(Pset),len(Mach)])
