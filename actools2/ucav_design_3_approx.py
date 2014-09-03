@@ -13,11 +13,6 @@ import matplotlib.pyplot as plt
 
 from ucav_design_1 import DesignFormulation
 
-def get_rbf(x,f):
-    f = np.vstack([x,f])
-    f = np.transpose(f)
-    return ModRbf(f[0],f[1],f[2],f[3],f[4],f[5],f[6],f[7],f[8])
-
 
 def run_optimization_1():
     pathIn = 'design_out4.txt'
@@ -28,7 +23,7 @@ def run_optimization_1():
     learnData = np.transpose(learnData)
     
     WemptyMax      = 3400.0
-    CnbMin         = 0.001
+    CnbMin         = 0.0001
     ClbMax         = -0.05
     SMmin          = -0.05
     SMmax          = 0.10

@@ -37,5 +37,6 @@ config.fin.airfoil = 'NACA0012.txt';
 config = geometry_analysis_large(config);
 config.massData = weight_analysis_large(config);
 config.CG = [config.massData.Xcg 0 0];
+config.drag = drag_analysis(config);
 
 end

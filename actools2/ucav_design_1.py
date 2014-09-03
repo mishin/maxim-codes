@@ -8,46 +8,63 @@ Created on Mon Jul 21 20:58:10 2014
 import design
 from scipy.optimize import fmin_slsqp
 import numpy as np
-from mission import run_mission_B11, run_mission_B15
+from mission import run_mission_B15
 from performance import SteadyLevelFlight, ClimbDescent
 import copy
 from weight_tools import MassComponent
+
+from misc_tools import read_tabulated_data_without_header, Normalization, RbfMod
+
 
 class DesignFormulation(design.Design):
     def setup(self):
         self.lb = np.array([40, 40, 6.00, 3.00, 0.5, 1.00, 3.000, -4, -4])
         self.ub = np.array([60, 60, 7.50, 5.25, 1.8, 1.80, 3.200,  0,  0])
         self.x0 = np.array([55, 55, 6.91, 4.15, 1.1, 1.44, 3.115,  0, -3])
+        self.norm = Normalization(self.lb, self.ub,-1.,1.)
         self.xCurrent = np.zeros(len(self.x0))
-        self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
+        #self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
         self.WemptyMax      = 3400.0
-        self.CnbMin         = 0.0001
+        self.CnbMin         = 0.0003
         self.ClbMax         = -0.05
         self.SMmin          = -0.05
         self.SMmax          = 0.10
-        self.combatRadiusMin= 900.0
+        self.combatRadiusMin= 1000.0
         self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
         # --- misc ---
         self.analysisData = np.zeros(8)
+        self._upd_approximation()
+    
+    def _upd_approximation(self):
+        pathIn = 'design_out4.txt'
+        pathInSamples = 'DOE_LHS250_FFD2_3_3.txt'
+        learnData = read_tabulated_data_without_header(pathIn)
+        xNorm = read_tabulated_data_without_header(pathInSamples)
+        learnData = np.transpose(learnData)
+        _Cnb     = RbfMod(xNorm, (learnData[2])*1e3)
+        self.Cnb = lambda x: _Cnb(x)/1e3
+        self.Clb = RbfMod(xNorm, learnData[3])
+        self.LD  = RbfMod(xNorm, learnData[0])
 
-    def set_x(self,x,fullUpdate=True):
+    def set_x(self,xnorm,fullUpdate=True):
         """
         To minimize function evaluation, this function re-calculates analysis if 
         new x is given, otherwise precalculated results are used.
         """
+        x = self.norm.denormalize(xnorm)
         if not (x==self.xCurrent).all():
             self.xCurrent = x
             self._upd_configuration(x)
-            try:
-                self._upd_analysis(fullUpdate)
-            except:
-                print x
-                print self.analysisData
-                raise ValueError
+            #try:
+            self._upd_analysis(xnorm,fullUpdate)
+#            except:
+#                print x
+#                print self.analysisData
+#                raise ValueError
     
     def _upd_configuration(self,x):
         sweep1 = x[0]
@@ -66,18 +83,18 @@ class DesignFormulation(design.Design):
         self.set_twist_by_index(twist1,0)
         self.set_twist_by_index(twist2,1)
     
-    def _upd_analysis(self,fullUpdate):
+    def _upd_analysis(self,xnorm,fullUpdate):
         self._update_mass()
         self._upd_drag()
         V   = self.designGoals.cruiseSpeed
         alt = self.designGoals.cruiseAltitude
         self.aero = self.get_aero_single_point(V,alt,0)
-        self.analysisData[0] = self.aero.coef.CL/self.aero.coef.CD
+        self.analysisData[0] = self.LD(xnorm) #self.aero.coef.CL/self.aero.coef.CD
 
         if fullUpdate:
         # mission
-            ac1 = copy.deepcopy(self)
-            ac2 = copy.deepcopy(self)
+            ac1 = copy.copy(self)
+            ac2 = copy.copy(self)
     
             Wf = ac1.mass.fuel.mass
             CGf = ac1.mass.fuel.coords
@@ -100,12 +117,14 @@ class DesignFormulation(design.Design):
             
             
             self.analysisData[1] = self.mass.empty()
-            self.analysisData[2] = self.aero.derivs.Cnb
-            self.analysisData[3] = self.aero.derivs.Clb
+            
+            self.analysisData[2] = self.Cnb(xnorm)  #self.aero.derivs.Cnb
+            self.analysisData[3] = self.Clb(xnorm)  #self.aero.derivs.Clb
             self.analysisData[4] = self.aero.SM
             self.analysisData[5] = self.combatRadius
             self.analysisData[6] = clm.run_max_climb_rate(0).climbRate
             self.analysisData[7] = slf.run_max_TAS(alt).Mach
+        print self.analysisData[0]
 
     def f(self,x):
         self.set_x(x,False)
@@ -138,12 +157,15 @@ class DesignFormulation(design.Design):
 def run_optimization():
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
-    ac.propulsion._build_thrust_table()
+    #ac.propulsion._build_thrust_table()
     ac.setup()
-    ac.set_x(ac.x0)
-
-    rslt = fmin_slsqp(ac.f, ac.x0, f_ieqcons=ac.g, bounds=ac.bnds,
-                      epsilon=1e-3,iprint=2,acc=2e-3)
+    x0 = ac.norm.normalize(ac.x0)
+    #ac.set_x(x0)
+    
+    bnds = np.ones([len(ac.x0),2])
+    bnds[:,0] = -bnds[:,0]
+    rslt = fmin_slsqp(ac.f, x0, f_ieqcons=ac.g, bounds=bnds, iprint=2,
+                      epsilon=1e-6, acc=1e-3)
     ac.set_x(rslt)
     print ac.analysisData
     print ac.g(rslt)
@@ -205,9 +227,4 @@ def run_design_table():
 
 
 if __name__=="__main__":
-#    ac = DesignFormulation()
-#    ac.load_xls('Baseline1')
-#    ac.propulsion._build_thrust_table()
-#    ac.setup()
-#    ac.set_x(ac.x0)
-    run_design_table()
+    run_optimization()

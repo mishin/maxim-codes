@@ -349,7 +349,8 @@ def run_test4():
 #    print ac.mass.empty()
 #    ac.mass.display()
 #    print ac.propulsion.get_sfc(0.7, 1e4, 2500)
-    print ac.wing.get_max_segment_length(2.87)
+    print ac.wing.get_max_segment_length(ac.propulsion.engine.diameter)
+    print ac.propulsion.engine.length
     print ac.wing.segSweepTEdeg
     print ac.wing.segSweepLEdeg
     ac.mass.empty.display()

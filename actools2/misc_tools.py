@@ -191,11 +191,13 @@ def run_test1():
     timer.stop('cosine',True)
 
 def run_test2():
-    lb = -4
-    ub = 15
-    n = Normalization(lb,ub,0,1)
-    xnorm1 = n.normalize(4)
+    lb = np.array([40, 40, 6.00, 3.00, 0.5, 1.00, 3.000, -4, -4])
+    ub = np.array([60, 60, 7.50, 5.25, 1.8, 1.80, 3.200,  0,  0])
+    x0 = np.array([55, 55, 6.91, 4.15, 1.1, 1.44, 3.115,  0, -3])
+    n = Normalization(lb,ub,-1,1)
+    xnorm1 = n.normalize(x0)
     xorig = n.denormalize(xnorm1)
+    print xnorm1, xorig
 
 def run_test3():
     data = read_tabulated_data('test_file2.txt',header=False)
@@ -208,4 +210,4 @@ def run_test4():
     fid.close()
 
 if __name__=="__main__":
-    run_test4()
+    run_test2()
