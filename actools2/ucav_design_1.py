@@ -95,7 +95,7 @@ class DesignFormulation(design.Design):
         x,l = self.wing.get_max_segment_length(engineDiameter)
         self.maxSectionLength = l
         cgNew = x+self.engineOffset
-        self.mass.empty.update_item_cg('engine',cgNew[0],cgNew[1],cgNew[2])
+        self.mass.empty.update_item_cg('engine',cgNew,0,0)
     
     def _upd_analysis(self,xnorm,fullUpdate):
         self._update_mass()
