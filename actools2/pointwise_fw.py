@@ -9,7 +9,8 @@ import numpy as np
 import os
 
 
-def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yplus=0.5):
+def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yplus=0.5,
+                    glfPath=None):
     if ac==None:
         ac = aircraft_FW.load('Baseline1')
     if igsPath==None:
@@ -18,6 +19,8 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
         casPathSym = 'fw_case_sym.cas'
     if casPathNonsym==None:
         casPathNonsym = 'fw_case_nonsym.cas'
+    if glfPath==None:
+        glfPath='dbg_cmesh.glf'
 
     fid = open('./templates/fw_automation.glf')
     lines = fid.readlines()
@@ -28,9 +31,9 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
     nWallSeg1  = 30
     nWallSeg2  = 31
     nWallTip   = 8
-    nFFx = 51
-    nFFy = 100
-    nFFz = 55
+    nFFx = 46
+    nFFy = 75
+    nFFz = 46
     
     #yplus = 0.5
     dsLE = 1e-3
@@ -58,7 +61,19 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
     lines[186] = '  $_TMP(PW_13) addPoint [pwu::Vector3 add [$_CN(11) getPosition -arc 1] {0 0 %.6f}]\n'%span
     lines[198] = '  $_TMP(PW_14) addPoint [pwu::Vector3 add [$_CN(13) getPosition -arc 1] {0 0 %.6f}]\n'%span
     lines[211] = '  $_TMP(PW_15) addPoint [pwu::Vector3 add [$_CN(12) getPosition -arc 1] {0 0 %.6f}]\n'%span
-
+    
+    # number of points
+    lines[380] = '$_TMP(PW_28) do setDimension %d\n'%nWallChord
+    lines[387] = '$_TMP(PW_29) do setDimension %d\n'%nWallSeg1
+    lines[394] = '$_TMP(PW_30) do setDimension %d\n'%nWallSeg2
+    lines[401] = '$_TMP(PW_31) do setDimension %d\n'%nWallTip
+    lines[408] = '$_TMP(PW_32) do setDimension %d\n'%(nWallSeg1+nWallSeg2+nWallTip-2)
+    
+    lines[416] = '$_TMP(PW_33) do setDimension %d\n'%nFFx
+    lines[424] = '$_TMP(PW_34) do setDimension %d\n'%nFFy
+    lines[432] = '$_TMP(PW_35) do setDimension %d\n'%nFFz
+    lines[439] = '$_TMP(PW_36) do setDimension %d\n'%(2*nWallChord-1)
+    lines[446] = '$_TMP(PW_37) do setDimension %d\n'%nFFz
     # wall spacing BL
     ds1 = ac.designGoals.fc.get_wall_spacing(yplus)
     cr = ac.wing.chords[0]
@@ -96,13 +111,13 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
     lines[1094] = '  $_TMP(mode_1) initialize -type CAE {%s}\n'%casPathNonsym
     lines[1118] = '  $_TMP(mode_4) initialize -type CAE {%s}\n'%casPathSym
     
-    glfPath = os.path.abspath('temp/new.glf')
+    #glfPath = os.path.abspath('temp/new.glf')
     fid = open(glfPath,'wt')
     for line in lines:
         fid.write(line)
     fid.close()
     os.system('\"%s\"'%glfPath)
-    os.remove(glfPath)
+    #os.remove(glfPath)
 
 
 if __name__=="__main__":
