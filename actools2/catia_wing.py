@@ -14,7 +14,7 @@ import paths
 
 
 def create_catia_wing(ac, fileIgs):
-    ac = aircraft_FW.load('Baseline1')
+    #ac = aircraft_FW.load('Baseline1')
     scale = 1.
     symmetric = True
     show = False

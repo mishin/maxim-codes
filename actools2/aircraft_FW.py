@@ -146,6 +146,12 @@ class FlyingWing(object):
         plt.axis('equal')
         plt.show()
     
+    def save_2d_figure(self,path):
+        plt.figure()
+        plt.plot(self.wing.x2d, self.wing.y2d,'k-')
+        plt.axis('equal')
+        plt.savefig(path)
+    
     def _update_parasite_drag(self):
         alt = self.designGoals.cruiseAltitude
         #alt = 0
