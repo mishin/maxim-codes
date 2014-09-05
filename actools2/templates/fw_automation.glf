@@ -1,42 +1,8 @@
-# Pointwise V17.2 Journal file - Mon Aug 18 14:37:20 2014
-
-package require PWI_Glyph 2.17.2
-
-pw::Application setUndoMaximumLevels 5
-pw::Application reset
-pw::Application markUndoLevel {Journal Reset}
-
-pw::Application clearModified
-
-pw::Application setCAESolver {ANSYS FLUENT} 3
-pw::Application markUndoLevel {Select Solver}
-
-set _TMP(mode_1) [pw::Application begin DatabaseImport]
-  $_TMP(mode_1) initialize -type Automatic {E:/1. Current work/2014 - UAV performance code/CFD automation/fw3.igs}
-  $_TMP(mode_1) read
-  $_TMP(mode_1) convert
-$_TMP(mode_1) end
-unset _TMP(mode_1)
-pw::Application markUndoLevel {Import Database}
-
-set _DB(1) [pw::DatabaseEntity getByName "Symmetry.1-quilt-2"]
-set _DB(2) [pw::DatabaseEntity getByName "Symmetry.1-model"]
-set _DB(3) [pw::DatabaseEntity getByName "Symmetry.1-quilt-3"]
-set _DB(4) [pw::DatabaseEntity getByName "Symmetry.1-model-2"]
-set _DB(5) [pw::DatabaseEntity getByName "Symmetry.1-quilt"]
-set _DB(6) [pw::DatabaseEntity getByName "Symmetry.1-quilt-1"]
-set _DB(7) [pw::DatabaseEntity getByName "Symmetry.1-model-1"]
-set _DB(8) [pw::DatabaseEntity getByName "Symmetry.1-model-3"]
-set _TMP(PW_1) [pw::Connector createOnDatabase -merge 0.001 -splitConnectors 0 -joinConnectors 150 -reject _TMP(unused) [list $_DB(1) $_DB(2) $_DB(3) $_DB(4) $_DB(5) $_DB(6) $_DB(7) $_DB(8)]]
-unset _TMP(unused)
-unset _TMP(PW_1)
-pw::Application markUndoLevel {On DB Entities}
-
 set _TMP(mode_2) [pw::Application begin Create]
   set _TMP(PW_2) [pw::SegmentSpline create]
   set _CN(1) [pw::GridEntity getByName "con-5"]
-  set _CN(2) [pw::GridEntity getByName "con-8"]
-  set _CN(3) [pw::GridEntity getByName "con-12"]
+  set _CN(2) [pw::GridEntity getByName "con-7"]
+  set _CN(3) [pw::GridEntity getByName "con-8"]
   $_TMP(PW_2) addPoint [$_CN(1) getPosition -arc 0]
   $_TMP(PW_2) addPoint [pwu::Vector3 add [pw::Application getXYZ [$_CN(1) getPosition -arc 0]] {0.05 0 0.05}]
   set _TMP(con_1) [pw::Connector create]
@@ -80,7 +46,7 @@ set _TMP(mode_5) [pw::Application begin Create]
   set _TMP(PW_5) [pw::SegmentSpline create]
   set _CN(7) [pw::GridEntity getByName "con-17"]
   set _CN(8) [pw::GridEntity getByName "con-2"]
-  set _CN(9) [pw::GridEntity getByName "con-13"]
+  set _CN(9) [pw::GridEntity getByName "con-10"]
   set _CN(10) [pw::GridEntity getByName "con-3"]
   $_TMP(PW_5) addPoint [$_CN(8) getPosition -arc 1]
   $_TMP(PW_5) addPoint [pwu::Vector3 add [pw::Application getXYZ [$_CN(8) getPosition -arc 1]] {120 0 0}]
@@ -1045,54 +1011,78 @@ unset _TMP(face_1)
 unset _TMP(block_1)
 pw::Application markUndoLevel {Assemble Block}
 
-set _TMP(PW_74) [pw::BoundaryCondition getByName "Unspecified"]
+# delete temporal connectors
+set _CN(1) [pw::GridEntity getByName "con-11"]
+set _CN(2) [pw::GridEntity getByName "con-12"]
+set _CN(3) [pw::GridEntity getByName "con-13"]
+set _CN(4) [pw::GridEntity getByName "con-14"]
+pw::Entity delete [list $_CN(1) $_CN(2) $_CN(3) $_CN(4)]
+pw::Application markUndoLevel {Delete}
+
+# export
+
+pw::Application setCAESolver {ANSYS FLUENT} 3
+pw::Application markUndoLevel {Select Solver}
+
+set _DM(1) [pw::GridEntity getByName "dom-7"]
+set _DM(2) [pw::GridEntity getByName "dom-13"]
+set _TMP(PW_1) [pw::BoundaryCondition getByName "Unspecified"]
+set _DM(3) [pw::GridEntity getByName "dom-1"]
+set _DM(4) [pw::GridEntity getByName "dom-2"]
+set _DM(5) [pw::GridEntity getByName "dom-3"]
+set _DM(6) [pw::GridEntity getByName "dom-4"]
+set _DM(7) [pw::GridEntity getByName "dom-5"]
+set _DM(8) [pw::GridEntity getByName "dom-6"]
+set _DM(9) [pw::GridEntity getByName "dom-8"]
+set _DM(10) [pw::GridEntity getByName "dom-9"]
+set _DM(11) [pw::GridEntity getByName "dom-10"]
+set _DM(12) [pw::GridEntity getByName "dom-11"]
+set _DM(13) [pw::GridEntity getByName "dom-12"]
+set _DM(14) [pw::GridEntity getByName "dom-14"]
+set _DM(15) [pw::GridEntity getByName "dom-15"]
 set _BL(1) [pw::GridEntity getByName "blk-1"]
-set _TMP(PW_75) [pw::BoundaryCondition create]
+set _TMP(PW_2) [pw::BoundaryCondition create]
 pw::Application markUndoLevel {Create BC}
 
-set _TMP(PW_76) [pw::BoundaryCondition getByName "bc-2"]
-unset _TMP(PW_75)
-$_TMP(PW_76) apply [list [list $_BL(1) $_DM(3)] [list $_BL(1) $_DM(4)] [list $_BL(1) $_DM(5)] [list $_BL(1) $_DM(2)] [list $_BL(1) $_DM(7)] [list $_BL(1) $_DM(6)]]
-pw::Application markUndoLevel {Set BC}
-
-$_TMP(PW_76) setName "ff"
+set _TMP(PW_3) [pw::BoundaryCondition getByName "bc-2"]
+unset _TMP(PW_2)
+$_TMP(PW_3) setName "ff"
 pw::Application markUndoLevel {Name BC}
 
-$_TMP(PW_76) setPhysicalType {Pressure Far Field}
+$_TMP(PW_3) setPhysicalType {Pressure Far Field}
 pw::Application markUndoLevel {Change BC Type}
 
-set _TMP(PW_77) [pw::BoundaryCondition create]
+$_TMP(PW_3) apply [list [list $_BL(1) $_DM(13)] [list $_BL(1) $_DM(10)] [list $_BL(1) $_DM(11)] [list $_BL(1) $_DM(12)] [list $_BL(1) $_DM(14)] [list $_BL(1) $_DM(15)]]
+pw::Application markUndoLevel {Set BC}
+
+set _TMP(PW_4) [pw::BoundaryCondition create]
 pw::Application markUndoLevel {Create BC}
 
-set _TMP(PW_78) [pw::BoundaryCondition getByName "bc-3"]
-unset _TMP(PW_77)
-$_TMP(PW_78) setName "sym"
+set _TMP(PW_5) [pw::BoundaryCondition getByName "bc-3"]
+unset _TMP(PW_4)
+$_TMP(PW_5) setName "sym"
 pw::Application markUndoLevel {Name BC}
 
-$_TMP(PW_78) setPhysicalType {Symmetry}
-pw::Application markUndoLevel {Change BC Type}
+$_TMP(PW_5) apply [list [list $_BL(1) $_DM(9)]]
+pw::Application markUndoLevel {Set BC}
 
-set _TMP(PW_79) [pw::BoundaryCondition create]
+set _TMP(PW_6) [pw::BoundaryCondition create]
 pw::Application markUndoLevel {Create BC}
 
-set _TMP(PW_80) [pw::BoundaryCondition getByName "bc-4"]
-unset _TMP(PW_79)
-$_TMP(PW_80) setName "wall"
+set _TMP(PW_7) [pw::BoundaryCondition getByName "bc-4"]
+unset _TMP(PW_6)
+$_TMP(PW_7) setName "wall"
 pw::Application markUndoLevel {Name BC}
 
-$_TMP(PW_80) setPhysicalType {Wall}
-pw::Application markUndoLevel {Change BC Type}
-
-$_TMP(PW_78) apply [list [list $_BL(1) $_DM(1)]]
+$_TMP(PW_7) apply [list [list $_BL(1) $_DM(3)] [list $_BL(1) $_DM(4)] [list $_BL(1) $_DM(6)] [list $_BL(1) $_DM(5)] [list $_BL(1) $_DM(7)] [list $_BL(1) $_DM(8)]]
 pw::Application markUndoLevel {Set BC}
 
-$_TMP(PW_80) apply [list [list $_BL(1) $_DM(9)] [list $_BL(1) $_DM(10)] [list $_BL(1) $_DM(11)] [list $_BL(1) $_DM(12)] [list $_BL(1) $_DM(13)] [list $_BL(1) $_DM(15)]]
-pw::Application markUndoLevel {Set BC}
-
-
-set _BL(1) [pw::GridEntity getByName "blk-1"]
+unset _TMP(PW_1)
+unset _TMP(PW_3)
+unset _TMP(PW_5)
+unset _TMP(PW_7)
 set _TMP(mode_1) [pw::Application begin CaeExport [pw::Entity sort [list $_BL(1)]]]
-  $_TMP(mode_1) initialize -type CAE {E:/codes/fw_nonsym.cas}
+  $_TMP(mode_1) initialize -type CAE {E:/ucav_tmp_sym.cas}
   if {![$_TMP(mode_1) verify]} {
     error "Data verification failed."
   }
@@ -1104,8 +1094,8 @@ pw::Application setClipboard [list $_BL(1)]
 pw::Application markUndoLevel {Copy}
 
 set _TMP(mode_2) [pw::Application begin Paste]
-  set _TMP(PW_1) [$_TMP(mode_2) getEntities]
-  set _TMP(mode_3) [pw::Application begin Modify $_TMP(PW_1)]
+  set _TMP(PW_8) [$_TMP(mode_2) getEntities]
+  set _TMP(mode_3) [pw::Application begin Modify $_TMP(PW_8)]
     pw::Entity transform [pwu::Transform mirroring {0 0 1} 0] [$_TMP(mode_3) getEntities]
   $_TMP(mode_3) end
   unset _TMP(mode_3)
@@ -1113,10 +1103,10 @@ $_TMP(mode_2) end
 unset _TMP(mode_2)
 pw::Application markUndoLevel {Paste}
 
-unset _TMP(PW_1)
+unset _TMP(PW_8)
 set _BL(2) [pw::GridEntity getByName "blk-2"]
 set _TMP(mode_4) [pw::Application begin CaeExport [pw::Entity sort [list $_BL(1) $_BL(2)]]]
-  $_TMP(mode_4) initialize -type CAE {E:/codes/fw_sym.cas}
+  $_TMP(mode_4) initialize -type CAE {E:/ucav_tmp_sym2.cas}
   if {![$_TMP(mode_4) verify]} {
     error "Data verification failed."
   }

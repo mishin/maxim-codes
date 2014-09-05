@@ -1,0 +1,187 @@
+unset _TMP(curve_1)
+set _TMP(mode_7) [pw::Application begin Create]
+  set _TMP(PW_7) [pw::SegmentSpline create]
+  $_TMP(PW_7) delete
+  unset _TMP(PW_7)
+$_TMP(mode_7) abort
+unset _TMP(mode_7)
+set _TMP(mode_8) [pw::Application begin Create]
+  set _TMP(PW_8) [pw::Surface create]
+  $_TMP(PW_8) interpolate -orient Best $_DB(2) $_DB(1)
+  $_TMP(PW_8) interpolate -orient Same $_DB(2) $_DB(1)
+  $_TMP(PW_8) interpolate -orient Opposite $_DB(2) $_DB(1)
+$_TMP(mode_8) end
+unset _TMP(mode_8)
+unset _TMP(PW_8)
+pw::Application markUndoLevel {Interpolate}
+
+set _DB(4) [pw::DatabaseEntity getByName "curve-4"]
+set _DB(5) [pw::DatabaseEntity getByName "curve-2"]
+set _TMP(mode_9) [pw::Application begin Create]
+  set _TMP(PW_9) [pw::Surface create]
+  $_TMP(PW_9) interpolate -orient Opposite $_DB(4) $_DB(5)
+  $_TMP(PW_9) interpolate -orient Same $_DB(4) $_DB(5)
+$_TMP(mode_9) end
+unset _TMP(mode_9)
+unset _TMP(PW_9)
+pw::Application markUndoLevel {Interpolate}
+
+set _TMP(mode_10) [pw::Application begin Create]
+  set _TMP(PW_10) [pw::Surface create]
+  $_TMP(PW_10) interpolate -orient Same $_DB(2) $_DB(3)
+$_TMP(mode_10) end
+unset _TMP(mode_10)
+unset _TMP(PW_10)
+pw::Application markUndoLevel {Interpolate}
+
+set _DB(6) [pw::DatabaseEntity getByName "curve-6"]
+set _TMP(mode_10) [pw::Application begin Create]
+  set _TMP(PW_11) [pw::Surface create]
+  $_TMP(PW_11) interpolate -orient Same $_DB(6) $_DB(4)
+  $_TMP(PW_11) interpolate -orient Opposite $_DB(6) $_DB(4)
+$_TMP(mode_10) end
+unset _TMP(mode_10)
+unset _TMP(PW_11)
+pw::Application markUndoLevel {Interpolate}
+
+set _DB(7) [pw::DatabaseEntity getByName "surface-3"]
+set _TMP(boundary_1) [$_DB(7) getBoundary 1]
+set _TMP(PW_12) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_1)]]
+unset _TMP(unused)
+unset _TMP(PW_12)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_1)
+set _DB(8) [pw::DatabaseEntity getByName "surface-1"]
+set _TMP(boundary_2) [$_DB(8) getBoundary 2]
+set _TMP(PW_13) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_2)]]
+unset _TMP(unused)
+unset _TMP(PW_13)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_2)
+set _TMP(boundary_3) [$_DB(8) getBoundary 3]
+set _TMP(PW_14) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_3)]]
+unset _TMP(unused)
+unset _TMP(PW_14)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_3)
+set _TMP(boundary_4) [$_DB(8) getBoundary 4]
+set _TMP(PW_15) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_4)]]
+unset _TMP(unused)
+unset _TMP(PW_15)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_4)
+set _TMP(boundary_5) [$_DB(7) getBoundary 3]
+set _TMP(PW_16) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_5)]]
+unset _TMP(unused)
+unset _TMP(PW_16)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_5)
+set _TMP(boundary_6) [$_DB(7) getBoundary 2]
+set _TMP(PW_17) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_6)]]
+unset _TMP(unused)
+unset _TMP(PW_17)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_6)
+set _TMP(boundary_7) [$_DB(7) getBoundary 4]
+set _TMP(PW_18) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_7)]]
+unset _TMP(unused)
+unset _TMP(PW_18)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_7)
+set _DB(9) [pw::DatabaseEntity getByName "surface-4"]
+set _TMP(boundary_8) [$_DB(9) getBoundary 1]
+set _TMP(PW_19) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_8)]]
+unset _TMP(unused)
+unset _TMP(PW_19)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_8)
+set _DB(10) [pw::DatabaseEntity getByName "surface-2"]
+set _TMP(boundary_9) [$_DB(10) getBoundary 1]
+set _TMP(PW_20) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_9)]]
+unset _TMP(unused)
+unset _TMP(PW_20)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_9)
+set _TMP(boundary_10) [$_DB(10) getBoundary 3]
+set _TMP(PW_21) [pw::Connector createOnDatabase -merge 0 -reject _TMP(unused) [list $_TMP(boundary_10)]]
+unset _TMP(unused)
+unset _TMP(PW_21)
+pw::Application markUndoLevel {Connectors On DB Entities}
+
+unset _TMP(boundary_10)
+
+# connectors for keeping right numbering
+
+set _TMP(mode_1) [pw::Application begin Create]
+  set _TMP(PW_1) [pw::SegmentSpline create]
+  $_TMP(PW_1) addPoint {-3.5979491761339 -0.193018390636357 -1.23508389650975}
+  $_TMP(PW_1) addPoint {-3.57342934169799 -0.958042212702666 -0.596164151194652}
+  set _TMP(con_1) [pw::Connector create]
+  $_TMP(con_1) addSegment $_TMP(PW_1)
+  unset _TMP(PW_1)
+  $_TMP(con_1) calculateDimension
+$_TMP(mode_1) end
+unset _TMP(mode_1)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_2) [pw::Application begin Create]
+  set _TMP(PW_2) [pw::SegmentSpline create]
+  set _CN(1) [pw::GridEntity getByName "con-11"]
+  $_TMP(PW_2) addPoint {-2.75653601286411 -0.0747207126454112 -1.00643922360831}
+  $_TMP(PW_2) addPoint {-2.7907089696691 -0.845487097895636 -0.385533103655538}
+  unset _TMP(con_1)
+  set _TMP(con_2) [pw::Connector create]
+  $_TMP(con_2) addSegment $_TMP(PW_2)
+  unset _TMP(PW_2)
+  $_TMP(con_2) calculateDimension
+$_TMP(mode_2) end
+unset _TMP(mode_2)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_3) [pw::Application begin Create]
+  set _TMP(PW_3) [pw::SegmentSpline create]
+  set _CN(2) [pw::GridEntity getByName "con-12"]
+  $_TMP(PW_3) addPoint {-3.21812632909707 -0.167847114147631 -1.10864550215072}
+  $_TMP(PW_3) addPoint {-3.20614992999159 -0.814188375738691 -0.572230864555829}
+  unset _TMP(con_2)
+  set _TMP(con_3) [pw::Connector create]
+  $_TMP(con_3) addSegment $_TMP(PW_3)
+  unset _TMP(PW_3)
+  $_TMP(con_3) calculateDimension
+$_TMP(mode_3) end
+unset _TMP(mode_3)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_4) [pw::Application begin Create]
+  set _TMP(PW_4) [pw::SegmentSpline create]
+  set _CN(3) [pw::GridEntity getByName "con-13"]
+  $_TMP(PW_4) addPoint {-4.11655198757876 -0.27973197111577 -1.3646536299184}
+  $_TMP(PW_4) addPoint {-4.03625048750916 -0.9553611813471 -0.777672472108883}
+  unset _TMP(con_3)
+  set _TMP(con_4) [pw::Connector create]
+  $_TMP(con_4) addSegment $_TMP(PW_4)
+  unset _TMP(PW_4)
+  $_TMP(con_4) calculateDimension
+$_TMP(mode_4) end
+unset _TMP(mode_4)
+pw::Application markUndoLevel {Create 2 Point Connector}
+
+set _TMP(mode_5) [pw::Application begin Create]
+  set _TMP(PW_5) [pw::SegmentSpline create]
+  set _CN(4) [pw::GridEntity getByName "con-14"]
+  $_TMP(PW_5) delete
+  unset _TMP(PW_5)
+$_TMP(mode_5) abort
+unset _TMP(mode_5)
+unset _TMP(con_4)
+
+# end of tmp connectors
