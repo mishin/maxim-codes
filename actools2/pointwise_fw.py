@@ -243,8 +243,8 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
     lines[608-dl] = '  $_TMP(PW_73) setEndSpacing %.10f\n'%(dsLEt)
 
     # case file export
-    lines[1084] = '  $_TMP(mode_1) initialize -type CAE {%s}\n'%casPathNonsym
-    lines[1108] = '  $_TMP(mode_4) initialize -type CAE {%s}\n'%casPathSym
+    lines[1089] = '  $_TMP(mode_1) initialize -type CAE {%s}\n'%casPathNonsym
+    lines[1113] = '  $_TMP(mode_4) initialize -type CAE {%s}\n'%casPathSym
 
     #glfPath = os.path.abspath('temp/new.glf')
     fid = open(glfPath,'at')

@@ -23,9 +23,9 @@ config.wing.skinThickness = 0.0005; % for weight estimation
 config.wing.thickness = 0.15;
 config.wing.airfoil = 'NASALRN1015.txt';
 
-config.fin.secChords = [0.08, 0.08];
+config.fin.secChords = [0.08, 0.04];
 config.fin.halfSpan = 0.1;
-config.fin.sweepAngle = 0;
+config.fin.sweepAngle = 10;
 config.fin.locationX = 1.6868;
 config.fin.centerOffset = 0.9*config.body.diameter/2; % first section offset
 config.fin.elevatorChordRatio = 0; %[0;1] 0 - all moving
@@ -37,6 +37,6 @@ config.fin.airfoil = 'NACA0012.txt';
 config = geometry_analysis_large(config);
 config.massData = weight_analysis_large(config);
 config.CG = [config.massData.Xcg 0 0];
-config.drag = drag_analysis(config);
+%config.drag = drag_analysis(config);
 
 end

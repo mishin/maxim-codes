@@ -1019,7 +1019,7 @@ set _CN(4) [pw::GridEntity getByName "con-14"]
 pw::Entity delete [list $_CN(1) $_CN(2) $_CN(3) $_CN(4)]
 pw::Application markUndoLevel {Delete}
 
-# export
+# set boundary conditions
 
 pw::Application setCAESolver {ANSYS FLUENT} 3
 pw::Application markUndoLevel {Select Solver}
@@ -1062,6 +1062,8 @@ set _TMP(PW_5) [pw::BoundaryCondition getByName "bc-3"]
 unset _TMP(PW_4)
 $_TMP(PW_5) setName "sym"
 pw::Application markUndoLevel {Name BC}
+$_TMP(PW_5) setPhysicalType {Symmetry}
+pw::Application markUndoLevel {Change BC Type}
 
 $_TMP(PW_5) apply [list [list $_BL(1) $_DM(9)]]
 pw::Application markUndoLevel {Set BC}
@@ -1073,10 +1075,13 @@ set _TMP(PW_7) [pw::BoundaryCondition getByName "bc-4"]
 unset _TMP(PW_6)
 $_TMP(PW_7) setName "wall"
 pw::Application markUndoLevel {Name BC}
+$_TMP(PW_7) setPhysicalType {Wall}
+pw::Application markUndoLevel {Change BC Type}
 
 $_TMP(PW_7) apply [list [list $_BL(1) $_DM(3)] [list $_BL(1) $_DM(4)] [list $_BL(1) $_DM(6)] [list $_BL(1) $_DM(5)] [list $_BL(1) $_DM(7)] [list $_BL(1) $_DM(8)]]
 pw::Application markUndoLevel {Set BC}
 
+# export CAE
 unset _TMP(PW_1)
 unset _TMP(PW_3)
 unset _TMP(PW_5)

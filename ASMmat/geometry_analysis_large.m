@@ -14,6 +14,8 @@ missile.weight = missile.mass*9.81;
 %% body
 bodyFunction = fuselage_coordinate_generator(missile.body.type);
 missile.body.coord = bodyFunction(missile.body.length,missile.body.diameter);
+rb = missile.body.diameter/2;
+missile.body.wettedArea = 4*pi*rb^2 + 2*pi*rb*(missile.body.length-missile.body.diameter);
 %% wing
 
 missile.wing.halfSpan = missile.wing.span/2;
@@ -26,6 +28,17 @@ missile.wing.rootSection = [0,0,0];
 missile.wing.tipSection = [secX, secY, secZ];
 
 missile.wing.MAC = mean(missile.wing.secChords); % TODO: change MAC calculation
+missile.wing.halfSpan = missile.wing.span/2;
+x = missile.wing.halfSpan*tand(missile.wing.sweepAngle);
+y = missile.wing.halfSpan;
+missile.wing.tipApex = [x, y, 0];
+dx1 = x + (missile.wing.secChords(2) - missile.wing.secChords(1))*0.25;
+dx2 = x + (missile.wing.secChords(2) - missile.wing.secChords(1))*0.5;
+missile.wing.sweepC4 = rad2deg(atan(dx1/missile.wing.halfSpan));
+missile.wing.sweepC2 = rad2deg(atan(dx2/missile.wing.halfSpan));
+Sw = missile.wing.area;
+tcw = missile.wing.thickness;
+missile.wing.wettedArea = Sw*(2+0.1843*tcw + 1.5268*tcw*tcw - 0.8394*tcw^3);
 %% tail
 halfSpan = missile.fin.halfSpan;
 missile.fin.areaPerSide = sum(missile.fin.secChords)*halfSpan/2;
@@ -58,7 +71,16 @@ for i=0:3
     missile.fin.tipSection  = [missile.fin.tipSection; newTip];
     missile.fin.middleSection = [missile.fin.middleSection; newMiddle];
 end
-
+x = missile.fin.halfSpan*tand(missile.fin.sweepAngle);
+y = missile.fin.halfSpan;
+missile.fin.tipApex = [x, y, 0];
+dx1 = x + (missile.fin.secChords(2) - missile.fin.secChords(1))*0.25;
+dx2 = x + (missile.fin.secChords(2) - missile.fin.secChords(1))*0.5;
+missile.fin.sweepC4 = rad2deg(atan(dx1/missile.fin.halfSpan));
+missile.fin.sweepC2 = rad2deg(atan(dx2/missile.fin.halfSpan));
+tcw = missile.fin.thickness;
+missile.fin.wettedArea = missile.fin.area*(2+0.1843*tcw + 1.5268*tcw*tcw - 0.8394*tcw^3);
+missile.fin.equivSpan = missile.fin.numberOfTails * missile.fin.halfSpan;
 %% for mass analysis
 missile.Mtot = missile.mass;
 

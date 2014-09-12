@@ -70,6 +70,39 @@ class CFDresults:
         pass
 
 
+class FluentOutput:
+    """
+    Reads fluent result file for single case
+    """
+    def __init__(self):
+        self.CL = 0.0
+        self.CD = 0.0
+        self.Cm = 0.0
+        self.Cl = 0.0
+        self.Cn = 0.0
+
+    def read_long(self,directory, filePrefix):
+        pathCL = directory + '\\' + filePrefix + '_lift.txt'
+        pathCD = directory + '\\' + filePrefix + '_drag.txt'
+        pathCm = directory + '\\' + filePrefix + '_pitch.txt'
+        self.CL = self._read_fluent_file(pathCL)
+        self.CD = self._read_fluent_file(pathCD)
+        self.Cm = self._read_fluent_file(pathCm)
+    
+    def read_lat_dir(self,directory, filePrefix):
+        pathCl = directory + '\\' + filePrefix + '_roll.txt'
+        pathCn = directory + '\\' + filePrefix + '_yaw.txt'
+        self.Cl = self._read_fluent_file(pathCl)
+        self.Cn = self._read_fluent_file(pathCn)
+    
+    def _read_fluent_file(self,path):
+        fid = open(path,'rt')
+        lines = fid.readlines()
+        fid.close()
+        coef = lines[14].split()[-1]
+        return float(coef)
+        
+
 def run_cfd_wing_analysis():
     Mach = 0.7
     altitude = 1e4 # m
@@ -91,6 +124,13 @@ def run_cfd_wing_analysis():
     fc = FlightConditions(Mach, altitude)
     run_wing_half(nonsymCasPath, fc)
 
+def run_test1():
+    rslt = FluentOutput()
+    rslt.read_long('E:\sync_analysisPC','case2_half_a0')
+    print rslt.CL
+    print rslt.CD
+    print rslt.Cm
+
 if __name__=="__main__":
-    run_cfd_wing_analysis()
+    run_test1()
     

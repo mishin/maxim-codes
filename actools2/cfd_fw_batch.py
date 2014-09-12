@@ -38,7 +38,7 @@ def create_input_files():
         glfPath = '%s.glf'%name
         #create_catia_wing(ac,igsPath)
         #create_fw_cmesh(ac,igsPath,symCasPath,nonsymCasPath,yplus,glfPath)
-        Sref = ac.wing.area
+        Sref = ac.wing.area/2.0
         Cref = ac.wing.MAC
         CG = ac.get_cg()
         for a in alpha:
