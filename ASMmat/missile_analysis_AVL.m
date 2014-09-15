@@ -21,6 +21,7 @@ files.input = strcat(name,'.avl');
 files.case = strcat(name,'.case');
 files.output = strcat(name,'.stab');
 
+missile.CD0 = getParasiteDrag(missile, flightConditions.altitude, flightConditions.Mach);
 generate_avl_input_config(missile,files);
 generate_avl_casefile(files,flightConditions,setup);
 

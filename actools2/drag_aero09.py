@@ -96,7 +96,7 @@ def get_parasite_drag_fw(ac,altitude=0.0):
 
 def run_test1():
     import aircraft_FW
-    ac = aircraft_FW.load('X-1')
+    ac = aircraft_FW.load('Baseline1')
     print get_parasite_drag_fw(ac)
 
 
