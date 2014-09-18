@@ -26,8 +26,8 @@ class DesignFormulation(design.Design):
         #self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
         self.WemptyMax      = 3400.0
-        self.CnbMin         = 0.0003
-        self.ClbMax         = -0.05
+        self.CnbMin         = 2.5e-4
+        self.ClbMax         = -6.0e-4
         self.SMmin          = -0.05
         self.SMmax          = 0.10
         self.combatRadiusMin= 1000.0
@@ -61,15 +61,15 @@ class DesignFormulation(design.Design):
         new x is given, otherwise precalculated results are used.
         """
         x = self.norm.denormalize(xnorm)
-        if not (x==self.xCurrent).all():
-            self.xCurrent = x
-            self._upd_configuration(x)
-            #try:
-            self._upd_analysis(xnorm,fullUpdate)
+        #if not (x==self.xCurrent).all():
+        #self.xCurrent = x
+        self._upd_configuration(x)
+        #try:
+        self._upd_analysis(xnorm,fullUpdate)
 #            except:
-#                print x
-#                print self.analysisData
-#                raise ValueError
+#                print 'error:', x
+#                self.analysisData[0] = 0.0
+#                self.analysisData[1:] = -np.ones(len(self.analysisData-1))*100.0
     
     def _upd_configuration(self,x):
         sweep1 = x[0]
@@ -102,8 +102,9 @@ class DesignFormulation(design.Design):
         self._upd_drag()
         V   = self.designGoals.cruiseSpeed
         alt = self.designGoals.cruiseAltitude
-        self.aero = self.get_aero_single_point(V,alt,0)
-        self.analysisData[0] = self.LD(xnorm) #self.aero.coef.CL/self.aero.coef.CD
+        self.aero = self.get_aero_single_point(V,alt,2.0)
+        self.analysisData[0] = self.aero.coef.CL/self.aero.coef.CD
+        #self.analysisData[0] = self.LD(xnorm) #self.aero.coef.CL/self.aero.coef.CD
 
         if fullUpdate:
         # mission
@@ -119,8 +120,8 @@ class DesignFormulation(design.Design):
 
             slf = SteadyLevelFlight(self)
             self.analysisData[1] = self.mass.empty()
-            self.analysisData[2] = self.Cnb(xnorm)  #self.aero.derivs.Cnb
-            self.analysisData[3] = self.Clb(xnorm)  #self.aero.derivs.Clb
+            self.analysisData[2] = self.aero.derivs.Cnb
+            self.analysisData[3] = self.aero.derivs.Clb  #self.aero.derivs.Clb
             self.analysisData[4] = self.aero.SM
             self.analysisData[5] = self.combatRadius
             self.analysisData[7] = slf.run_max_TAS(alt).Mach
@@ -171,8 +172,10 @@ def run_optimization():
     
     bnds = np.ones([len(ac.x0),2])
     bnds[:,0] = -bnds[:,0]
-    rslt = fmin_slsqp(ac.f, x0, f_ieqcons=ac.g, bounds=bnds, iprint=2,
-                      epsilon=1e-6, acc=1e-3)
+#    ac.set_x(ac.norm.normalize(ac.x0))
+#    print ac.analysisData
+#    raw_input()
+    rslt = fmin_slsqp(ac.f, x0, f_ieqcons=ac.g, bounds=bnds, iprint=2)
     ac.set_x(rslt)
     print ac.analysisData
     print ac.g(rslt)

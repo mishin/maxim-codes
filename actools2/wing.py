@@ -290,7 +290,7 @@ class Wing(object):
         width *= 0.5
 
         if width>self.segSpans[0]:
-            return 0.0
+            return 0.0, 0.0
         
         fsFront = width * np.tan(self.segSweepLErad[0])
         if self.segSweepTEdeg[0]>=0:

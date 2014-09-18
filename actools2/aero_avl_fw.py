@@ -208,74 +208,75 @@ class AVLsolver(object):
     def _process_output(self):
         result = AVLresults(['e'])
         rawOutput = self.avl.get_output()
-        coefficientsRaw=self._split_results(rawOutput,'Enter filename, or <return> for screen output   s>',' Neutral point  Xnp =',12)      
+        coefficientsRaw=self._split_results(rawOutput,'Enter filename, or <return> for screen output   s>',' Neutral point  Xnp =',24)
+        coefficientsRaw = coefficientsRaw.split()
         result = self._set_coefficients(coefficientsRaw,result)
         result = self._set_derivatives(coefficientsRaw,result)
         return result
 
     def _set_coefficients(self,raw,results):
-        results.alpha=self._selTxt(raw,'Alpha =','pb/2V')
-        results.beta =self._selTxt(raw,'Beta  =','qc/2V')
-        results.Mach =self._selTxt(raw,'Mach  =','rb/2V')
-        results.Sref =self._selTxt(raw,'Sref =','Cref =')
-        results.Cref =self._selTxt(raw,'Cref =','Bref =')
-        results.Bref =self._selTxt(raw,'Bref =','    \n  Xref')
+        results.alpha= self._get_value(raw,'Alpha')
+        results.beta =self._get_value(raw,'Beta')
+        results.Mach =self._get_value(raw,'Mach')
+        results.Sref =self._get_value(raw,'Sref')
+        results.Cref =self._get_value(raw,'Cref')
+        results.Bref =self._get_value(raw,'Bref')
         results.ARref=results.Bref**2/results.Sref
-        results.coef.CX=self._selTxt(raw,'CXtot =','Cltot =')
-        results.coef.CY=self._selTxt(raw,'CYtot =','Cmtot =')
-        results.coef.CZ=self._selTxt(raw,'CZtot =','Cntot =')
-        results.coef.Cl=self._selTxt(raw,'Cltot =','Cl\'tot =')
-        results.coef.Cm=self._selTxt(raw,'Cmtot =','\n  CZtot =')
-        results.coef.Cn=self._selTxt(raw,'Cntot =','Cn\'tot =')
-        results.coef.CL=self._selTxt(raw,'CLtot =','\n  CDtot')
-        results.coef.CD=self._selTxt(raw,'CDtot =','\n  CDvis')
-        results.coef.CDind=self._selTxt(raw,'CDff  =','\| Trefftz\n  CYff ')
+        results.coef.CX=self._get_value(raw,'CXtot')
+        results.coef.CY=self._get_value(raw,'CYtot')
+        results.coef.CZ=self._get_value(raw,'CZtot')
+        results.coef.Cl=self._get_value(raw,'Cltot')
+        results.coef.Cm=self._get_value(raw,'Cmtot')
+        results.coef.Cn=self._get_value(raw,'Cntot')
+        results.coef.CL=self._get_value(raw,'CLtot')
+        results.coef.CD=self._get_value(raw,'CDtot')
+        results.coef.CDind=self._get_value(raw,'CDind')
         results.k=results.coef.CDind/(results.coef.CL**2)    
         results.e=1.0/(results.k*np.pi*results.ARref)       
-        results.a=self._selTxt(raw,'CLa =','CLb =')
-        results.xNP=self._selNum(raw,'Neutral point  Xnp =   ',10)
+        results.a=self._get_value(raw,'CLa')
+        results.xNP=self._get_value(raw,'Xnp')
         results.CL0=results.coef.CL-results.a*np.pi/180*results.alpha
-        results.elevator=self._selNum(raw,'elevator        =',10)
+        results.elevator=self._get_value(raw,'elevator')
         return results
 
     def _set_derivatives(self,raw,results):
-        results.derivs.CLa=self._selTxt(raw,'CLa =','CLb =')            
-        results.derivs.CYa=self._selTxt(raw,'CYa =','CYb =')
-        results.derivs.Cla=self._selTxt(raw,'Cla =','Clb =')
-        results.derivs.Cma=self._selTxt(raw,'Cma =','Cmb =')
-        results.derivs.Cna=self._selTxt(raw,'Cna =','Cnb =')
+        results.derivs.CLa=self._get_value(raw,'CLa')
+        results.derivs.CYa=self._get_value(raw,'CYa')
+        results.derivs.Cla=self._get_value(raw,'Cla')
+        results.derivs.Cma=self._get_value(raw,'Cma')
+        results.derivs.Cna=self._get_value(raw,'Cna')
         
-        results.derivs.CLb=self._selNum(raw,'CLb =',11)
-        results.derivs.CYb=self._selNum(raw,'CYb =',11)            
-        results.derivs.Clb=self._selNum(raw,'Clb =',11)
-        results.derivs.Cmb=self._selNum(raw,'Cmb =',11)
-        results.derivs.Cnb=self._selNum(raw,'Cnb =',11)            
+        results.derivs.CLb=self._get_value(raw,'CLb')
+        results.derivs.CYb=self._get_value(raw,'CYb')         
+        results.derivs.Clb=self._get_value(raw,'Clb')
+        results.derivs.Cmb=self._get_value(raw,'Cmb')
+        results.derivs.Cnb=self._get_value(raw,'Cnb')       
         
-        results.derivs.CLp=self._selTxt(raw,'CLp =','CLq =')      
-        results.derivs.CYp=self._selTxt(raw,'CYp =','CYq =')      
-        results.derivs.Clp=self._selTxt(raw,'Clp =','Clq =')      
-        results.derivs.Cmp=self._selTxt(raw,'Cmp =','Cmq =')      
-        results.derivs.Cnp=self._selTxt(raw,'Cnp =','Cnq =')                  
+        results.derivs.CLp=self._get_value(raw,'CLp')
+        results.derivs.CYp=self._get_value(raw,'CYp')
+        results.derivs.Clp=self._get_value(raw,'Clp')
+        results.derivs.Cmp=self._get_value(raw,'Cmp')
+        results.derivs.Cnp=self._get_value(raw,'Cnp')
         
-        results.derivs.CLp=self._selTxt(raw,'CLq =','CLr =')  
-        results.derivs.CLq=self._selTxt(raw,'CYq =','CYr =')  
-        results.derivs.CYq=self._selTxt(raw,'Clq =','Clr =')  
-        results.derivs.Cmq=self._selTxt(raw,'Cmq =','Cmr =')  
-        results.derivs.Cnq=self._selTxt(raw,'Cnq =','Cnr =')  
+        results.derivs.CLp=self._get_value(raw,'CLq')
+        results.derivs.CLq=self._get_value(raw,'CYq')
+        results.derivs.CYq=self._get_value(raw,'Clq')
+        results.derivs.Cmq=self._get_value(raw,'Cmq')
+        results.derivs.Cnq=self._get_value(raw,'Cnq')
 
-        results.derivs.CLr=self._selNum(raw,'CLr =',11)
-        results.derivs.CYr=self._selNum(raw,'CYr =',11)
-        results.derivs.Clr=self._selNum(raw,'Clr =',11)
-        results.derivs.Cmr=self._selNum(raw,'Cmr =',11)
-        results.derivs.Cnr=self._selNum(raw,'Cnr =',11)
+        results.derivs.CLr=self._get_value(raw,'CLr')
+        results.derivs.CYr=self._get_value(raw,'CYr')
+        results.derivs.Clr=self._get_value(raw,'Clr')
+        results.derivs.Cmr=self._get_value(raw,'Cmr')
+        results.derivs.Cnr=self._get_value(raw,'Cnr')
 
-        results.derivs.CLde=self._selNum(raw,'CLd1 =',11)
-        results.derivs.CYde=self._selNum(raw,'CYd1 =',11)
-        results.derivs.Clde=self._selNum(raw,'Cld1 =',11)
-        results.derivs.Cmde=self._selNum(raw,'Cmd1 =',11)
-        results.derivs.Cnde=self._selNum(raw,'Cnd1 =',11)
-        results.derivs.CDfe=self._selNum(raw,'CDffd1 =',11)
-        results.derivs.ede =self._selNum(raw,'ed1 =',11)
+        results.derivs.CLde=self._get_value(raw,'CLd1')
+        results.derivs.CYde=self._get_value(raw,'CYd1')
+        results.derivs.Clde=self._get_value(raw,'Cld1')
+        results.derivs.Cmde=self._get_value(raw,'Cmd1')
+        results.derivs.Cnde=self._get_value(raw,'Cnd1')
+        results.derivs.CDfe=self._get_value(raw,'CDffd1')
+        results.derivs.ede =self._get_value(raw,'ed1')
         return results
 
     def _split_results(self,source,fromStr1,toStr2,offset=0):
@@ -300,7 +301,11 @@ class AVLsolver(object):
 
     def set_flight_conditions(self,flightConditions):
         pass
-
+    
+    def _get_value(self,raw,name,offset=2):
+        idx = raw.index(name)
+        val = raw[idx+2]
+        return float(val)
 
 
 

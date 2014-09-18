@@ -240,7 +240,7 @@ class FlyingWing(object):
         return cd
     
     def get_inertia(self):
-        return np.zeros(3) #FIXME: should be replaced by real calculation
+        return np.ones(3) #FIXME: should be replaced by real calculation
     
     def get_sfc(self,velocity,altitude,thrustRequired):
         fc = FlightConditions(velocity,altitude,0.0,self.wing.MAC)

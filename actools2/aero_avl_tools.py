@@ -18,19 +18,20 @@ pth = MyPaths()
 class AVL:
     def __init__(self):
         args = shlex.split(pth.avl,False,os.name=='posix')
-        self.ps=Popen(args,stdin=PIPE,stderr=PIPE,stdout=PIPE)
+        self.ps=Popen(args,shell=True,stdin=PIPE,stderr=PIPE,stdout=PIPE)
 
     def cmd(self,command,echo=False):
         command = str(command)
         self.ps.stdin.write(command+'\n')
         if echo: print command
     def terminate(self):
-        #self.cmd('\n\n\nQUIT')
         self.ps.stderr.close()
         self.ps.kill()
 
     def get_output(self):
-        return str(self.ps.stdout.read()).replace('\r','')
+        out,err = self.ps.communicate()
+        return out
+        #return str(self.ps.stdout.read()).replace('\r','')
 
 
 class Results(object):
