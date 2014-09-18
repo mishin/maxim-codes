@@ -15,7 +15,7 @@ Sref = gb.wing.area;
 W = gb.weight;
 m = gb.Mtot;
 
-fid = fopen('simulation7.txt','wt');
+fid = fopen('simulation7mod.txt','wt');
 fprintf(fid,'time\taltitude\trange\tax\tay\ta\tVx\tVy\tV\tphi\talpha\t');
 fprintf(fid,'CL\tCD\telev\tLDmax\n');
 
@@ -40,6 +40,7 @@ axis([0,100,0,15])
 while h>hEnd
     i = i+1;
     fc = get_flight_conditions(h,V);
+    lift = .99*W*cos(phi);
     CLtrim = lift/(fc.dynamicPressure*Sref);
     aero = missile_trim_AVL(gb, fc, CLtrim);
     %lift = aero.CL*fc.dynamicPressure*Sref;

@@ -24,7 +24,7 @@ def create_input_files():
     beta = 2.0
     niter = 5000
     
-    batFileLongitudinal = '%s\\batchLongitudinal.bat'%wdir
+    batFileLongitudinal = '%s\\batchLatDirectional.bat'%wdir
     fid = open(batFileLongitudinal,'at')
     pathFluent = r'C:\Program Files\Ansys Inc\v130\fluent\ntbin\win64\fluent.exe'
     for i,xnorm in enumerate(DOE):
@@ -36,20 +36,26 @@ def create_input_files():
         symCasPath = '%s_sym.cas'%name
         nonsymCasPath = '%s_half.cas'%name
         glfPath = '%s.glf'%name
-        #create_catia_wing(ac,igsPath)
-        #create_fw_cmesh(ac,igsPath,symCasPath,nonsymCasPath,yplus,glfPath)
-        Sref = ac.wing.area/2.0
+        create_catia_wing(ac,igsPath)
+        create_fw_cmesh(ac,igsPath,symCasPath,nonsymCasPath,yplus,glfPath)
+        Sref = ac.wing.area
         Cref = ac.wing.MAC
+        Lref = ac.wing.span
         CG = ac.get_cg()
-        for a in alpha:
-            outPrefix = '%s\\results\\case%d_half_a%d'%(wdir,i+1,a*100)
-            journalFileRel = 'case%d_half_a%d.jou'%(i+1, a*100)
-            journalFile = '%s_half_a%d.jou'%(name, a*100)
-            run_wing_half(nonsymCasPath, outPrefix, ac.designGoals.fc, a, 0, 
-                          Sref, Cref, CG,journalFile,niter)
-            fid.write('\"%s\" 3ddp -t7 -i %s -wait\n'%(pathFluent, journalFileRel))
-    fid.close()
-            
+        #a = 2.0
+#        outPrefix = '%s\\results\\case%d_sym_a%d_b%d'%(wdir,i+1,a*100,beta*100)
+#        journalFileRel = 'case%d_sym_a%d_b%d.jou'%(i+1, a*100,beta*100)
+#        journalFile = '%s_sym_a%d_b%d.jou'%(name, a*100, beta*100)
+#        run_wing_symmetric(symCasPath, outPrefix, ac.designGoals.fc, a, beta, Sref, Lref, CG, journalFile, niter)
+#        for a in alpha:
+#            outPrefix = '%s\\results\\case%d_half_a%d'%(wdir,i+1,a*100)
+#            journalFileRel = 'case%d_half_a%d.jou'%(i+1, a*100)
+#            journalFile = '%s_half_a%d.jou'%(name, a*100)
+#            run_wing_half(nonsymCasPath, outPrefix, ac.designGoals.fc, a, 0, 
+#                          Sref, Cref, CG,journalFile,niter)
+#        fid.write('\"%s\" 3ddp -t7 -i %s -wait\n'%(pathFluent, journalFileRel))
+#    fid.close()
+
 
 if __name__=="__main__":
     create_input_files()

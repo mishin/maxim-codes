@@ -213,6 +213,11 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
     ds1 = ac.designGoals.fc.get_wall_spacing(yplus)
     cr = ac.wing.chords[0]
     ct = ac.wing.chords[-1]
+    
+    #FIXME: high taper ratio caused negative jacobean, so it is decided
+    # temporarily assume yplus at MAC for all wing
+    cr = ac.wing.MAC
+    ct = ac.wing.MAC
     lines[453-dl] = '  $_TMP(PW_38) setBeginSpacing %.6e\n'%(ds1*cr)
     lines[456-dl] = '  $_TMP(PW_39) setBeginSpacing %.6e\n'%(ds1*cr)
     lines[464-dl] = '  $_TMP(PW_40) setBeginSpacing %.6e\n'%(ds1*ct)

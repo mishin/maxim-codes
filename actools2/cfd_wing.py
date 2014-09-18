@@ -8,7 +8,7 @@ Created on Sat Aug 30 11:28:44 2014
 from ucav_design_1 import DesignFormulation
 from catia_wing import create_catia_wing
 from pointwise_fw import create_fw_cmesh
-from fluent_fw import run_wing_half
+from fluent_fw import run_wing_half, run_wing_symmetric
 import paths
 import os
 from numpy import zeros
