@@ -118,6 +118,12 @@ class MyPaths:
         os.remove(self.aeroCD0in)
         os.remove(self.aeroCD0inWave)
         os.remove(self.aeroCD0out)
+    
+    def clean_temp_files(self):
+        for file in os.listdir(self.tmpDir):
+            if file.startswith(self.namePrefix):
+                name = self.tmpDir + '/' + file
+                os.remove(name)
 
 
 def determine_platform():

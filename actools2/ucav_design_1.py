@@ -18,19 +18,21 @@ from misc_tools import read_tabulated_data_without_header, Normalization, RbfMod
 
 class DesignFormulation(design.Design):
     def setup(self):
+        self.neval = 0
         self.lb = np.array([40, 40, 6.00, 3.00, 0.5, 1.00, 3.000, -4, -4])
         self.ub = np.array([60, 60, 7.50, 5.25, 1.8, 1.80, 3.200,  0,  0])
         self.x0 = np.array([55, 55, 6.91, 4.15, 1.1, 1.44, 3.115,  0, -3])
         self.norm = Normalization(self.lb, self.ub,-1.,1.)
         self.xCurrent = np.zeros(len(self.x0))
+        self.x0norm = self.norm.normalize(self.x0)
         #self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
-        self.WemptyMax      = 3400.0
+        self.WemptyMax      = 3500.0
         self.CnbMin         = 2.5e-4
         self.ClbMax         = -6.0e-4
         self.SMmin          = -0.05
         self.SMmax          = 0.10
-        self.combatRadiusMin= 1000.0
+        self.combatRadiusMin= 750.0
         self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
         self.minSectionLen  = 1.5*self.propulsion.engine.length
@@ -63,13 +65,15 @@ class DesignFormulation(design.Design):
         x = self.norm.denormalize(xnorm)
         #if not (x==self.xCurrent).all():
         #self.xCurrent = x
-        self._upd_configuration(x)
-        #try:
-        self._upd_analysis(xnorm,fullUpdate)
-#            except:
-#                print 'error:', x
-#                self.analysisData[0] = 0.0
-#                self.analysisData[1:] = -np.ones(len(self.analysisData-1))*100.0
+        try:
+            self._upd_configuration(x)
+            self._upd_analysis(xnorm,fullUpdate)
+        except:
+                print x
+                print xnorm
+                self.analysisData[0] = 0.0
+                self.analysisData[1:] = -np.ones(len(self.analysisData-1))*100.0
+                raise ValueError
     
     def _upd_configuration(self,x):
         sweep1 = x[0]
@@ -111,8 +115,8 @@ class DesignFormulation(design.Design):
             self.mass.set_fuel_mass(self.Wf, self.CGf)
             if not self.mass.payload.item_exists(self.SDB.name):
                 self.mass.payload.add_component(self.SDB)
-    
-            self.combatRadius = run_mission_B15(self)
+            self.mass.set_fuel_mass(self.Wf,self.CGf)
+            self.combatRadius = run_mission_B15(self) /1e3
             # performance
             self.mass.set_fuel_mass(self.Wf,self.CGf)
             if not self.mass.payload.item_exists(self.SDB.name):
@@ -134,6 +138,7 @@ class DesignFormulation(design.Design):
         print self.analysisData[0]
 
     def f(self,x):
+        self.neval += 1
         self.set_x(x,False)
         return -self.analysisData[0]
 
@@ -149,36 +154,59 @@ class DesignFormulation(design.Design):
         g[6] = self.analysisData[6] - self.RCmin
         g[7] = self.analysisData[7] - self.VmaxMin
         g[8] = self.maxSectionLength - self.minSectionLen
-#
+#       
+        print g<0
+        out = ''
+        for v in g:
+            out += '%.0e '%v
+        print out
+        print '%.0f\t%.0f'%(self.analysisData[1],self.analysisData[5])
+
         g[0] *= 1e-2
         g[1] *= 1e4
         g[2] *= 1e3
         g[3] *= 1e3
         g[4] *= 1e3
-        g[5] *= 1e-2
+        g[5] *= 1e-1
         g[6] *= 1e-1
         g[7] *= 1e2
-        
-        return g
+        return g*100.
 
 
 def run_optimization():
+    import numdifftools as nd
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
     #ac.propulsion._build_thrust_table()
     ac.setup()
-    x0 = ac.norm.normalize(ac.x0)
     #ac.set_x(x0)
     
     bnds = np.ones([len(ac.x0),2])
     bnds[:,0] = -bnds[:,0]
-#    ac.set_x(ac.norm.normalize(ac.x0))
-#    print ac.analysisData
-#    raw_input()
-    rslt = fmin_slsqp(ac.f, x0, f_ieqcons=ac.g, bounds=bnds, iprint=2)
-    ac.set_x(rslt)
+    ac.set_x(ac.norm.normalize(ac.x0))
+    
+    fd = nd.Hessian(ac.f,step_nom=1e-3*np.ones(len(ac.x0)), romberg_terms=0,
+                    method='forward', order=1, step_num=2)
+
+    print fd(ac.x0norm)
+    print ac.neval
+    print 'completed hessian calculation'
+    raw_input()
+
     print ac.analysisData
-    print ac.g(rslt)
+    #raw_input()
+    rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2, epsilon=1e-9)
+    ac.set_x(rslt)
+    print ac.g(rslt)>=0.0
+    print 'LD', ac.analysisData[0]
+    print 'We', ac.analysisData[1]
+    print 'Cnb',ac.analysisData[2]
+    print 'Clb',ac.analysisData[3]
+    print 'SM',ac.analysisData[4]
+    print 'R',ac.analysisData[5]
+    print 'RC',ac.analysisData[6]
+    print 'M',ac.analysisData[7]
+    
     print ac.aero.display()
     print rslt
     ac.display()

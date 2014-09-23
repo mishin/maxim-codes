@@ -69,7 +69,8 @@ class AVLsolver(object):
         control surface - ELEVATOR only for now
         weight and CG
         """
-        pth.set_file_prefix('flyingwing')
+        #pth.set_file_prefix('flyingwing')
+        pth.set_file_prefix_random()
         path = pth.get_tmp_file('avl')
         cg = self.ac.get_cg()
         CD0 = self.ac.get_drag()
@@ -108,6 +109,7 @@ class AVLsolver(object):
         result.CD0 = float(fc.CD0)
         result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
         self.avl.terminate()
+        pth.clean_temp_files()
         return result
 
     def run_single_point(self,fc,alpha=0,beta=0,elevator=0):
@@ -121,6 +123,7 @@ class AVLsolver(object):
         result.CD0 = float(fc.CD0)
         result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
         self.avl.terminate()
+        pth.clean_temp_files()
         return result
 
     def run_avl(self,fc,runTrim=True,alpha=0,beta=0,elevator=0):
@@ -231,7 +234,7 @@ class AVLsolver(object):
         results.coef.CL=self._get_value(raw,'CLtot')
         results.coef.CD=self._get_value(raw,'CDtot')
         results.coef.CDind=self._get_value(raw,'CDind')
-        results.k=results.coef.CDind/(results.coef.CL**2)    
+        results.k=results.coef.CDind/(results.coef.CL**2)
         results.e=1.0/(results.k*np.pi*results.ARref)       
         results.a=self._get_value(raw,'CLa')
         results.xNP=self._get_value(raw,'Xnp')
