@@ -69,8 +69,12 @@ def run_optimization_1():
 
     x0 = np.zeros(9)
     rslt = minimize(f, x0, method='SLSQP',constraints=cnstr, bounds=bnds)
-    xopt = rslt.x
     print rslt
+    rslt2 = minimize(f, x0,constraints=cnstr, bounds=bnds,
+                     options={'maxiter':10000})
+    print rslt2
+    xopt = rslt.x
+
     print g1(xopt), We(xopt)
     print g2(xopt), Cnb(xopt)
     print g3(xopt), Clb(xopt)
