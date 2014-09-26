@@ -22,29 +22,32 @@ class DesignFormulation(design.Design):
         self.lb = np.array([40, 40, 6.00, 3.00, 0.5, 1.00, 3.000, -4, -4])
         self.ub = np.array([60, 60, 7.50, 5.25, 1.8, 1.80, 3.200,  0,  0])
         self.x0 = np.array([55, 55, 6.91, 4.15, 1.1, 1.44, 3.115,  0, -3])
+        #self.x0 = np.array([50.146128, 44.359194, 6.840497, 3.000000, 0.500000, 1.800000, 3.117574, 0.000000, -3.000000])
         self.norm = Normalization(self.lb, self.ub,-1.,1.)
         self.xCurrent = np.zeros(len(self.x0))
         self.x0norm = self.norm.normalize(self.x0)
         #self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
-        self.WemptyMax      = 3500.0
-        self.CnbMin         = 2.5e-4
+        self.WemptyMax      = 3400.0
+        self.CnbMin         = 3e-4
         self.ClbMax         = -6.0e-4
         self.SMmin          = -0.05
         self.SMmax          = 0.10
         self.combatRadiusMin= 750.0
         self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
-        self.minSectionLen  = 1.5*self.propulsion.engine.length
+        self.minSectionLen  = 1.4*self.propulsion.engine.length
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
         # --- misc ---
-        self.analysisData = np.zeros(8)
+        self.analysisData = np.zeros(9)
         self._upd_approximation()
         # --- initial data ---
         self.Wf  = self.mass.fuel.mass
         self.CGf = self.mass.fuel.coords
+        #self.engineOffset = 0.75*self.propulsion.engine.length
         self.engineOffset = 0.75*self.propulsion.engine.length
+        self.fileFeasible = 'ucav_feasible.txt'
 
     def _upd_approximation(self):
         pathIn = 'design_out4.txt'
@@ -69,11 +72,15 @@ class DesignFormulation(design.Design):
             self._upd_configuration(x)
             self._upd_analysis(xnorm,fullUpdate)
         except:
-                print x
-                print xnorm
-                self.analysisData[0] = 0.0
-                self.analysisData[1:] = -np.ones(len(self.analysisData-1))*100.0
-                raise ValueError
+            print x
+            print xnorm
+            self._upd_configuration(x)
+            print 'Error occured'
+            self.display_2d()
+            self._upd_analysis(xnorm,fullUpdate)
+#                self.analysisData[0] = 0.0
+#                self.analysisData[1:] = -np.ones(len(self.analysisData)-1)*100.0
+#                raise ValueError
     
     def _upd_configuration(self,x):
         sweep1 = x[0]
@@ -99,7 +106,9 @@ class DesignFormulation(design.Design):
         x,l = self.wing.get_max_segment_length(engineDiameter)
         self.maxSectionLength = l
         cgNew = x+self.engineOffset
-        self.mass.empty.update_item_cg('engine',cgNew,0,0)
+        #self.mass.empty.update_item_cg('engine',cgNew,0,0)
+        self.set_engine_cg(cgNew,0,0)
+        self.mass.payload.update_item_cg('drop payload',cgNew,.0,.0)
     
     def _upd_analysis(self,xnorm,fullUpdate):
         self._update_mass()
@@ -129,6 +138,9 @@ class DesignFormulation(design.Design):
             self.analysisData[4] = self.aero.SM
             self.analysisData[5] = self.combatRadius
             self.analysisData[7] = slf.run_max_TAS(alt).Mach
+            S = self.wing.area
+            q = self.designGoals.fc.dynamicPressure
+            self.analysisData[8] = self.aero.coef.CL*q*S
 
             self.mass.set_fuel_mass(self.Wf,self.CGf)
             if not self.mass.payload.item_exists(self.SDB.name):
@@ -144,7 +156,8 @@ class DesignFormulation(design.Design):
 
     def g(self,x):
         self.set_x(x,True)
-        g = np.zeros(9)
+        _x = self.norm.denormalize(x)
+        g = np.zeros(11)
         g[0] = self.WemptyMax - self.analysisData[1]
         g[1] = self.analysisData[2] - self.CnbMin
         g[2] = self.ClbMax - self.analysisData[3]
@@ -154,13 +167,24 @@ class DesignFormulation(design.Design):
         g[6] = self.analysisData[6] - self.RCmin
         g[7] = self.analysisData[7] - self.VmaxMin
         g[8] = self.maxSectionLength - self.minSectionLen
+        g[9] = self.analysisData[8] - self.get_mass()*9.81
+        g[10] = _x[0] - _x[1]
 #       
-        print g<0
+        print g>0
         out = ''
         for v in g:
             out += '%.0e '%v
         print out
-        print '%.0f\t%.0f'%(self.analysisData[1],self.analysisData[5])
+        print '%.4f\t%.4f\t%.4f'%(self.analysisData[1],self.analysisData[5],self.analysisData[8])
+        
+#        if all(g>0):
+#            fid = open(self.fileFeasible,'at')
+#            for _x in self.norm.denormalize(x):
+#                fid.write('%.6f\t'%_x)
+#            for val in self.analysisData:
+#                fid.write('%.4e\t'%val)
+#            fid.write('\n')
+#            fid.close()
 
         g[0] *= 1e-2
         g[1] *= 1e4
@@ -179,23 +203,25 @@ def run_optimization():
     ac.load_xls('Baseline1')
     #ac.propulsion._build_thrust_table()
     ac.setup()
-    #ac.set_x(x0)
+#    ac.set_x(ac.x0norm)
+#    ac.display()
     
     bnds = np.ones([len(ac.x0),2])
     bnds[:,0] = -bnds[:,0]
     ac.set_x(ac.norm.normalize(ac.x0))
     
-    fd = nd.Hessian(ac.f,step_nom=1e-3*np.ones(len(ac.x0)), romberg_terms=0,
-                    method='forward', order=1, step_num=2)
+    fd = nd.Gradient(ac.f,step_max=1e-2, romberg_terms=1)
+    gd = nd.Jacobian(ac.g,step_max=1e-2, romberg_terms=1, vectorized=True)
 
-    print fd(ac.x0norm)
-    print ac.neval
-    print 'completed hessian calculation'
-    raw_input()
-
-    print ac.analysisData
+#    print gd(ac.x0norm)
+#    print ac.neval
+#    print 'completed gradient calculation'
     #raw_input()
-    rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2, epsilon=1e-9)
+#
+#    print ac.analysisData
+#    #raw_input()
+    rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=1e-2)#,
+                      #fprime=fd, fprime_ieqcons=gd)
     ac.set_x(rslt)
     print ac.g(rslt)>=0.0
     print 'LD', ac.analysisData[0]
@@ -206,9 +232,10 @@ def run_optimization():
     print 'R',ac.analysisData[5]
     print 'RC',ac.analysisData[6]
     print 'M',ac.analysisData[7]
-    
-    print ac.aero.display()
+
+    ac.aero.display()
     print rslt
+    print ac.norm.denormalize(rslt)
     ac.display()
 
 
@@ -228,7 +255,6 @@ def function_for_sensitivity():
 #    lb = np.array([40, 40, 6, 0.5, 0.15, 1, 3, -4, -4])
 #    ub = np.array([60, 60, 7.5, 0.7, 0.35, 1.8, 3.2, 0, 0])
 #    x0 = np.array([55, 55, 6.91, 0.6006, 0.2656, 1.443, 3.112, 0, -3])
-    
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
     ac.setup()

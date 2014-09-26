@@ -246,6 +246,10 @@ class FlyingWing(object):
         fc = FlightConditions(velocity,altitude,0.0,self.wing.MAC)
         sfc = self.propulsion.get_sfc(fc.Mach,altitude,thrustRequired)
         return sfc
+    
+    def set_engine_cg(self,cgX,cgY=0,cgZ=0):
+        self.mass.empty.update_item_cg('engine',cgX,cgY,cgZ)
+        self.propulsion.CG = np.array([cgX,cgY,cgZ])
 
 
 class LandingGear(object):

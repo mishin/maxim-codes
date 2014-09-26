@@ -79,8 +79,8 @@ class AVLsolver(object):
         fid.write('%s\n'%self.ac.name)
         fid.write('0.0\n')
         fid.write('0  0  0.0\n')
-        fid.write('%.4f  %.4f  %.4f\n'%(self.ac.wing.area,self.ac.wing.MAC,self.ac.wing.span))
-        fid.write('%.4f  %.4f  %.4f\n'%(cg[0],cg[1],cg[2]))
+        fid.write('%.6f  %.6f  %.6f\n'%(self.ac.wing.area,self.ac.wing.MAC,self.ac.wing.span))
+        fid.write('%.6f  %.6f  %.6f\n'%(cg[0],cg[1],cg[2]))
         fid.write('%.8f\n'%CD0)
         # wing input
         fid.write('SURFACE\n')
@@ -95,10 +95,10 @@ class AVLsolver(object):
             chord = self.ac.wing.chords[i]
             angle = self.ac.wing.secAngles[i]
             fid.write('SECTION\n')
-            fid.write('%.6f  %.6f  %.6f  %.6f  %.6f\n'%(apex[0],apex[1],apex[2],chord,angle))
+            fid.write('%.12f  %.12f  %.12f  %.12f  %.12f\n'%(apex[0],apex[1],apex[2],chord,angle))
             fid.write('AFIL\n%s\n'%pathAf)
             fid.write('CONTROL\n')
-            fid.write('elevator  1.0  %.4f  0  0  0  +1\n'%(self.ac.wing.elevon.location[i]))
+            fid.write('elevator  1.0  %.8f  0  0  0  +1\n'%(self.ac.wing.elevon.location[i]))
         fid.close()
     
     def run_trim(self,fc):
