@@ -30,17 +30,18 @@ class DesignFormulation(design.Design):
         # --- constraints ---
         self.WemptyMax      = 3400.0
         self.CnbMin         = 3e-4
-        self.ClbMax         = -6.0e-4
+        self.ClbMax         = -6.0e-2
         self.SMmin          = -0.05
         self.SMmax          = 0.10
         self.combatRadiusMin= 750.0
         self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
         self.minSectionLen  = 1.4*self.propulsion.engine.length
+        self.CmdeReq        = -0.008
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
         # --- misc ---
-        self.analysisData = np.zeros(9)
+        self.analysisData = np.zeros(10)
         self._upd_approximation()
         # --- initial data ---
         self.Wf  = self.mass.fuel.mass
@@ -147,6 +148,7 @@ class DesignFormulation(design.Design):
                 self.mass.payload.add_component(self.SDB)
             clm = ClimbDescent(self)
             self.analysisData[6] = clm.run_max_climb_rate(0).climbRate
+            self.analysisData[9] = self.aero.derivs.Cmde
         print self.analysisData[0]
 
     def f(self,x):
@@ -157,7 +159,7 @@ class DesignFormulation(design.Design):
     def g(self,x):
         self.set_x(x,True)
         _x = self.norm.denormalize(x)
-        g = np.zeros(11)
+        g = np.zeros(12)
         g[0] = self.WemptyMax - self.analysisData[1]
         g[1] = self.analysisData[2] - self.CnbMin
         g[2] = self.ClbMax - self.analysisData[3]
@@ -169,7 +171,7 @@ class DesignFormulation(design.Design):
         g[8] = self.maxSectionLength - self.minSectionLen
         g[9] = self.analysisData[8] - self.get_mass()*9.81
         g[10] = _x[0] - _x[1]
-#       
+        g[11] = self.CmdeReq - self.analysisData[9]
         print g>0
         out = ''
         for v in g:
@@ -194,6 +196,7 @@ class DesignFormulation(design.Design):
         g[5] *= 1e-1
         g[6] *= 1e-1
         g[7] *= 1e2
+        g[11] *= 1e3
         return g*100.
 
 

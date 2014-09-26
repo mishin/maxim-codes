@@ -11,7 +11,7 @@ import numpy as np
 ac = DesignFormulation()
 ac.load_xls('Baseline1')
 ac.setup()
-
+ac.get_aero_single_point(0.7,1e4).display()
 
 xopt = np.array([-0.6510831,0.10411176,0.18537688,-0.99810656,-0.99857516,
                  0.73880065,0.44773939,0.99990615,0.22948609])
