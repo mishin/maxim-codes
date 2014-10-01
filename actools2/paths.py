@@ -50,7 +50,7 @@ class MyPaths:
 #        self.aeroCD0in     = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.inp')
 #        self.aeroCD0inWave = os.path.abspath(self.wdir + '/aeroCD0/WAV_KTX2.inp')
 #        self.aeroCD0out    = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.out')
-        
+        self.namePrefix    = 'default'
         self.platform  = determine_platform()
         self._init_xfoilpath()
     
@@ -93,7 +93,8 @@ class MyPaths:
         Returns temporal filename with given file extension and file prefix. 
         Absolute path is returned.
         """
-        fileName = self.tmpDir + '/' + self.namePrefix + addSymbol
+        #fileName = self.tmpDir + '/' + self.namePrefix + addSymbol
+        fileName = os.path.join(self.tmpDir,self.namePrefix + addSymbol)
         if not fileExt==None:
             fileName += '.'+fileExt
         return os.path.abspath(fileName)

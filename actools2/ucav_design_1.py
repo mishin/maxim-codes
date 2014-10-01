@@ -49,6 +49,7 @@ class DesignFormulation(design.Design):
         #self.engineOffset = 0.75*self.propulsion.engine.length
         self.engineOffset = 0.75*self.propulsion.engine.length
         self.fileFeasible = 'ucav_feasible.txt'
+        self.set_x(self.x0norm)
 
     def _upd_approximation(self):
         pathIn = 'design_out4.txt'
@@ -201,28 +202,18 @@ class DesignFormulation(design.Design):
 
 
 def run_optimization():
-    import numdifftools as nd
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
-    #ac.propulsion._build_thrust_table()
     ac.setup()
-#    ac.set_x(ac.x0norm)
-#    ac.display()
+    ac.set_x(ac.x0norm)
+    print ac.x0norm
+    ac.display()
     
     bnds = np.ones([len(ac.x0),2])
     bnds[:,0] = -bnds[:,0]
-    ac.set_x(ac.norm.normalize(ac.x0))
-    
-    fd = nd.Gradient(ac.f,step_max=1e-2, romberg_terms=1)
-    gd = nd.Jacobian(ac.g,step_max=1e-2, romberg_terms=1, vectorized=True)
 
-#    print gd(ac.x0norm)
-#    print ac.neval
-#    print 'completed gradient calculation'
+    print ac.analysisData
     #raw_input()
-#
-#    print ac.analysisData
-#    #raw_input()
     rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=1e-2)#,
                       #fprime=fd, fprime_ieqcons=gd)
     ac.set_x(rslt)
