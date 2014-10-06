@@ -201,7 +201,14 @@ class DesignFormulation(design.Design):
         g[9] *= 10.
         g[11] *= 10.
         return g*100.
-
+    
+    def get_aero_single_point(self,velocity,altitude,alpha=0.0,beta=0.0,
+                          elevator=0.0,mass=None,cg=None,inertia=None,CD0=None):
+        super(DesignFormulation,self).get_aero_single_point(velocity,altitude,alpha,beta,elevator,mass,cg,inertia,CD0)
+        # modify results here by scaling models
+        # approximation functions should be initialized in separate function
+        print 'new method'
+        return self.aeroResults
 
 def run_optimization():
     ac = DesignFormulation()
