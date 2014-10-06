@@ -660,6 +660,33 @@ class Airfoil:
         self.ptsLo[:,1] = ptsLoNew
         self._join_coordinates()
         self._analyze_geometry()
+    
+def fit_square(af,square,scale=1.0):
+    square = square/scale
+    #ptsUpNew = af.ptsUp #tmp
+    curve = af._curveUp2
+    pt1 = square[0]
+    pt2 = square[1]
+    dist1 = pt1[1] - curve(pt1[0])
+    dist2 = pt2[1] - curve(pt2[0])
+    offset = max([dist1,dist2])
+    
+    #nose points
+    radius = .5 *(square[0,1] - square[3,1])
+    
+    leOffset = pt1[0] - radius
+    if leOffset<.05:
+        leOffset = .05
+    lePts = geom.split_coordinates(af.ptsUp,None,leOffset,0,True)
+    interiorPts = geom.split_coordinates(af.ptsUp,pt1[0],pt2[0],0,True)
+    interiorPts[:,1] += offset
+    
+    ptsUpNew = np.vstack([lePts,interiorPts,[1,0]])
+    afnew = Airfoil()
+    afnew.ptsUp = ptsUpNew
+    afnew.ptsLo = af.ptsLo
+    afnew._join_coordinates()
+    return afnew
 
 # --- debug section ---
 def run_test_geometry():
@@ -691,5 +718,26 @@ def run_test_aero_analysis():
     plt.plot(pol2.alpha,pol2.cd)
     plt.show()
 
+def run_test_square():
+    af = load('UCAVoptimum')
+    af._create_splines()
+    engine = np.zeros([4,2])
+    engine[0] = [0, 0.15]
+    engine[1] = [0.65, 0.15]
+    engine[2] = [0.65, 0]
+    engine[3] = [0,0]
+    engine[:,0] += 0.15
+    engine[:,1] += -0.03
+    
+    afnew = fit_square(af, engine)
+    
+    plt.figure(1)
+    plt.hold(True)
+    plt.axis('equal')
+    plt.plot(engine[:,0],engine[:,1],'r-')
+    plt.plot(af.pts[:,0],af.pts[:,1],'k--')
+    plt.plot(afnew.pts[:,0],afnew.pts[:,1],'b-')
+    plt.show()
+
 if __name__=="__main__":
-    run_test_geometry()
+    run_test_square()

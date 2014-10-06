@@ -278,7 +278,7 @@ class AVLsolver(object):
         results.derivs.Clde=self._get_value(raw,'Cld1')
         results.derivs.Cmde=self._get_value(raw,'Cmd1')
         results.derivs.Cnde=self._get_value(raw,'Cnd1')
-        results.derivs.CDfe=self._get_value(raw,'CDffd1')
+        results.derivs.CDde=self._get_value(raw,'CDffd1')
         results.derivs.ede =self._get_value(raw,'ed1')
         return results
 

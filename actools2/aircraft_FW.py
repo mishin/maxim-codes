@@ -200,8 +200,8 @@ class FlyingWing(object):
     def get_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
                       mass=None,cg=None,inertia=None,CD0=None):
         """ run avl analysis and return trim state """
-        self.update_aero_trim(velocity,altitude,CmTrim=0.0,loadFactor=1.0,
-                              mass=None,cg=None,inertia=None,CD0=None)
+        self.update_aero_trim(velocity,altitude,CmTrim,loadFactor,
+                              mass,cg,inertia,CD0)
         return self.aeroResults
     
     def get_aero_single_point(self,velocity,altitude,alpha=0.0,beta=0.0,

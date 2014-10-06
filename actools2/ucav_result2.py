@@ -10,7 +10,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ac = DesignFormulation()
-ac.load_xls('Baseline1')
+ac.load_xls('Baseline1 (2)')
+#cg1 = ac.get_cg()
+#cg1[0] = cg1[0]+0.15
+#print cg1
+#ac.get_aero_single_point(0.7,1e4).display()
+#ac.get_aero_trim(70,0,0.0,cg=cg1).display()
+#ac.get_aero_trim(0.7,1e4,cg=cg1).display()
+#print '--->'
+#raw_input()
+
 ac.setup()
 ac.aero.display()
 
@@ -22,7 +31,7 @@ print ac.maxSectionLength
 print ac.analysisData
 
 # aero, performance, mission, stability
-xopt1 = np.array([-0.63420399,-0.63420399,-0.61525095,-0.99880774,-0.70527458,1.,-0.92293879, 0.04597545, 0.98522291])
+xopt1 = np.array([ 0.20520747,-0.39226611,-0.47326701,-1.,0.14291925,0.98650447,  0.37346922,  0.37756372,  0.65654722])
 ac.set_x(xopt1)
 ac.aero.display()
 
@@ -37,6 +46,8 @@ ac.set_x(xopt2)
 x2 = ac.wing.x2d
 y2 = ac.wing.y2d
 cg2 = ac.get_cg()
+
+print ac.analysisData
 
 fig = plt.figure(1)
 ax1 = fig.add_subplot(111)

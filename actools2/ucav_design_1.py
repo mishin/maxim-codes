@@ -20,24 +20,30 @@ class DesignFormulation(design.Design):
     def setup(self):
         self.neval = 0
         self.lb = np.array([40, 40, 6.00, 3.00, 0.5, 1.00, 3.000, -4, -4])
+        #self.lb = np.array([40, 40, 6.00, 3.00, 0.5, 1.00, 3.000, -4, -4])
         self.ub = np.array([60, 60, 7.50, 5.25, 1.8, 1.80, 3.200,  0,  0])
+        #self.ub = np.array([60, 60, 7.50, 5.25, 1.8, 1.80, 3.200,  0,  0])
         self.x0 = np.array([55, 55, 6.91, 4.15, 1.1, 1.44, 3.115,  0, -3])
-        #self.x0 = np.array([50.146128, 44.359194, 6.840497, 3.000000, 0.500000, 1.800000, 3.117574, 0.000000, -3.000000])
         self.norm = Normalization(self.lb, self.ub,-1.,1.)
         self.xCurrent = np.zeros(len(self.x0))
         self.x0norm = self.norm.normalize(self.x0)
         #self.bnds = np.array([[l,u] for l,u in zip(self.lb,self.ub)])
         # --- constraints ---
-        self.WemptyMax      = 3400.0
-        self.CnbMin         = 3e-4
-        self.ClbMax         = -6.0e-2
-        self.SMmin          = -0.05
-        self.SMmax          = 0.10
+        self.WemptyMax      = 3500.0
+        self.CnbMin         = 0.003
+        self.ClbMax         = -0.075 #-6.0e-4
+        self.SMmin          = 0.05
+        self.SMmax          = 0.15
         self.combatRadiusMin= 750.0
         self.RCmin          = 125.0
         self.VmaxMin        = 0.90 # Mach
         self.minSectionLen  = 1.4*self.propulsion.engine.length
-        self.CmdeReq        = -0.008
+        self.CmdeReq        = -0.01 # baseline -0.00866
+        self.alphaTrimMax   = 8.0 # deg
+        self.elevTrimMax    = 20.0
+        self.elevTrimMin    = -20.0
+        
+        self.Vtrim = 65.0 # 135kts: assumed value
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
         # --- misc ---
@@ -48,6 +54,7 @@ class DesignFormulation(design.Design):
         self.CGf = self.mass.fuel.coords
         #self.engineOffset = 0.75*self.propulsion.engine.length
         self.engineOffset = 0.75*self.propulsion.engine.length
+        self.payloadOffset = 0.75*self.propulsion.engine.length
         self.fileFeasible = 'ucav_feasible.txt'
         self.set_x(self.x0norm)
 
@@ -108,9 +115,12 @@ class DesignFormulation(design.Design):
         x,l = self.wing.get_max_segment_length(engineDiameter)
         self.maxSectionLength = l
         cgNew = x+self.engineOffset
+        cgNew2 = x+self.payloadOffset
         #self.mass.empty.update_item_cg('engine',cgNew,0,0)
         self.set_engine_cg(cgNew,0,0)
-        self.mass.payload.update_item_cg('drop payload',cgNew,.0,.0)
+        self.SDB = MassComponent('drop payload', 1132.0, np.array([cgNew2, 0.0, 0.12]))
+        #self.mass.payload.update_item_cg('drop payload',cgNew,.0,.0)
+        
     
     def _upd_analysis(self,xnorm,fullUpdate):
         self._update_mass()
@@ -140,16 +150,16 @@ class DesignFormulation(design.Design):
             self.analysisData[4] = self.aero.SM
             self.analysisData[5] = self.combatRadius
             self.analysisData[7] = slf.run_max_TAS(alt).Mach
-            S = self.wing.area
-            q = self.designGoals.fc.dynamicPressure
-            self.analysisData[8] = self.aero.coef.CL*q*S
+            aeroTrim = self.get_aero_trim(self.Vtrim, 0.0)
+            self.analysisData[8] = aeroTrim.elevator
+            self.analysisData[9] = aeroTrim.alpha
 
             self.mass.set_fuel_mass(self.Wf,self.CGf)
             if not self.mass.payload.item_exists(self.SDB.name):
                 self.mass.payload.add_component(self.SDB)
             clm = ClimbDescent(self)
             self.analysisData[6] = clm.run_max_climb_rate(0).climbRate
-            self.analysisData[9] = self.aero.derivs.Cmde
+            #self.analysisData[9] = self.aero.derivs.Cmde
         print self.analysisData[0]
 
     def f(self,x):
@@ -170,24 +180,15 @@ class DesignFormulation(design.Design):
         g[6] = self.analysisData[6] - self.RCmin
         g[7] = self.analysisData[7] - self.VmaxMin
         g[8] = self.maxSectionLength - self.minSectionLen
-        g[9] = self.analysisData[8] - self.get_mass()*9.81
+        g[9] = self.analysisData[8] - self.elevTrimMin
         g[10] = _x[0] - _x[1]
-        g[11] = self.CmdeReq - self.analysisData[9]
+        g[11] = self.alphaTrimMax - self.analysisData[9]
         print g>0
         out = ''
         for v in g:
             out += '%.0e '%v
         print out
         print '%.4f\t%.4f\t%.4f'%(self.analysisData[1],self.analysisData[5],self.analysisData[8])
-        
-#        if all(g>0):
-#            fid = open(self.fileFeasible,'at')
-#            for _x in self.norm.denormalize(x):
-#                fid.write('%.6f\t'%_x)
-#            for val in self.analysisData:
-#                fid.write('%.4e\t'%val)
-#            fid.write('\n')
-#            fid.close()
 
         g[0] *= 1e-2
         g[1] *= 1e4
@@ -197,7 +198,8 @@ class DesignFormulation(design.Design):
         g[5] *= 1e-1
         g[6] *= 1e-1
         g[7] *= 1e2
-        g[11] *= 1e3
+        g[9] *= 10.
+        g[11] *= 10.
         return g*100.
 
 
@@ -207,14 +209,14 @@ def run_optimization():
     ac.setup()
     ac.set_x(ac.x0norm)
     print ac.x0norm
-    ac.display()
+    #ac.display()
     
     bnds = np.ones([len(ac.x0),2])
     bnds[:,0] = -bnds[:,0]
 
     print ac.analysisData
     #raw_input()
-    rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=1e-2)#,
+    rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=1e-2, acc=1e-3)#,
                       #fprime=fd, fprime_ieqcons=gd)
     ac.set_x(rslt)
     print ac.g(rslt)>=0.0
@@ -226,7 +228,8 @@ def run_optimization():
     print 'R',ac.analysisData[5]
     print 'RC',ac.analysisData[6]
     print 'M',ac.analysisData[7]
-
+    print 'alphaTrim',ac.analysisData[9]
+    print 'elevTrim',ac.analysisData[8]
     ac.aero.display()
     print rslt
     print ac.norm.denormalize(rslt)
