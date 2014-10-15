@@ -674,11 +674,11 @@ def fit_square(af,square,scale=1.0):
     #nose points
     radius = .5 *(square[0,1] - square[3,1])
     
-    leOffset = pt1[0] - radius
+    leOffset = pt1[0] - 1.2*radius
     if leOffset<.05:
         leOffset = .05
-    lePts = geom.split_coordinates(af.ptsUp,None,leOffset,0,True)
-    interiorPts = geom.split_coordinates(af.ptsUp,pt1[0],pt2[0],0,True)
+    lePts = geom.split_coordinates(af.ptsUp,None,leOffset,0,False,acc=.05)
+    interiorPts = geom.split_coordinates(af.ptsUp,pt1[0],pt2[0],0,False,acc=.05)
     interiorPts[:,1] += offset
     
     ptsUpNew = np.vstack([lePts,interiorPts,[1,0]])
@@ -736,7 +736,7 @@ def run_test_square():
     plt.axis('equal')
     plt.plot(engine[:,0],engine[:,1],'r-')
     plt.plot(af.pts[:,0],af.pts[:,1],'k--')
-    plt.plot(afnew.pts[:,0],afnew.pts[:,1],'b-')
+    plt.plot(afnew.pts[:,0],afnew.pts[:,1],'bs-')
     plt.show()
 
 if __name__=="__main__":

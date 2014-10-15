@@ -24,6 +24,9 @@ class Design(FlyingWing):
         self.wing.chords[idx] = chord
         self.wing._process_data()
     
+    def set_aileron_chord(self,chord):
+        self.wing.elevon.chords = chord
+    
     def set_sweep_angles(self,sweep):
         """ NOTE: spans should be specified before sweeps """
         assert len(sweep)==self.wing.nSeg

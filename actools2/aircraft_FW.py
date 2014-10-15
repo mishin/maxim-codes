@@ -37,6 +37,7 @@ class FlyingWing(object):
         self.drag = None #total drag list
         self.propulsion = Propulsion() #table lookup database
         self.aeroResults = None
+        self._rootAirfoil = None
 
     def load_xls(self, name, xlsPath=None):
         """
@@ -250,6 +251,34 @@ class FlyingWing(object):
     def set_engine_cg(self,cgX,cgY=0,cgZ=0):
         self.mass.empty.update_item_cg('engine',cgX,cgY,cgZ)
         self.propulsion.CG = np.array([cgX,cgY,cgZ])
+    
+    def _get_engine_pts(self,cgRatio=.4,verticalOffset=None,ratio=1.):
+        cg = self.propulsion.CG
+        if not verticalOffset==None:
+            cg[2] = float(verticalOffset)*self.propulsion.engine.diameter
+        L = self.propulsion.engine.length *ratio
+        R = self.propulsion.engine.diameter /2. *ratio
+        offset = np.array([cg[0] - cgRatio*L, cg[2]])
+        pts = np.zeros([4,2])
+        pts[0,1] = R
+        pts[1] = [L,R]
+        pts[2] = [L,-R]
+        pts[3,1] = -R
+        pts += offset
+        return pts
+    
+    def _adjust_root_airfoil(self,ratio=.9):
+        from airfoil import fit_square
+        self._rootAirfoil = self.wing.airfoils[0]
+        scale = self.wing.chords[0]
+        square = self._get_engine_pts(verticalOffset=0,ratio=ratio)
+        newAf = fit_square(self.wing.airfoils[0],square,scale)
+        #newAf.display()
+        self.wing.airfoils[0] = newAf
+    
+    def _restore_root_airfoil(self):
+        if not self._rootAirfoil==None:
+            self.wing.airfoils[0] = self._rootAirfoil
 
 
 class LandingGear(object):

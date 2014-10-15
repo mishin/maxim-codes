@@ -139,7 +139,7 @@ def create_wing_db(ac=None, glfPath=None):
 
 
 
-def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yplus=0.5,
+def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yplus=.5,
                     glfPath=None):
     if ac==None:
         ac = aircraft_FW.load('Baseline1')
@@ -168,7 +168,7 @@ def create_fw_cmesh(ac=None,igsPath=None,casPathSym=None, casPathNonsym=None, yp
     nFFz = 46
     
     #yplus = 0.5
-    dsLE = 1e-3
+    dsLE = 2e-3
 
     dsFFy = 1e-3
     dsTopAft = 1e-2

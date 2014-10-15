@@ -337,7 +337,8 @@ class PtsArray():
         coord = ny.transpose(ny.vstack([x,y]))
         self.__init__(coord)
 
-def split_coordinates(coord,start=None,end=None,axis=0,addEndValues=False):
+def split_coordinates(coord,start=None,end=None,axis=0,addEndValues=False,
+                      acc=1e-6):
     """
     Takes array of coordinates and returns coordiates at given axis between 
     start and end values.
@@ -355,10 +356,10 @@ def split_coordinates(coord,start=None,end=None,axis=0,addEndValues=False):
     newCoord = newCoord[:i]
     if addEndValues:
         curve = interpolate.interp1d(coord[:,0],coord[:,1],'cubic')
-        if abs(start-coord[0,0])>1e-6:
+        if abs(start-coord[0,0])>acc:
             startPt = curve(start)
             newCoord = vstack([[start,startPt],newCoord])
-        if abs(end-coord[-1,0])>1e-6:
+        if abs(end-coord[-1,0])>acc:
             endPt = curve(end)
             newCoord = vstack([newCoord,[end,endPt]])
     return newCoord

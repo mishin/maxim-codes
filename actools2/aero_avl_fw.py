@@ -233,6 +233,7 @@ class AVLsolver(object):
         results.coef.Cn=self._get_value(raw,'Cntot')
         results.coef.CL=self._get_value(raw,'CLtot')
         results.coef.CD=self._get_value(raw,'CDtot')
+        results.LD = results.coef.CL/results.coef.CD
         results.coef.CDind=self._get_value(raw,'CDind')
         results.k=results.coef.CDind/(results.coef.CL**2)
         results.e=1.0/(results.k*np.pi*results.ARref)       

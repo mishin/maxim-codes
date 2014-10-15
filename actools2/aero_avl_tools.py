@@ -11,6 +11,7 @@ from paths import MyPaths
 import shlex
 from subprocess import Popen, PIPE
 import os
+from numpy import float64
 
 pth = MyPaths()
 
@@ -43,7 +44,7 @@ class Results(object):
         else:
             print_header(self.name)
         for attr, value in self.__dict__.iteritems():
-            if type(value) is float:
+            if type(value) is float or type(value) is float64:
                 print '{:<8} = {:<+12.5f}  '.format(attr,value)
 
 
@@ -69,7 +70,7 @@ class AVLresults:
     def display(self):
         print_header('AVL analysis results','=')
         for attr, value in self.__dict__.iteritems():
-            if type(value) is float:
+            if type(value) is float or type(value) is float64:
                 print '{:<8} = {:<+12.5f}  '.format(attr,value)
         self.coef.display()
         self.derivs.display()

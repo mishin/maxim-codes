@@ -10,8 +10,42 @@ import numpy as np
 from scipy.interpolate import Rbf
 
 
+def get_cd0_k(CL,CD):
+    x1, x2, x3 = CL[0], CL[1], CL[2]
+    y1, y2, y3 = CD[0], CD[1], CD[2]
+    
+    a = (y3 - (x3*(y2-y1)+x2*y1-x1*y2)/(x2-x1))/(x3*(x3-x1-x2)+x1*x2)
+    b = (y2-y1)/(x2-x1)-a*(x1+x2)
+    c = (x2*y1-x1*y2)/(x2-x1)+a*x1*x2
+    k = a
+    CL0 = -b/2.0/k
+    CD0 = c-CL0*CL0*k
+    return CD0,CL0,k
+
+
+def get_cd0_k_2(CL,CD,CL0=0):
+    CL0 = float(CL0)
+    if CL.ndim==2:
+        CD1 = CD[0,:]
+        CD2 = CD[1,:]
+        CL1 = CL[0,:]
+        CL2 = CL[1,:]
+    else:
+        CD1 = CD[0]
+        CD2 = CD[1]
+        CL1 = CL[0]
+        CL2 = CL[1]
+    tmp1 = (CL1-CL0)**2.
+    tmp2 = (CL2-CL0)**2.
+    k = (CD1 - CD2)/(tmp1 - tmp2)
+    CD0 = CD1 - k*CL1*CL1
+    return CD0, k
+
+
 class RbfMod():
-    def __init__(self,x,y):
+    def __init__(self,x,y,offset=0.0):
+        self.offset = float(offset)
+        y = y+self.offset
         if x.ndim>1:
             x = np.transpose(x)
             x = self._get_tuple(x)
@@ -23,9 +57,9 @@ class RbfMod():
     def __call__(self,x):
         if hasattr(x,'__iter__'):
             x = self._get_tuple(x)
-            return self.rbf(*x)
+            return self.rbf(*x) -self.offset
         else:
-            return self.rbf(x)
+            return self.rbf(x) -self.offset
 
     def _get_tuple(self,xArray):
         xTuple = tuple()

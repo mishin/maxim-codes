@@ -12,6 +12,7 @@ from mission import run_mission_B15
 from performance import SteadyLevelFlight, ClimbDescent
 import copy
 from weight_tools import MassComponent
+import sys
 
 from misc_tools import read_tabulated_data_without_header, Normalization, RbfMod
 
@@ -39,11 +40,12 @@ class DesignFormulation(design.Design):
         self.VmaxMin        = 0.90 # Mach
         self.minSectionLen  = 1.4*self.propulsion.engine.length
         self.CmdeReq        = -0.01 # baseline -0.00866
-        self.alphaTrimMax   = 8.0 # deg
+        self.alphaTrimMax   = 8.0+1e-4 # deg
         self.elevTrimMax    = 20.0
         self.elevTrimMin    = -20.0
-        
+        self.gvfmAero = True
         self.Vtrim = 65.0 # 135kts: assumed value
+        self._load_rbf_models()
         # --- payload ---
         self.SDB = MassComponent('drop payload', 1132.0, np.array([4.5, 0.0, 0.12]))
         # --- misc ---
@@ -52,12 +54,42 @@ class DesignFormulation(design.Design):
         # --- initial data ---
         self.Wf  = self.mass.fuel.mass
         self.CGf = self.mass.fuel.coords
-        #self.engineOffset = 0.75*self.propulsion.engine.length
         self.engineOffset = 0.75*self.propulsion.engine.length
         self.payloadOffset = 0.75*self.propulsion.engine.length
         self.fileFeasible = 'ucav_feasible.txt'
-        self.set_x(self.x0norm)
-
+        self.set_x(self.x0norm)        
+    
+    def get_bounds(self,x0):
+        n = len(self.x0norm)
+        c1 = 0.5
+        treshold = 0.005
+        xUold = np.ones(n)
+        xLold = -np.ones(n)
+        xUnew = np.zeros(n)
+        xLnew = np.zeros(n)
+        u = xUold-x0
+        l = x0 - xLold
+        delta = np.zeros(len(self.x0))
+        i=0
+        for _l,_u in zip(l,u):
+            delta[i] = min([_l,_u])
+            if delta[i]<treshold:
+                d = c1*(xUold[i]-xLold[i])
+                if _u<treshold:
+                    xLnew[i] = x0[i] - d
+                    xUnew[i] = x0[i]
+                else:
+                    xLnew[i] = x0[i]
+                    xUnew[i] = x0[i] + d
+            else:
+                xUnew[i] = x0[i] + delta[i]
+                xLnew[i] = x0[i] - delta[i]
+            print '%.4f\t%.4f\t%.4f'%(_l,_u,delta[i])
+            i += 1
+        bounds = np.transpose(np.vstack([xLnew,xUnew]))
+        return bounds
+        
+        
     def _upd_approximation(self):
         pathIn = 'design_out4.txt'
         pathInSamples = 'DOE_LHS250_FFD2_3_3.txt'
@@ -74,22 +106,21 @@ class DesignFormulation(design.Design):
         To minimize function evaluation, this function re-calculates analysis if 
         new x is given, otherwise precalculated results are used.
         """
+        self.xcurNorm = xnorm
         x = self.norm.denormalize(xnorm)
-        #if not (x==self.xCurrent).all():
-        #self.xCurrent = x
         try:
             self._upd_configuration(x)
             self._upd_analysis(xnorm,fullUpdate)
         except:
             print x
             print xnorm
+            self.display_2d()
             self._upd_configuration(x)
             print 'Error occured'
-            self.display_2d()
             self._upd_analysis(xnorm,fullUpdate)
-#                self.analysisData[0] = 0.0
-#                self.analysisData[1:] = -np.ones(len(self.analysisData)-1)*100.0
-#                raise ValueError
+#            self.analysisData[0] = 0.0
+#            self.analysisData[1:] = -np.ones(len(self.analysisData)-1)*100.0
+#            raise ValueError
     
     def _upd_configuration(self,x):
         sweep1 = x[0]
@@ -128,7 +159,7 @@ class DesignFormulation(design.Design):
         V   = self.designGoals.cruiseSpeed
         alt = self.designGoals.cruiseAltitude
         self.aero = self.get_aero_single_point(V,alt,2.0)
-        self.analysisData[0] = self.aero.coef.CL/self.aero.coef.CD
+        self.analysisData[0] = self.aero.LD #self.aero.coef.CL/self.aero.coef.CD
         #self.analysisData[0] = self.LD(xnorm) #self.aero.coef.CL/self.aero.coef.CD
 
         if fullUpdate:
@@ -151,6 +182,7 @@ class DesignFormulation(design.Design):
             self.analysisData[5] = self.combatRadius
             self.analysisData[7] = slf.run_max_TAS(alt).Mach
             aeroTrim = self.get_aero_trim(self.Vtrim, 0.0)
+            #self.analysisData[9],self.analysisData[8] = self.get_trim()
             self.analysisData[8] = aeroTrim.elevator
             self.analysisData[9] = aeroTrim.alpha
 
@@ -161,6 +193,20 @@ class DesignFormulation(design.Design):
             self.analysisData[6] = clm.run_max_climb_rate(0).climbRate
             #self.analysisData[9] = self.aero.derivs.Cmde
         print self.analysisData[0]
+    
+    def get_trim(self):
+        CLa = self.aero.derivs.CLa
+        Cma = self.aero.derivs.Cma
+        CLde = self.aero.derivs.CLde
+        Cmde = self.aero.derivs.Cmde
+        CLtrim = self.mass.total()*9.81/self.designGoals.fc.dynamicPressure/self.wing.area
+        Cmtrim = 0.0
+        A = np.array([[CLa,CLde*180/np.pi],[Cma,Cmde*180/np.pi]])
+        b = np.array([[CLtrim],[Cmtrim]])
+        x = np.linalg.solve(A,b)
+        alphaTrim = np.degrees(x[0])
+        deltaTrim = np.degrees(x[1])
+        return alphaTrim, deltaTrim
 
     def f(self,x):
         self.neval += 1
@@ -199,32 +245,143 @@ class DesignFormulation(design.Design):
         g[6] *= 1e-1
         g[7] *= 1e2
         g[9] *= 10.
-        g[11] *= 10.
-        return g*100.
+        g[11] *= 10
+        return g*1000.
     
     def get_aero_single_point(self,velocity,altitude,alpha=0.0,beta=0.0,
                           elevator=0.0,mass=None,cg=None,inertia=None,CD0=None):
         super(DesignFormulation,self).get_aero_single_point(velocity,altitude,alpha,beta,elevator,mass,cg,inertia,CD0)
-        # modify results here by scaling models
-        # approximation functions should be initialized in separate function
-        print 'new method'
+        if self.gvfmAero:
+            sys.stdout.write('GVFM add> ')
+            xcurrent = self.xcurNorm
+            self.aeroResults.coef.CL += self.CLrbf(xcurrent)
+            self.aeroResults.coef.CD += self.CDrbf(xcurrent)
+            self.aeroResults.LD      += self.LDrbf(xcurrent)
+            self.aeroResults.SM      += self.SMrbf(xcurrent)
+            self.aeroResults.CD0     += self.CD0rbf(xcurrent)
+            self.aeroResults.k       += self.krbf(xcurrent)
         return self.aeroResults
+    
+    def update_aero_trim(self,velocity,altitude,CmTrim=0.0,loadFactor=1.0,
+                      mass=None,cg=None,inertia=None,CD0=None):
+        super(DesignFormulation,self).update_aero_trim(velocity,altitude,CmTrim,loadFactor,mass,cg,inertia,CD0)
+        if self.gvfmAero:
+            xcurrent = self.xcurNorm
+            self.aeroResults.CD0     += self.CD0rbf(xcurrent)
+            self.aeroResults.k       += self.krbf(xcurrent)
 
+    def get_drag(self,velocity=None,altitude=None):
+        cd0 = super(DesignFormulation,self).get_drag(velocity,altitude)
+        if self.gvfmAero:
+            return cd0 + self.CD0rbf(self.xcurNorm)
+        else:
+            return cd0
+
+    def _load_rbf_models(self,DOEpath=None,rsltPath=None):
+
+        if DOEpath==None:
+            DOEpath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\LHS_dvar9_sample24.txt'
+        if rsltPath==None:
+            rsltPath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\CFDresults.txt'
+        dCD0 = 0.0005
+        xDOE = read_tabulated_data_without_header(DOEpath)
+        fDOE = read_tabulated_data_without_header(rsltPath,1)
+        self.CLrbf = RbfMod(xDOE, fDOE[:,4]-fDOE[:,13])
+        self.CDrbf = RbfMod(xDOE, fDOE[:,5]-fDOE[:,14])
+        self.CD0rbf= RbfMod(xDOE, fDOE[:,11]-fDOE[:,19]+dCD0)
+        self.krbf  = RbfMod(xDOE, fDOE[:,12]-fDOE[:,20])
+        self.SMrbf = RbfMod(xDOE, fDOE[:,10]-fDOE[:,18],0.02)
+        self.LDrbf = RbfMod(xDOE, fDOE[:,7] -fDOE[:,15])
+    
+    def show_results(self):
+        print '{0:10}={1:10.4f}'.format('LD',self.aero.coef.CL/self.aero.coef.CD)
+        print '{0:10}={1:10.4f}'.format('SM',self.aero.SM)
+        print '{0:10}={1:10.4f}'.format('Cnb',self.aero.derivs.Cnb)
+        print '{0:10}={1:10.4f}'.format('Clb',self.aero.derivs.Clb)
+        print '{0:10}={1:10.4f}'.format('elev',self.analysisData[8])
+        print '{0:10}={1:10.4f}'.format('alpha',self.analysisData[9])
+        print '{0:10}={1:10.4f}'.format('We',self.analysisData[1])
+        print '{0:10}={1:10.4f}'.format('Rcombat',self.analysisData[5])
+        print '{0:10}={1:10.4f}'.format('ROC',self.analysisData[6])
+        print '{0:10}={1:10.4f}'.format('Mmax',self.analysisData[7])
+
+def calculate_scaling_factors():
+    def process_cd0(CL0=-.1,f=None):
+        if f.ndim==2:
+            CD1 = f[:,1]
+            CD2 = f[:,4]
+            CL1 = f[:,0]
+            CL2 = f[:,3]
+        else:
+            CD1 = f[1]
+            CD2 = f[4]
+            CL1 = f[0]
+            CL2 = f[3]
+        tmp1 = (CL1-CL0)**2.
+        tmp2 = (CL2-CL0)**2.
+        k = (CD1 - CD2)/(tmp1 - tmp2)
+        CD0 = CD1 - k*CL1*CL1
+        return CD0, k
+    
+    def adjust_cd0(f,cd0avl,kavl):
+        bnds = ((-.1,.1),)
+        def obj(x,f):
+            cd0,k = process_cd0(x,f)
+            return 1e4*(cd0-cd0avl)**2.0 + (k-kavl)**2.0
+        cl0 = fmin_slsqp(obj,[0],bounds=bnds,args=(f,))[0]
+        cd0,k = process_cd0(cl0,f)
+        return cd0,k,cl0
+
+    xpath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\LHS_dvar9_sample24.txt'
+    fpath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\CFD_FW_results-longitudinal2.txt'
+    out = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\CFD_FW_results-longitudinal3.txt'
+    ac = DesignFormulation()
+    ac.load_xls('Baseline1')
+    ac.setup()
+    xData = read_tabulated_data_without_header(xpath)
+    fData = read_tabulated_data_without_header(fpath,1)
+    
+    k = np.zeros(fData.shape[0])
+    CD0 = np.zeros(fData.shape[0])
+    
+    #CD0cfd, kcfd = process_cd0(f=fData)
+    
+    fid = open(out,'wt')
+    fid.write('CD0avl\tkavl\tCD0cfd\tkcfd\tCD0add\tkadd\tCL0\n')
+    for i,x in enumerate(xData):
+        ac.set_x(x)
+        aero = ac.get_aero_single_point(.7,1e4,alpha=2.)
+        k[i] = aero.k
+        CD0[i] = aero.CD0
+        CD0cfd,kcfd,cl0 = adjust_cd0(fData[i],CD0[i],k[i])
+        print CD0cfd, kcfd, cl0
+        print 'case ',i
+        fid.write('%.9f\t%.9f\t%.9f\t%.9f\t%.9f\t%.9f\t%.9f\n'%(CD0[i],k[i],CD0cfd,kcfd,CD0cfd-CD0[i],kcfd-k[i],cl0))
+    fid.close()
+    
 def run_optimization():
+    print 'GVFM 1st iter: 24+1+1 points'
     ac = DesignFormulation()
     ac.load_xls('Baseline1')
     ac.setup()
     ac.set_x(ac.x0norm)
-    print ac.x0norm
+    for xval in ac.x0norm:
+        sys.stdout.write('%.8f\t'%xval)
+    sys.stdout.write('\n')
+
     #ac.display()
     
-    bnds = np.ones([len(ac.x0),2])
-    bnds[:,0] = -bnds[:,0]
+#    bnds = np.ones([len(ac.x0),2])
+#    bnds[:,0] = -bnds[:,0]
+    
+    #x0norm1 = np.array([ 0.20520747,-0.39226611,-0.47326701,-1.,0.14291925,0.98650447, 
+    #                  0.37346922,  0.37756372,  0.65654722]) # low fidelity optimum
+    x0norm1 = np.array([-0.10127195,-0.10127187,-0.60597138,-0.99999966,-0.71421434,0.97300896,1.00000803,0.57455958,0.3130853]) #gvfm 1
+    bnds = ac.get_bounds(x0norm1)
+    print bnds
 
-    print ac.analysisData
-    #raw_input()
-    rslt = fmin_slsqp(ac.f, ac.x0norm, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=1e-2, acc=1e-3)#,
-                      #fprime=fd, fprime_ieqcons=gd)
+    rslt = fmin_slsqp(ac.f, x0norm1, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=5e-3, acc=0.1)
+
     ac.set_x(rslt)
     print ac.g(rslt)>=0.0
     print 'LD', ac.analysisData[0]
