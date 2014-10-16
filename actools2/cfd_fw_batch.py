@@ -30,7 +30,7 @@ def create_input_files():
     fid = open(batFileLongitudinal,'at')
     pathFluent = r'C:\Program Files\Ansys Inc\v130\fluent\ntbin\win64\fluent.exe'
     for i,xnorm in enumerate(DOE):
-        if i>2:
+        if i>3:
             name = '%s\\case%d'%(wdir,i+startCase)
             caseName = 'case%d'%(i+startCase)
             print name

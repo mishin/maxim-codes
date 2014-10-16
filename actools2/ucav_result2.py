@@ -39,12 +39,13 @@ def plot_results():
     cg1 = ac.get_cg()
     
     xgvfm1 = np.array([-0.10127195,-0.10127187,-0.60597138,-0.99999966,-0.71421434,0.97300896,  1.00000803, 0.57455958,0.3130853])
-    xgvfm2 = np.array([-0.04819471,-0.04819471,-0.59713618,-0.99999966,-1.,0.94601792,1.00000803,0.81889676,-0.3738294])
+    xgvfm2 = np.array([-0.04819471,-0.04819471,-0.59713618,-0.99999966,-1.,        0.94601792,  1.00000803,0.81889676,-0.3738294])
     print np.linalg.norm(xgvfm1-xgvfm2)
     ac.set_x(xgvfm2)
     ac.show_results()
+    print ac.LDrbf(xgvfm2) + ac.analysisData[0], ac.LDrbf(xgvfm2), ac.analysisData[0]
     print ac.get_drag()
-  
+
     x3 = ac.wing.x2d
     y3 = ac.wing.y2d
     cg3 = ac.get_cg()
