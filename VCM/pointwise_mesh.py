@@ -9,6 +9,13 @@ from paths import CFD_paths
 import airfoil
 from os import system
 
+
+def get_file_contents(path):
+    fid = open(path,'rt')
+    lines = fid.readlines()
+    fid.close()
+    return lines
+
 class ScriptFile():
     def __init__(self,templateFile,outputFile):
         fid1 = open(templateFile,'rt')
@@ -121,6 +128,7 @@ class AirfoilOMesh():
         self._dsLE = dsLE
         self._dsTE = dsTE
         self._growthRate = growthRate
+        
 
     def create(self,meshFilePath,caseFilePath,batch=True):
         self._create_script(meshFilePath,caseFilePath,batch=batch)
@@ -153,7 +161,11 @@ class AirfoilOMesh():
         script.write('$_DM(1) setExtrusionSolverAttribute SpacingGrowthFactor %.8f\n'%self._growthRate)
         script.write('$_TMP(mode_6) run -keepFailingStep %d\n'%self._interiorPts)
         script.write_template_lines(arange(78,111))
-        script.write('pw::Application export [list $_DM(1)] {%s}\n'%caseFilePath)
+        appendix = get_file_contents(paths.template_pw4)
+        appendix[18] = '  $_TMP(mode_1) initialize -type CAE {%s}\n'%caseFilePath
+        for line in appendix:
+            script.write(line)
+        #script.write('pw::Application export [list $_DM(1)] {%s}\n'%caseFilePath)
         if batch:
             script.write('pw::Application exit 0')
         script.close()

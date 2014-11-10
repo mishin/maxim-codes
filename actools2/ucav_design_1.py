@@ -61,7 +61,7 @@ class DesignFormulation(design.Design):
     
     def get_bounds(self,x0,c1=0.3):
         n = len(self.x0norm)
-        c1 = 0.5
+        #c1 = 0.25
         treshold = 0.005
         xUold = np.ones(n)
         xLold = -np.ones(n)
@@ -268,14 +268,15 @@ class DesignFormulation(design.Design):
         if rsltPath==None:
             rsltPath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\CFDresults.txt'
         dCD0 = 0.0005
-        xDOE = read_tabulated_data_without_header(DOEpath)[:-1]
-        fDOE = read_tabulated_data_without_header(rsltPath,1)[:-1]
+        xDOE = read_tabulated_data_without_header(DOEpath)
+        fDOE = read_tabulated_data_without_header(rsltPath,1)
         self.CLrbf = RbfMod(xDOE, fDOE[:,4]-fDOE[:,13])
         self.CDrbf = RbfMod(xDOE, fDOE[:,5]-fDOE[:,14])
         self.CD0rbf= RbfMod(xDOE, fDOE[:,11]-fDOE[:,19]+dCD0)
         self.krbf  = RbfMod(xDOE, fDOE[:,12]-fDOE[:,20])
         self.SMrbf = RbfMod(xDOE, fDOE[:,10]-fDOE[:,18],0.5)
         self.LDrbf = RbfMod(xDOE, fDOE[:,7] -fDOE[:,15])
+        self._xdoe = xDOE
     
     def show_results(self):
         print '{0:10}={1:10.4f}'.format('LD',self.analysisData[0])
@@ -358,13 +359,16 @@ def run_optimization():
 #    bnds = np.ones([len(ac.x0),2])
 #    bnds[:,0] = -bnds[:,0]
     
-    #x0norm1 = np.array([ 0.20520747,-0.39226611,-0.47326701,-1.,0.14291925,0.98650447, 
+    #low-fi
+    #x0norm2 = np.array([ 0.20520747,-0.39226611,-0.47326701,-1.,0.14291925,0.98650447, 
     #                  0.37346922,  0.37756372,  0.65654722]) # low fidelity optimum
-    x0norm1 = np.array([-0.10127195,-0.10127187,-0.60597138,-0.99999966,-0.71421434,0.97300896,1.00000803,0.57455958,0.3130853]) #gvfm 1
-    bnds = ac.get_bounds(x0norm1)
+    x0norm2 = np.array([-0.10127195,-0.10127187,-0.60597138,-0.99999966,-0.71421434,0.97300896,1.00000803,0.57455958,0.3130853]) #gvfm 1
+    #x0norm2 = np.array([-0.12782713,-0.12782713,-0.53160625,-0.99999966,-0.57132151,0.95951344,1.00000803,0.44481799,0.65654265])    
+    x0 = ac._xdoe[25]
+    bnds = ac.get_bounds(x0,0.25)
     print bnds
 
-    rslt = fmin_slsqp(ac.f, x0norm1, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=5e-3, acc=0.01)
+    rslt = fmin_slsqp(ac.f, x0, f_ieqcons=ac.g, bounds=bnds, iprint=2,epsilon=1e-2, acc=0.01)
 
     ac.set_x(rslt)
     print ac.g(rslt)>=0.0
@@ -378,7 +382,7 @@ def run_optimization():
     print 'M',ac.analysisData[7]
     print 'alphaTrim',ac.analysisData[9]
     print 'elevTrim',ac.analysisData[8]
-    ac.aero.display()
+    #ac.aero.display()
     print rslt
     print ac.norm.denormalize(rslt)
     ac.display()

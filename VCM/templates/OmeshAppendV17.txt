@@ -1,0 +1,25 @@
+set _CN(1) [pw::GridEntity getByName "con-3"]
+set _TMP(PW_1) [pw::BoundaryCondition getByName "Unspecified"]
+set _TMP(PW_2) [pw::BoundaryCondition getByName "bc-2"]
+set _TMP(PW_3) [pw::BoundaryCondition getByName "bc-3"]
+set _CN(2) [pw::GridEntity getByName "con-1"]
+set _CN(3) [pw::GridEntity getByName "con-2"]
+set _CN(4) [pw::GridEntity getByName "con-4"]
+set _DM(1) [pw::GridEntity getByName "dom-1"]
+$_TMP(PW_2) apply [list [list $_DM(1) $_CN(2)] [list $_DM(1) $_CN(3)]]
+pw::Application markUndoLevel {Set BC}
+
+$_TMP(PW_3) apply [list [list $_DM(1) $_CN(4)]]
+pw::Application markUndoLevel {Set BC}
+
+unset _TMP(PW_1)
+unset _TMP(PW_2)
+unset _TMP(PW_3)
+set _TMP(mode_1) [pw::Application begin CaeExport [pw::Entity sort [list $_DM(1)]]]
+  $_TMP(mode_1) initialize -type CAE {E:/codes/pyCodes/VCM/temp/new.cas}
+  if {![$_TMP(mode_1) verify]} {
+    error "Data verification failed."
+  }
+  $_TMP(mode_1) write
+$_TMP(mode_1) end
+unset _TMP(mode_1)

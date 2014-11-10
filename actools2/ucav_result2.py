@@ -25,6 +25,7 @@ def plot_results():
     ac.set_x(xbase)
     ac.show_results()
     print ac.get_drag()
+    print ac.wing.aspectRatio
     # low fidelity optimum
     xopt1 = np.array([ 0.20520747,-0.39226611,-0.47326701,-1.,0.14291925,0.98650447, 
                       0.37346922,  0.37756372,  0.65654722])
@@ -33,6 +34,7 @@ def plot_results():
     ac.set_x(xopt1)
     ac.show_results()
     print ac.get_drag()
+    print ac.wing.aspectRatio
   
     x1 = ac.wing.x2d
     y1 = ac.wing.y2d
@@ -40,11 +42,14 @@ def plot_results():
     
     xgvfm1 = np.array([-0.10127195,-0.10127187,-0.60597138,-0.99999966,-0.71421434,0.97300896,  1.00000803, 0.57455958,0.3130853])
     xgvfm2 = np.array([-0.04819471,-0.04819471,-0.59713618,-0.99999966,-1.,        0.94601792,  1.00000803,0.81889676,-0.3738294])
+    xgvfm4 = np.array([-0.10676065, -0.10676065, -0.61007048, -1.00003353, -0.57133293,  0.9857291,  1.00000803,  0.56576939,  0.08997523])
+    
     print np.linalg.norm(xgvfm1-xgvfm2)
-    ac.set_x(xgvfm2)
+    ac.set_x(xgvfm4)
     ac.show_results()
     print ac.LDrbf(xgvfm2) + ac.analysisData[0], ac.LDrbf(xgvfm2), ac.analysisData[0]
     print ac.get_drag()
+    print ac.wing.aspectRatio
 
     x3 = ac.wing.x2d
     y3 = ac.wing.y2d

@@ -302,6 +302,10 @@ def run_mission_B10(ac=None):
 
 
 if __name__=="__main__":
-    print run_mission_B15()/1e3
-    print run_mission_B11()/1e3
-    print run_mission_B10()/1e3
+    name = 'X45C'
+    ac = aircraft_FW.load(name)
+    print run_mission_B15(ac)/1e3
+    ac = aircraft_FW.load(name)
+    print run_mission_B11(ac)/1e3
+    ac = aircraft_FW.load(name)
+    print run_mission_B10(ac)/1e3

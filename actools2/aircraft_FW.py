@@ -16,6 +16,7 @@ from display_aircraft import flying_wing_display
 from wing import Wing
 from aero_avl_fw import Aerodynamics, FlightConditionsAVL
 from drag_aero09 import get_parasite_drag_fw
+from drag import get_transonic_drag_wing
 
 import matplotlib.pyplot as plt
 
@@ -38,6 +39,7 @@ class FlyingWing(object):
         self.propulsion = Propulsion() #table lookup database
         self.aeroResults = None
         self._rootAirfoil = None
+        self._dragAero09 = True # if True then aero09 is used, otherwise Mason+Korn equation
 
     def load_xls(self, name, xlsPath=None):
         """
@@ -155,13 +157,18 @@ class FlyingWing(object):
     
     def _update_parasite_drag(self):
         alt = self.designGoals.cruiseAltitude
-        #alt = 0
-        M, CD, Mdd, CDdd = get_parasite_drag_fw(self,alt)
-        self._M = np.hstack([M[0]-.2,M[0]-.1,M])+.1
-        self._CD = np.hstack([CD[0],CD[0],CD])
+        if self._dragAero09:
+            M, CD, Mdd, CDdd = get_parasite_drag_fw(self,alt)
+            self._M = np.hstack([M[0]-.2,M[0]-.1,M])+.1
+            self._CD = np.hstack([CD[0],CD[0],CD])
+            self.Mdd = Mdd
+            self.CDdd = CDdd
+        else:
+            M, CD = get_transonic_drag_wing(self.wing,Ka=0.90)
+            self._M = M
+            self._CD = CD
         self._dragCurve = Akima1DInterpolator(self._M,self._CD)
-        self.Mdd = Mdd
-        self.CDdd = CDdd
+        
     
     def plot_drag(self):
         m = np.linspace(self._M[0],self._M[-1],100)
@@ -395,7 +402,9 @@ def run_test4():
     ac.mass.empty.display()
     ac.mass.display()
     #ac.display_2d()
-    #ac.plot_drag()
+    ac._dragAero09 = False
+    ac._update_parasite_drag()
+    ac.plot_drag()
     ac.get_aero_single_point(0.7,1e4,0,0).display()
     print (ac.aeroResults.xNP - ac.wing.MAClocation)/ac.wing.MAC
     print ac.wing.MAClocation

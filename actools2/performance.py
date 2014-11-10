@@ -60,7 +60,7 @@ class SteadyLevelFlight(FlightMechanics):
         try:
             V = brentq(velocity_eqn,V0,V2,xtol=1e-3,args=(altitude,))
         except ValueError:
-            V = fsolve(velocity_eqn,atm.soundSpeed*0.9,(altitude,))[0]
+            V = fsolve(velocity_eqn,atm.soundSpeed*0.99,(altitude,))[0]
         self.set_results(V,altitude)
         #self.results.thrust = self.tm.totalThrust
         self.results.thrust = self.get_required_thrust(V,altitude)
@@ -229,7 +229,7 @@ class Field:
 
 def run_test1():
     import aircraft_FW
-    ac = aircraft_FW.load('Baseline1')
+    ac = aircraft_FW.load('X47B')
     #ac.display()
     slf =SteadyLevelFlight(ac)
     #alt = ac.designGoals.cruiseAltitude
@@ -247,7 +247,7 @@ def run_test1():
     clm = ClimbDescent(ac)
     print clm.run_max_climb_rate(0)
     print clm.run_most_economical_climb(0)
-    print clm.get_service_ceiling()
+#    print clm.get_service_ceiling()
     
 
 if __name__=="__main__":

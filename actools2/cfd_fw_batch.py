@@ -21,7 +21,7 @@ def create_input_files():
 #    Mach = ac.designGoals.cruiseMach
 #    altitude = ac.designGoals.cruiseAltitude
     yplus = .5
-    wdir = 'D:\FW_LHS30_new'
+    wdir = 'D:\sync_Maxim'
     alpha = [0,2]
 #    beta = 2.0
     niter = 5000
@@ -30,7 +30,7 @@ def create_input_files():
     fid = open(batFileLongitudinal,'at')
     pathFluent = r'C:\Program Files\Ansys Inc\v130\fluent\ntbin\win64\fluent.exe'
     for i,xnorm in enumerate(DOE):
-        if i>3:
+        if i>5:
             name = '%s\\case%d'%(wdir,i+startCase)
             caseName = 'case%d'%(i+startCase)
             print name

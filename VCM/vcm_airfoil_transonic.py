@@ -22,8 +22,8 @@ class AirfoilAnalysis:
         V = fc.atmosphere.soundSpeed * self.MachCruise
         self.fc = FlightConditions(V,9e3)
         self.CmMax = 0.15
-        self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_20131123.txt'
-        self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_20131123.txt'
+        self.hifiHistoryFilePath = 'transonic_af_cfd_history_high_1.txt'
+        self.lofiHistoryFilePath = 'transonic_af_cfd_history_low_1.txt'
     
     def _read_cfd_history_file(self,path):
         fid = open(path,'rt')
@@ -115,7 +115,7 @@ class AirfoilAnalysis:
     
     def _run_high_fidelity_cfd(self,x):
         self._upd_cst(x)
-        solver = CFDsolver(self.af,self.fc,10,mesh='O')
+        solver = CFDsolver(self.af,self.fc,5,mesh='O')
         solver.fluent.residuals['energy']=1e-6
         solver.fluent.relaxationFactor['xvelocity'] = 1e-3
         solver.mesh._airfoilPts = 220
@@ -125,7 +125,7 @@ class AirfoilAnalysis:
         solver.mesh._growthRate = 1.2
         solver.create_mesh()
         result = solver.run_for_single_aoa(self.alphaCruise,iterMax=10000,
-                                           turbulenceModel='ke-realizable')
+                                           turbulenceModel='SA')
         solver.fluent.paths.clean()
         return result.cl, result.cd, result.cm, result.LD
     
@@ -134,14 +134,14 @@ class AirfoilAnalysis:
         solver = CFDsolver(self.af,self.fc,50,mesh='O')
         solver.fluent.residuals['energy']=1e-4
         solver.fluent.relaxationFactor['xvelocity'] = 1e-3
-        solver.mesh._airfoilPts = 50
-        solver.mesh._interiorPts = 45
+        solver.mesh._airfoilPts = 55
+        solver.mesh._interiorPts = 40
         solver.mesh._dsTE = 5e-4
         solver.mesh._dsLE = 2e-3
         solver.mesh._growthRate = 1.3
         solver.create_mesh()
         result = solver.run_for_single_aoa(self.alphaCruise,iterMax=5000,
-                                           turbulenceModel='ke-realizable')
+                                           turbulenceModel='SA')
         solver.fluent.paths.clean()
         return result.cl, result.cd, result.cm, result.LD
     
@@ -182,26 +182,40 @@ def get_bounds(x0,delta,lb,ub):
         bnds.append(bnd)
     return array(bnds,dtype=float)
 
+    
+def get_trust_region_ratio((f0, fnew,fHighNew, g0, gnew, gHighNew)):
+    def get_penalty(f,g):
+        P = f
+        mu = 100.
+        if hasattr(g,'__iter__'):
+            for val in g:
+                P += -mu*min(0,val)
+        else:
+            P = P-mu*min(0,g)
+        return P
+    rho = (get_penalty(f0,g0) - get_penalty(fHighNew, gHighNew))/(get_penalty(f0,g0) - get_penalty(fnew,gnew))
+    return rho
+    
 def transonic_airfoil_design():
     x0 = array([1.19087477e-01,1.60950359e-01,2.03634413e-01,1.92468212e-01,-2.00580639e-01,-1.26010045e-01,1.07256400e-18])
     lbDoe = x0 - 0.075
     ubDoe = x0 + 0.075
     lb = x0 - 0.05
     ub = x0 + 0.05
-    histPath = 'transonic_airfoil_design_history_20131125.txt'
+    histPath = 'trans_af_20141107.txt'
     xDoe = read_samples('LHC_transonic_af.txt')
     xDoe = (xDoe+1.0)/2.0*(ubDoe-lbDoe)+lbDoe
     aa = AirfoilAnalysis()
-    tol = 1.0e-3
-    err = tol+1.0
-    gtol = 1.0e-3
+    err = 1.0e-6
+    tol = err+1.0
+    gtol = 1.0e-6
     maxIter = 20
     nIter = 0
     gConverged = False
     xConverged = False
     
     delta = min([min(xu-x,x-xl) for x,xu,xl in zip(x0,ub,lb)])
-    trustRegion = TrustRegionManagement(delta, 0.25, 0.75, 1.25, 0.3, 2.0)
+    trustRegion = TrustRegionManagement(delta, 0.25, 0.75, 1.25, 0.8, 2.0)
     
     clHigh, cdHigh, cmHigh, LDHigh = read_cfd_output('LHC_transonic_CFD_results_omesh_rae2822.txt',20)
     #TODO: precalculate low fidelity solutions
@@ -212,17 +226,22 @@ def transonic_airfoil_design():
     
     fscaled._initialize_by_doe_points(xDoe, -LDHigh, -LDLow)
     gscaled._initialize_by_doe_points(xDoe, aa.CmMax-cmHigh, aa.CmMax-cmLow)
-    fscaled.construct_scaling_model(x0)
-    print fscaled.beta.rbf.epsilon
-    raw_input()
-#    fscaled._initialize_by_doe_points(xDoe)
-#    gscaled._initialize_by_doe_points(xDoe)
-    fscaled.dx = 1e-4
-    gscaled.dx = 1e-4
-    while xConverged==False or gConverged==False:
+    fscaled.dx = 1e-3
+    gscaled.dx = 1e-3
+    fid = open(histPath,'wt')
+    for i in range(len(x0)):
+        fid.write('x%d\t'%(i+1))
+    fid.write('rno1\trho2\trho\tdelta\terr\tfhighNew\tghighNew\tfnew\tgnew\n')
+    fid.close()
+    #while xConverged==False or gConverged==False:
+    itr = 0
+    itrMax = 7
+    while itr<itrMax:
+        itr += 1
         fscaled.construct_scaling_model(x0)
         gscaled.construct_scaling_model(x0)
-        
+        f0 = fscaled(x0)
+        g0 = gscaled(x0)
         bnds = get_bounds(x0,delta,lb,ub)
         cnstr = ({'type':'ineq','fun':gscaled,'jac':gscaled.derivative},
                  {'type':'ineq','fun':aa.g2},{'type':'ineq','fun':aa.g3})
@@ -233,12 +252,13 @@ def transonic_airfoil_design():
         gnew = gscaled(xnew)
         rho1, fHighNew = fscaled.get_trust_region_ratio(xnew)
         rho2, gHighNew = gscaled.get_trust_region_ratio(xnew)
-        rho = max([abs(rho1-1),abs(rho2-1)])+1.0
+        #rho = min([rho1,rho2])
+        # updated calculation of trust region ratio
+        rho = get_trust_region_ratio(f0, fnew,fHighNew, g0, gnew, gHighNew)
+        
         err = np.linalg.norm([x0-xnew])
         delta = trustRegion.adjust(rho,err)
-        if rho1<0:
-            x0 = x0
-        else:
+        if rho>0.0:
             x0 = xnew
         nIter += 1
         fid = open(histPath,'a')

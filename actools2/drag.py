@@ -24,6 +24,21 @@ def get_friction_drag_FW(aircraft,velocity,altitude):
     items.name = 'Airframe'
     items.add_item( frictionDrag.analyze_wing(aircraft.wing,'main wing') )
     return items
+
+
+def get_transonic_drag_wing(wing,CL=0.1,Ka=0.95):
+    dM = 0.025
+    machList = np.arange(0.1,1.+dM,dM)
+    wd = WaveDrag(wing)
+    fd = Friction(wing.area)
+    cd = np.zeros(len(machList))
+    for i,mach in enumerate(machList):
+        fd.set_flight_conditions(mach,10000)
+        item = fd.analyze_wing(wing,'main wing')
+        cdf = item.CDtotal
+        cdw = wd.analyze_wing(mach,CL,Ka)
+        cd[i] = cdw + cdf
+    return machList, cd
     
 # --- drag data structures ---
 
@@ -375,56 +390,36 @@ def _calc_ARe(AR,Kp):
 
 
 class WaveDrag(object):
-    def __init__(self,refArea):
-        self.refArea = float(refArea)
-    
-    def analyze_wing(self,wing):
-        #if self.fc.Mach>1.0:
-        tc  = wing.equivThickness
-        xtc = wing.equivThicknessLoc
-        r0t = wing.equivLEradius/tc
-        ht  = wing.equivCamber/tc
-        TR = wing.taperRatio
-        cosLE = np.cos(wing.equivSweepLErad)
-        cosTE = np.cos(wing.equivSweepTErad)
-        tanLE = np.tan(wing.equivSweepLErad)
-        tanTE = np.tan(wing.equivSweepTErad)
-        # airfoil factors
-        Kb = 1.069 # for curved sections; Kb=1.0 for wedge type
-        Kw = 1.0 # for curved sections; Kw=1.2 for wedge type
-        # thickness factor
-        r0t2 = r0t**0.5
-        Kt = 1.0+4.0*(0.5-xtc*(1.0+0.5*r0t2))**2.0 - 0.25*r0t2*(1.0-xtc)**2.0
-        Kc = 1.0+2.5*(ht)**2. # airfoil camber factor
-        Kp = (cosLE + 0.5/((1.0+TR)**2.0)*(tanLE**2.0 - tanTE**2.0))
-        Kp = Kp/(1.0 + 1.0/((1.0+TR*TR)**2.0)*(tanLE + tanTE)**2.0)
-        Fb = 0.3+0.7*Kp**(1.0+2.0*TR**(1./3.))
+    def __init__(self,wing):
+        self.tc = wing.equivThickness
+        self.c1 = np.cos(wing.equivSweepC2rad)
+        self.c2 = self.c1*self.c1
+        self.c3 = 10.*self.c2*self.c1
+
+    def analyze_wing(self,mach,CL=0.1,Ka=0.95):
+        """
+        Transonic wave drag calculation using Korn equation
         
-        betaLim = abs(tanLE)
-        M = self.fc.Mach*tanLE
-        beta = (M**2.0-1.0)**0.5
-        betaBar = beta/(tc**(1.0/3.0))
-        if beta>betaLim:
-            z = cosLE + cosTE
-            m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)*(betaLim/beta)**z
+        Parameters
+        ----------
+        
+        wing : object
+        
+        CL : float
+            3D lift coefficient
+        Ka : float
+            empirical airfoil coefficient. 
+            Ka=0.87 - NACA6 series, Ka=0.95 - supercritical
+        """
+        Mdd = Ka/self.c1 - self.tc/self.c2 - CL/(10.*self.c3) # drag divergence Mach
+        Mcrit = Mdd - 0.1077217345015942
+
+        if mach>Mcrit:
+            return 20.*(mach-Mcrit)**4.0
         else:
-            m = 0.5*(1.0+TR**2.0*(2.0-TR)**3.0)
-        ARe = _calc_ARe(wing.aspectRatio,Kp)
-        # main equation
-        Fbm = Fb**m
-        var1 = Kt*Kw*Kc*Kb
-        var2 = (1.0/ARe)/(1.0+(1.0+TR)*Fb*betaBar**(1.0+Kw))
-        var3 = ARe**3.0/(1.0+1.0/3.0*ARe**3.0*betaBar**4.0)
-        CDbar = 2.0*var1/(betaBar*Kb*Kw*Fbm + (var2+var3))
-        var4 = betaBar*Kb*Kw**3.8*Fbm
-        var5 = (2.0/ARe**3.0)/(1.0+(2.0/3.0+TR)*Fb*betaBar**(1.0+Kw**3.8))
-        var6 = 1.0/(1.0+3.0*ARe*betaBar**4.0)
-        CDbar += 3.33*var1/(var4+var5+var6)
-        CDwave = CDbar*tc**(5./3)
-        return CDwave
-#        else:
-#            return 0.0
-    
+            return 0.0
+
+
     def set_flight_conditions(self,velocity,altitude):
         """
         setting flight conditions to be analyzed. Flight conditions are calculated
@@ -438,18 +433,17 @@ if __name__=="__main__":
     import aircraft_FW
     import matplotlib.pyplot as plt
     ac = aircraft_FW.load('X45C')
-    wd = WaveDrag(ac.wing.area)
+    wd = WaveDrag(ac.wing)
     fd = Friction(ac.wing.area)
-    M = np.arange(0.1,2.1,0.01)
+    M = np.arange(0.1,1.01,0.01)
     cd = np.zeros(len(M))
     for i,mach in enumerate(M):
-        wd.set_flight_conditions(mach,10000)
         fd.set_flight_conditions(mach,10000)
         item = fd.analyze_wing(ac.wing,'main wing')
         cdf = item.CDtotal
-        cdw = wd.analyze_wing(ac.wing)
+        cdw = wd.analyze_wing(mach)
         cd[i] = cdw + cdf
-        print '%.4f\t%.6f\t%.6f'%(mach,cdw,cdf)
+        #print '%.4f\t%.6f\t%.6f'%(mach,cdw,cdf)
     plt.figure(1)
     plt.grid(True)
     plt.plot(M,cd,'b-')

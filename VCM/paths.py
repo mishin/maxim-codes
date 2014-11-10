@@ -107,6 +107,7 @@ class CFD_paths:
         self.template_pw2 = self.templates + '\\CmeshJournalTemplate.glf'
         self.template_pw3 = self.templates + '\\OmeshJournalTemplate.glf'
         self.template_fl = self.templates + '\\fluentJournalTemplate.jou'
+        self.template_pw4 = self.templates + '\\OmeshAppendV17.txt'
         self.set_name()
         
     def _work_file(self, file_ext = "", add_symbol = ""):
