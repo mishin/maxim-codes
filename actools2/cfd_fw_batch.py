@@ -7,9 +7,10 @@ Created on Fri Sep 05 14:08:07 2014
 
 from cfd_wing import *
 from misc_tools import read_tabulated_data_without_header
-from ucav_design_1 import DesignFormulation
+
 
 def create_input_files():
+    from ucav_design_1 import DesignFormulation
     # Longitudinal (half wing)
     doePath = r'E:\1. Current work\2014 - UAV performance code\Results\norm_results.txt'
     #DOE = read_tabulated_data_without_header('LHS_dvar9_sample30.txt')
@@ -64,5 +65,41 @@ def create_input_files():
     fid.close()
 
 
+def create_input_files2():
+    import aircraft_FW
+    ac = aircraft_FW.load('aeroValidation',False)
+    name = 'aeroValidation'
+    CG = [0.2,0,0]
+
+    yplus = .5
+    wdir = 'D:\sync_Maxim'
+    alpha = [0,2,4,8,12]
+
+    niter = 5000
+    
+    batFile = 'run_cfd_batch2.bat'
+    pathFluent = r'C:\Program Files\Ansys Inc\v130\fluent\ntbin\win64\fluent.exe'
+    
+    igsPath = '%s.igs'%name
+    symCasPath = '%s_sym.cas'%name
+    nonsymCasPath = '%s_half.cas'%name
+    glfPath = '%s.glf'%name
+    
+    create_fw_cmesh(ac,igsPath,symCasPath,nonsymCasPath,yplus,glfPath)
+    Sref = ac.wing.area/2.0
+    Cref = ac.wing.MAC
+    
+    fid = open(batFile,'wt')
+    for a in alpha:
+        outPrefix = '%s\\results\\%s_half_a%d'%(wdir,name,a*100)
+        journalFileRel = '%s_half_a%d.jou'%(name, a*100)
+        journalFile = '%s_half_a%d.jou'%(name, a*100)
+        run_wing_half(nonsymCasPath, outPrefix, ac.designGoals.fc, a, 0, 
+                      Sref, Cref, CG, journalFile,niter)
+        fid.write('\"%s\" 3ddp -t8 -i %s -wait\n'%(pathFluent, journalFileRel))
+    fid.close()
+
+
+
 if __name__=="__main__":
-    create_input_files()
+    create_input_files2()

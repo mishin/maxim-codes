@@ -39,10 +39,10 @@ class Propulsion(object):
             path = MyPaths()
             thrustTablePath = '%s//ThrustTable_%s.txt'%(path.db.wdir,self.engine.name)
             if os.path.isfile(thrustTablePath):
-                print 'loading thrust table'
+                #print 'loading thrust table'
                 self._load_thrust_table(thrustTablePath)
             else:
-                print 'building thrust table'
+                #print 'building thrust table'
                 self._build_thrust_table()
 
     def _calc_cg(self):

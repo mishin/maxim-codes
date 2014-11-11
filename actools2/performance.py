@@ -147,13 +147,13 @@ class ClimbDescent(FlightMechanics):
         atm = ISAtmosphere(altitude)
         """ calculates maximum climb rate """
         Vstall = self.get_Vstall()
-        bound = np.array([2.0*Vstall,0.8*atm.soundSpeed])
+        bound = np.array([Vstall,0.99*atm.soundSpeed])
         opts = {'maxiter':100,'disp':False}
         args = (altitude,)
         def fun(velocity,altitude):
             rslt = self.run_climb_rate(velocity,altitude)
             return rslt.fuelFlow/rslt.climbRate
-        rslt = minimize_scalar(fun,bracket=bound,bounds=bound,method='Bounded',
+        rslt = minimize_scalar(fun,bounds=bound,method='Bounded',
                                options=opts,args=args)
         velocity = rslt.x
         return self.run_climb_rate(velocity,altitude)

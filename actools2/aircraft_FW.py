@@ -22,9 +22,9 @@ import matplotlib.pyplot as plt
 
 path = MyPaths()
 
-def load(name):
+def load(name,calculateData=True):
     ac = FlyingWing()
-    ac.load_xls(name)
+    ac.load_xls(name,None,calculateData)
     return ac
 
 
@@ -41,7 +41,7 @@ class FlyingWing(object):
         self._rootAirfoil = None
         self._dragAero09 = True # if True then aero09 is used, otherwise Mason+Korn equation
 
-    def load_xls(self, name, xlsPath=None):
+    def load_xls(self, name, xlsPath=None,calculateData=True):
         """
         Loads aircraft data from *.xls datasheet and calculates necessary 
         parameters:
@@ -86,6 +86,7 @@ class FlyingWing(object):
         idx = db.find_header(keyword+'PROPULSION')
         engineName                      = db.read_row(idx+1,1,False)
         self.propulsion.load(engineName,True)
+        #self.propulsion.sfcModel = None
         self.propulsion.numberOfEngines = int(db.read_row(-1,1,False))
         self.propulsion.CGx             = db.read_row(-1,1,True)
         self.propulsion.CGy             = db.read_row(-1,1,True)
@@ -112,14 +113,16 @@ class FlyingWing(object):
             CG   = np.array([float(val) for val in line[2:5]])
             MOI  = np.array([float(val) for val in line[5:8]])
             self.mass.payload.add_item(name,mass,CG,MOI)
-        self.mass.update_total()
+        if calculateData:
+            self.mass.update_total()
+            self._update_mass()
         self._process_data(True)
 #        fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
 #        fuelCG[1] = 0.0
 #        self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)
         self.designGoals._process_data()
         self._update_parasite_drag()
-        self._update_mass()
+        
 
     def _process_data(self,updateAirfoils=False):
         self.wing._process_data(updateAirfoils)
