@@ -109,7 +109,7 @@ class AVLsolver(object):
         result.CD0 = float(fc.CD0)
         result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
         self.avl.terminate()
-        pth.clean_temp_files()
+        #pth.clean_temp_files()
         return result
 
     def run_single_point(self,fc,alpha=0,beta=0,elevator=0):
@@ -123,7 +123,7 @@ class AVLsolver(object):
         result.CD0 = float(fc.CD0)
         result.SM = float((result.xNP - fc.cg[0])/fc.Lref)
         self.avl.terminate()
-        pth.clean_temp_files()
+        #pth.clean_temp_files()
         return result
 
     def run_avl(self,fc,runTrim=True,alpha=0,beta=0,elevator=0):

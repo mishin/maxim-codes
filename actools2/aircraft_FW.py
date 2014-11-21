@@ -113,10 +113,10 @@ class FlyingWing(object):
             CG   = np.array([float(val) for val in line[2:5]])
             MOI  = np.array([float(val) for val in line[5:8]])
             self.mass.payload.add_item(name,mass,CG,MOI)
+        self._process_data(True)
         if calculateData:
             self.mass.update_total()
             self._update_mass()
-        self._process_data(True)
 #        fuelCG = self.wing.locate_on_wing(self.wing.fuelTankCGratio[0],self.wing.fuelTankCGratio[1])
 #        fuelCG[1] = 0.0
 #        self.mass.set_fuel_mass(self.designGoals.fuelMass,fuelCG)

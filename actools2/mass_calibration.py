@@ -60,8 +60,8 @@ def run():
 
     plt.figure(1)
     plt.hold(True)
-    plt.bar(loc-width,mass1,width=width,color='b')
-    plt.bar(loc,mass2,width=width,color='r')
+    plt.bar(loc-width,mass1,width=width,hatch='//',edgecolor='k',fill=False)
+    plt.bar(loc,mass2,width=width,hatch='+',edgecolor='r',fill=False)
     plt.legend(['data','calculated'],'upper left')
     plt.ylabel('Empty mass, kg')
     plt.xticks(loc,name)
@@ -69,8 +69,8 @@ def run():
 
     plt.figure(2)
     plt.hold(True)
-    plt.bar(loc-width,mass4,width=width,color='b')
-    plt.bar(loc,mass3,width=width,color='r')
+    plt.bar(loc-width,mass4,width=width,hatch='//',edgecolor='k',fill=False)
+    plt.bar(loc,mass3,width=width,hatch='+',edgecolor='r',fill=False)
     plt.legend(['data','calculated'],'upper left')
     plt.ylabel('Total mass, kg')
     plt.xticks(loc,name)

@@ -17,7 +17,7 @@ from warnings import warn
 class dbPaths:
     """ structure with database paths"""
     def __init__(self):
-        self.wdir     = os.path.abspath(os.getcwd() + '/database')
+        self.wdir     = os.path.abspath(os.path.curdir + '/database')
         self.aircraft = os.path.abspath(self.wdir + '/aircraft.xls')
         self.aircraftFW = os.path.abspath(self.wdir + '/aircraftFW.xls')
         self.airfoil  = os.path.abspath(self.wdir + '/airfoil.xls')
@@ -50,7 +50,7 @@ class MyPaths:
 #        self.aeroCD0in     = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.inp')
 #        self.aeroCD0inWave = os.path.abspath(self.wdir + '/aeroCD0/WAV_KTX2.inp')
 #        self.aeroCD0out    = os.path.abspath(self.wdir + '/aeroCD0/drag_p_ktx2.out')
-        self.namePrefix    = 'default'
+        
         self.platform  = determine_platform()
         self._init_xfoilpath()
     
@@ -93,21 +93,26 @@ class MyPaths:
         Returns temporal filename with given file extension and file prefix. 
         Absolute path is returned.
         """
-        #fileName = self.tmpDir + '/' + self.namePrefix + addSymbol
-        fileName = os.path.join(self.tmpDir,self.namePrefix + addSymbol)
+        fileName = self.tmpDir + '/' + self.namePrefix + addSymbol
         if not fileExt==None:
             fileName += '.'+fileExt
         return os.path.abspath(fileName)
 
     def _init_javapath(self):
+        if os.path.isfile(os.path.abspath('../src/javapath.txt')):
+            path = os.path.abspath('../src/javapath.txt')
+        elif os.path.isfile(os.path.abspath('javapath.txt')):
+            path = os.path.abspath('javapath.txt')
+        else:
+            path = os.path.abspath(self.wdir + '/javapath.txt')
         try:
-            with open('javapath.txt','rt') as javapath: pass
+            with open(path,'rt') as javapath: pass
         except IOError:
             print 'Error: The root folder \n['+os.getcwd()+']'
             print 'must contain a file called javapath.txt'
             print 'On Windows, it must contain the full path to java.exe'
             print 'On linux, if Java is properly installed, the path is just [java].'
-        javapath=open('javapath.txt','rt')
+        javapath=open(path,'rt')
         jpath = javapath.readline()
         javapath.close()
         if jpath[:4]=='java':
@@ -119,12 +124,6 @@ class MyPaths:
         os.remove(self.aeroCD0in)
         os.remove(self.aeroCD0inWave)
         os.remove(self.aeroCD0out)
-    
-    def clean_temp_files(self):
-        for file in os.listdir(self.tmpDir):
-            if file.startswith(self.namePrefix):
-                name = self.tmpDir + '/' + file
-                os.remove(name)
 
 
 def determine_platform():
