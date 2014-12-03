@@ -22,9 +22,7 @@ class PerformanceResults:
         self.climbAngle      = 0.0
         self.fuelFlow        = 0.0
         self.TSFC            = 0.0
-        #self.powerSetting    = 0.0
         self.thrust          = 0.0
-        #self.power           = 0.0
         self.lift            = 0.0
         self.drag            = 0.0
         self.LD              = 0.0
@@ -32,15 +30,39 @@ class PerformanceResults:
         self.bankAngle       = 0.0
         self.loadFactor      = 1.0
         self.turnRate        = 0.0
+    
+    def process_data(self):
+        self.EAS = self.velocity * (self.density/1.2255)**0.5
 
-    def __repr__(self):
-        #out = 'Aircraft performance\n====================\n'
-        out = 'performance data\n=========\n'
+    def __repr__1(self):
+        out = 'performance data\n================\n'
         for attr, value in self.__dict__.iteritems():
             if type(value) is float or type(value) is np.float64:
                 out += '{:<15} = {:<12.5f}\n'.format(attr,value)
         return out
-
+    
+    def __repr__(self):
+        self.process_data()
+        out = 'performance data\n================\n'
+        out += '{:<15} = {:<12.1f}{:<6}\n'.format('altitude',self.altitude,'m')
+        out += '{:<15} = {:<12.4f}{:<6}\n'.format('density',self.density,'kg/m3')
+        out += '{:<15} = {:<12.2f}{:<6}\n'.format('TAS',self.velocity,'m/s')
+        out += '{:<15} = {:<12.2f}{:<6}\n'.format('EAS',self.EAS,'m/s')
+        out += '{:<15} = {:<12.4f}{:<6}\n'.format('Mach',self.Mach,'')
+        out += '{:<15} = {:<12.4f}{:<6}\n'.format('L/D',self.LD,'')
+        out += '{:<15} = {:<12.1f}{:<6}\n'.format('lift',self.lift,'N')
+        out += '{:<15} = {:<12.1f}{:<6}\n'.format('drag',self.drag,'N')
+        out += '{:<15} = {:<12.1f}{:<6}\n'.format('thrust',self.thrust,'N')
+        out += '{:<15} = {:<12.2f}{:<6}\n'.format('SAR',self.SAR,'m/kg')
+        out += '{:<15} = {:<12.4f}{:<6}\n'.format('fuel flow',self.fuelFlow,'kg/s')
+        out += '{:<15} = {:<12.4f}{:<6}\n'.format('TSFC',self.TSFC,'...')
+        out += '{:<15} = {:<12.2f}{:<6}\n'.format('climb rate',self.climbRate,'m/s')
+        out += '{:<15} = {:<12.2f}{:<6}\n'.format('climb angle',self.climbAngle,'deg')
+        #out += '{:<15} = {:<12.5f}{:>6}\n'.format('turn radius',self.SAR,'m/kg')
+        #out += '{:<15} = {:<12.5f}{:>6}\n'.format('bank angle',self.SAR,'m/kg')
+        #out += '{:<15} = {:<12.5f}{:>6}\n'.format('turn rate',self.SAR,'m/kg')
+        #out += '{:<15} = {:<12.5f}{:>6}\n'.format('load factor',self.loadFactor,'')
+        return out
     def display(self):
         print self.__repr__()
 
@@ -230,6 +252,7 @@ class Field:
 def run_test1():
     import aircraft_FW
     ac = aircraft_FW.load('X47B')
+    ac.set_drag_method(0)
     #ac.display()
     slf =SteadyLevelFlight(ac)
     #alt = ac.designGoals.cruiseAltitude
@@ -245,7 +268,9 @@ def run_test1():
     print slf.run_min_fuel(alt)
 
     clm = ClimbDescent(ac)
+    print 'MAXIMUM CLIMB RATE'
     print clm.run_max_climb_rate(0)
+    print 'ECONOMICAL CLIMB'
     print clm.run_most_economical_climb(0)
 #    print clm.get_service_ceiling()
     

@@ -901,7 +901,7 @@ class Airfoil:
         self.polar.Mach   = Mach
         self.polar.alpha  = tmpPolar.alpha
         self.polar.create_splines(mach=True)
-    def get_X_polar(self,Mach,Re,alphaSeq=[-10,25,1.0],nIter=50,
+    def get_X_polar(self,Mach,Re,alphaSeq=[-10,25,1.0],nIter=100,
                     graphic=False,smooth=False):
         """
         Calculates aerodynamic coefficients at given flight conditions using Xfoil.

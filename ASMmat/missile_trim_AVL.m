@@ -25,6 +25,10 @@ if CLtrim0==0
 end
 Cmtrim0 = 0;
 
+
+%i = 1;
+%xhist(i,1) = x0(1);
+%xhist(i,2) = x0(2);
 while err>=tol && iter<=iterMax
     controls = cs.set_de(controls,x0(2));
     controls.alpha = x0(1);
@@ -42,7 +46,18 @@ while err>=tol && iter<=iterMax
     err = norm(x0-xNew);
     x0 = xNew;
     iter = iter +1;
+    %i = i+1;
+    %itr(i) = iter;
+    %xhist(i,1) = x0(1);
+    %xhist(i,2) = x0(2);
 end
 
+%figure(1)
+%hold on
+%plot(itr,xhist(:,1),'rs-');
+%plot(itr,xhist(:,2),'bo-');
+%legend('alpha','elevator');
+%xlabel('iterations')
+%ylabel('angle, deg')
 results = aero;
 end

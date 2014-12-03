@@ -35,7 +35,7 @@ class AirfoilAnalysis:
         self._upd_cst(x)
         self.af.set_trailing_edge(self.zTE)
         try:
-            pol = self.af.get_J_polar(self.Mldg,self.landing.Re,alphaSeq=[-10,10,1.0])
+            pol = self.af.get_X_polar(self.Mldg,self.landing.Re,alphaSeq=[-10,10,1.0])
             cd = array([pol.get_cd_at_cl(cl) for cl in self.clCruise])
         except ValueError:
             pol.display()
@@ -54,7 +54,7 @@ class AirfoilAnalysis:
     def gLow(self,x):
         self._upd_cst(x)
         self.af.set_trailing_edge(self.zTE)
-        pol = self.af.get_J_polar(self.Mldg,self.landing.Re,alphaSeq=[0,20,1.0])
+        pol = self.af.get_X_polar(self.Mldg,self.landing.Re,alphaSeq=[0,20,1.0])
         pol.calc_clmax()
         sys.stdout.write('.')
         return -(self._clmax - pol.clmax)
@@ -138,6 +138,20 @@ def read_xls_doe():
     x = sh.readRange(0,0,50)
     return x[:,:-1],x[:,-1]
 
+
+def get_trust_region_ratio(f0, fnew,fHighNew, g0, gnew, gHighNew):
+    def get_penalty(f,g):
+        P = f
+        mu = 1000.
+        if hasattr(g,'__iter__'):
+            for val in g:
+                P += -mu*min(0,val)
+        else:
+            P = P-mu*min(0,g)
+        return P
+    rho = (get_penalty(f0,g0) - get_penalty(fHighNew, gHighNew))/(get_penalty(f0,g0) - get_penalty(fnew,gnew))
+    return rho
+
 def run_doe_cfd():
     x,f = read_xls_doe()
 
@@ -189,10 +203,10 @@ def vcm_airfoil_optimization():
     
     x0 = normalize(x0,aa.lb,aa.ub)
     aa._upd_cst(x0)
-    gscaled = ScaledFunction(aa.gLow, aa.gHigh,scalingType='add')
-    gscaled._initialize_by_doe_points(xdoe,f-aa._clmax)
+    gscaled = ScaledFunction(aa.gLow, aa.gHigh,100,scalingType='add')
+    #gscaled._initialize_by_doe_points(xdoe,f-aa._clmax)
     
-    histFile = 'KLA100//airfoil_root_history_20140227.txt'
+    histFile = 'KLA100//airfoil_root_history_20141202.txt'
     fid = open(histFile,'wt')
     fid.write('Iter\tfval\tgHi\tgLow\tgScaled\trho\tdelta\terror\tx\n')
     fid.close()
@@ -206,12 +220,15 @@ def vcm_airfoil_optimization():
         cnstr = ({'type':'ineq','fun':gscaled},{'type':'ineq','fun':aa.g2},
                  {'type':'ineq','fun':aa.g3})
         rslt = minimize(aa.fLow,x0,method='SLSQP',bounds=bnds,constraints=cnstr,
-                        tol=1e-10,jac=aa.fLowDeriv, options={'disp':False})
+                        tol=1e-6,jac=aa.fLowDeriv, options={'disp':False})
         xnew = rslt.x
         fnew = rslt.fun
-        gHinew = gscaled.funcHi(xnew)
-        rho = gscaled.get_trust_region_ratio(xnew,gHinew)
-        if gHinew>=0.0:
+        g0 = gscaled(x0)
+        goptScaled = gscaled(xnew)
+        goptHigh = gscaled.funcHi(xnew)
+        f0 = aa.fLow(x0)
+        rho = get_trust_region_ratio(f0,fnew,fnew,g0,goptScaled,goptHigh)
+        if goptHigh>=0.0:
             err = 0.0
         else:
             err = norm(x0-xnew)
@@ -226,14 +243,16 @@ def vcm_airfoil_optimization():
                 delta = delta
         #print nIter,'\t','%.6f\t'%err,fnew,rho,delta
         fid = open(histFile,'a')
-#        out = '%d\t%.6f\t%.4f\t%.4f\t%.4f\t%.4f\t%.2e\t%.2e\t'%(nIter,fnew,gHinew+aa._clmax,gscaled.funcLo(xnew)+aa._clmax,gscaled(xnew)+aa._clmax,rho,delta,err)
-#        for xx in denormalize(xnew,aa.lb,aa.ub):
-#            out += '%.4f\t'%xx
-        #fid.write(out)
-        #fid.write('\n')
+        #print nIter, fnew, gHinew, aa._clmax, gscaled.funcLo(xnew), gscaled(xnew), rho, delta, err
+        out = '%d\t%.6f\t%.4f\t%.4f\t%.4f\t%.4f\t%.2e\t%.2e\t'%(nIter,fnew,goptHigh+aa._clmax,gscaled.funcLo(xnew)+aa._clmax,gscaled(xnew)+aa._clmax,rho,delta,err)
+        for xx in denormalize(xnew,aa.lb,aa.ub):
+            out += '%.4f\t'%xx
+        fid.write(out)
+        fid.write('\n')
         fid.close()
-        #print out
-        x0 = xnew
+        print out
+        if rho>=0:
+            x0 = xnew
     
     aa._upd_cst(xnew)
     gscaled.funcHi.display()
@@ -275,6 +294,6 @@ def plot_result_af():
     plt.show()
     
 if __name__=="__main__":
-    #vcm_airfoil_optimization()
+    vcm_airfoil_optimization()
     #run_doe_cfd()
-    plot_result_af()
+    #plot_result_af()
