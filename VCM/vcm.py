@@ -73,7 +73,7 @@ class TestFunction():
             self.fHist.append(f)
         return f
 
-    def get_gradient(self,x,dx=1e-3,fval=None):
+    def get_gradient(self,x,dx=0.01,fval=None):
         self.nGrad += 1
         if fval==None: fval = self(x)
         if not hasattr(x,'__iter__'):
