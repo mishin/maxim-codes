@@ -33,6 +33,7 @@ class PerformanceResults:
     
     def process_data(self):
         self.EAS = self.velocity * (self.density/1.2255)**0.5
+        
 
     def __repr__1(self):
         out = 'performance data\n================\n'

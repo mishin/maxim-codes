@@ -42,7 +42,7 @@ def get_xfoil_analysis(airfoil,Mach,Re,alphaSeq=[-10,20,1.0],
     if smooth:
         xfoil.cmd('GDES\nCADD\n\n\n\n\nPANEL')
     if not flapDefl==None:
-        xfoil.cmd('GDES\nflap\n%.4f\n0\n%.4f\n\n'%((1-flapChordRatio),flapDefl))
+        xfoil.cmd('GDES\nflap\n%.4f\n0\n%.4f\n\n'%((1.0-flapChordRatio),flapDefl))
     xfoil.cmd('OPER\nVISC\n%.0f\nMACH\n%.4f'%(Re,Mach))
     if nIter>10:
         xfoil.cmd('ITER\n%d' % nIter)
