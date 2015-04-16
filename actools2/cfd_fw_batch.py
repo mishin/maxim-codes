@@ -12,7 +12,7 @@ from misc_tools import read_tabulated_data_without_header
 def create_input_files():
     from ucav_design_1 import DesignFormulation
     # Longitudinal (half wing)
-    doePath = r'E:\1. Current work\2014 - UAV performance code\Results\norm_results.txt'
+    doePath = r'D:\1. Current work\2014 - UAV performance code\Results\norm_results.txt'
     #DOE = read_tabulated_data_without_header('LHS_dvar9_sample30.txt')
     DOE = read_tabulated_data_without_header(doePath)
     ac = DesignFormulation()
@@ -22,20 +22,22 @@ def create_input_files():
 #    Mach = ac.designGoals.cruiseMach
 #    altitude = ac.designGoals.cruiseAltitude
     yplus = .5
-    wdir = 'D:\sync_Maxim'
-    alpha = [0,2]
+    wdir = 'D:\CFD'
+    alpha = [-2,0,2]
 #    beta = 2.0
     niter = 5000
     
-    batFileLongitudinal = '%s\\batchLatDirectional.bat'%wdir
+    batFileLongitudinal = '%s\\batchCFD.bat'%wdir
     fid = open(batFileLongitudinal,'at')
     pathFluent = r'C:\Program Files\Ansys Inc\v130\fluent\ntbin\win64\fluent.exe'
     for i,xnorm in enumerate(DOE):
-        if i>5:
+        if i>0:
             name = '%s\\case%d'%(wdir,i+startCase)
             caseName = 'case%d'%(i+startCase)
             print name
-            ac.set_x(xnorm)
+            ac.set_x(xnorm,False)
+            print ac.xCurrent
+            raw_input()
             #FIXME: this part adds section for payload on top
             #ac._adjust_root_airfoil()
             ac.save_2d_figure('%s.png'%name)
@@ -102,4 +104,4 @@ def create_input_files2():
 
 
 if __name__=="__main__":
-    create_input_files2()
+    create_input_files()

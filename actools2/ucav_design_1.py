@@ -148,7 +148,7 @@ class DesignFormulation(design.Design):
         cgNew = x+self.engineOffset
         cgNew2 = x+self.payloadOffset
         #self.mass.empty.update_item_cg('engine',cgNew,0,0)
-        self.set_engine_cg(cgNew,0,0)
+        #self.set_engine_cg(cgNew,0,0)
         self.SDB = MassComponent('drop payload', 1132.0, np.array([cgNew2, 0.0, 0.12]))
         #self.mass.payload.update_item_cg('drop payload',cgNew,.0,.0)
         
@@ -264,9 +264,9 @@ class DesignFormulation(design.Design):
     def _load_rbf_models(self,DOEpath=None,rsltPath=None):
 
         if DOEpath==None:
-            DOEpath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\LHS_dvar9_sample24.txt'
+            DOEpath = r'D:\1. Current work\2014 - UAV performance code\Results\DOE\LHS_dvar9_sample24.txt'
         if rsltPath==None:
-            rsltPath = r'E:\1. Current work\2014 - UAV performance code\Results\DOE\CFDresults.txt'
+            rsltPath = r'D:\1. Current work\2014 - UAV performance code\Results\DOE\CFDresults.txt'
         dCD0 = 0.0005
         xDOE = read_tabulated_data_without_header(DOEpath)
         fDOE = read_tabulated_data_without_header(rsltPath,1)
