@@ -1,1 +1,1 @@
-C:\\Program Files\\Java\\jre7\\bin\\java.exe
+C:\\Program Files\\Java\\jre1.8.0_45\\bin\\java.exe

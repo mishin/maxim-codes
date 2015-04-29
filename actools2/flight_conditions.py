@@ -69,6 +69,16 @@ class FlightConditions(object):
         Ufric = (tauWall/rho)**0.5
         ds = yplus*self.atm.viscosity / (Ufric*rho)
         return ds
+    
+    def __repr__(self):
+        out = ''
+        out += '%s\t%.4f\n'%('airspeed',self.velocity)
+        out += '%s\t%.4f\n'%('altitude',self.atm.altitude)
+        out += '%s\t%.4f\n'%('Mach',self.Mach)
+        out += '%s\t%.4f\n'%('pressure',self.atm.pressure)
+        out += '%s\t%.4f\n'%('temperature',self.atm.temperature)
+        out += '%s\t%.4f\n'%('density',self.atm.density)
+        return out
 
 
 class ISAtmosphere:
